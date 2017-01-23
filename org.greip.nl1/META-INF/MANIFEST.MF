@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Greip (Language Pack German)
+Bundle-SymbolicName: org.greip.nl1
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: Thomas Lorbeer
+Fragment-Host: org.greip;bundle-version="1.0.0"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
