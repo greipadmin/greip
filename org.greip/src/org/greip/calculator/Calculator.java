@@ -186,6 +186,7 @@ public class Calculator extends Composite {
 		});
 	}
 
+	// bla
 	private static String reverse(final String text) {
 		return new StringBuilder(text).reverse().toString();
 	}
