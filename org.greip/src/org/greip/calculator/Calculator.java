@@ -132,7 +132,10 @@ public class Calculator extends Composite {
 	}
 
 	private void createButtons() {
-		createButtonsFor('7', '8', '9', SPACER, '/', 'C');
+		new Label(this, SWT.LEFT).setLayoutData(GridDataFactory.fillDefaults().span(3, 1).create());
+		createSmallButton('\u2715', 'C', 3);
+		createSmallButton('\u2190', SWT.BS, 0);
+		createButtonsFor('7', '8', '9', SPACER, '/', '%');
 		createButtonsFor('4', '5', '6', SPACER, '*', '±');
 		createButtonsFor('1', '2', '3', SPACER, '-');
 		createButton('=', 1, 2, 0);
@@ -153,16 +156,26 @@ public class Calculator extends Composite {
 		}
 	}
 
-	private Button createButton(final char action, final int hSpan, final int vSpan, final int indent) {
-		final Button btn = new Button(this, SWT.PUSH);
-
-		btn.setText(String.valueOf(action));
-		btn.addListener(SWT.Selection, e -> processAction(action));
-		btn.addListener(SWT.Traverse, e -> e.doit = (e.detail != SWT.TRAVERSE_RETURN));
+	private void createButton(final char action, final int hSpan, final int vSpan, final int indent) {
+		final Button btn = createButton(String.valueOf(action), action);
 		btn.setLayoutData(
 				GridDataFactory.fillDefaults().span(hSpan, vSpan).grab(true, true).minSize(30, SWT.DEFAULT).indent(indent, 0).create());
+	}
+
+	private Button createButton(final String text, final char action) {
+		final Button btn = new Button(this, SWT.PUSH);
+
+		btn.setText(text);
+		btn.addListener(SWT.Selection, e -> processAction(action));
+		btn.addListener(SWT.Traverse, e -> e.doit = (e.detail != SWT.TRAVERSE_RETURN));
 
 		return btn;
+	}
+
+	private void createSmallButton(final char text, final char action, final int indent) {
+		final Button btn = createButton(String.valueOf(text), action);
+		btn.setLayoutData(
+				GridDataFactory.fillDefaults().grab(true, true).minSize(30, SWT.DEFAULT).hint(SWT.DEFAULT, 19).indent(indent, 0).create());
 	}
 
 	private void processAction(final char action) {

@@ -22,10 +22,10 @@ import org.greip.common.Util;
 
 class Formula {
 
-	private static final String NEGATE = "\u02D7";
+	static final char NEGATE = '\u02D7';
 
 	private final Map<String, BinaryOperator<BigDecimal>> operations = new HashMap<>();
-	private final String operators = "+-/*";
+	private final String operators = "+-/*%";
 	private final StringBuilder formula = new StringBuilder();
 
 	public static DecimalFormat getDefaultDecimalFormat() {
@@ -41,6 +41,7 @@ class Formula {
 		operations.put("-", BigDecimal::subtract);
 		operations.put("/", (v1, v2) -> v1.divide(v2, 20, BigDecimal.ROUND_HALF_EVEN));
 		operations.put("*", BigDecimal::multiply);
+		operations.put("%", (v1, v2) -> v1.multiply(v2).divide(new BigDecimal(100), 20, BigDecimal.ROUND_HALF_EVEN));
 
 		init(BigDecimal.ZERO);
 	}
@@ -94,7 +95,7 @@ class Formula {
 	}
 
 	private BigDecimal toBigDecimal(final String token) throws ParseException {
-		return BigDecimal.valueOf(getDefaultDecimalFormat().parse(token.replace(NEGATE, "-")).doubleValue());
+		return BigDecimal.valueOf(getDefaultDecimalFormat().parse(token.replace(NEGATE, '-')).doubleValue());
 	}
 
 	public String processAction(final char action) throws ParseException, TooManyDigitsException {
@@ -137,7 +138,7 @@ class Formula {
 
 			case '±':
 				if (!calculated && !result.isEmpty()) {
-					if (result.startsWith(Formula.NEGATE)) {
+					if (result.indexOf(Formula.NEGATE) == 0) {
 						result = result.substring(1);
 					} else {
 						result = Formula.NEGATE + result;
@@ -149,6 +150,7 @@ class Formula {
 			case '-':
 			case '*':
 			case '/':
+			case '%':
 				if (!calculated) {
 					formula.append(result);
 				}
@@ -209,7 +211,7 @@ class Formula {
 	}
 
 	public boolean isLegalAction(final char action) {
-		return "+-/*0123456789,=cC±".indexOf(action) != -1 || action == SWT.CR || action == SWT.BS;
+		return ("+-/*%0123456789,=cC±" + SWT.CR + SWT.BS).indexOf(action) != -1;
 	}
 
 	public void setDecimalFormat(final DecimalFormat format) {
