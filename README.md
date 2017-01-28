@@ -35,5 +35,4 @@ You can also use all color choosers as a whole widget.
 ```
 
 # License
-Eclipse Public License, Version 1.0 (EPL-1.0): https://www.eclipse.org/legal/epl-v10.html
-      
+Eclipse Public License, Version 1.0 (EPL-1.0). See https://www.eclipse.org/legal/epl-v10.html.
