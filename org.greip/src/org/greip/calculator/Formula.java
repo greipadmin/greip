@@ -23,15 +23,9 @@ import org.greip.common.Util;
 class Formula {
 
 	private static final String NEGATE = "\u02D7";
-	private static final Map<String, BinaryOperator<BigDecimal>> operations = new HashMap<>();
 
-	{
-		operations.put("+", BigDecimal::add);
-		operations.put("-", BigDecimal::subtract);
-		operations.put("/", (v1, v2) -> v1.divide(v2, 20, BigDecimal.ROUND_HALF_EVEN));
-		operations.put("*", BigDecimal::multiply);
-	}
-
+	private final Map<String, BinaryOperator<BigDecimal>> operations = new HashMap<>();
+	private final String operators = "+-/*";
 	private final StringBuilder formula = new StringBuilder();
 
 	public static DecimalFormat getDefaultDecimalFormat() {
@@ -43,11 +37,16 @@ class Formula {
 	private DecimalFormat format = getDefaultDecimalFormat();
 
 	public Formula() {
+		operations.put("+", BigDecimal::add);
+		operations.put("-", BigDecimal::subtract);
+		operations.put("/", (v1, v2) -> v1.divide(v2, 20, BigDecimal.ROUND_HALF_EVEN));
+		operations.put("*", BigDecimal::multiply);
+
 		init(BigDecimal.ZERO);
 	}
 
 	public String format() {
-		final StringTokenizer tk = new FormulaTokenizer(formula, operations.keySet());
+		final StringTokenizer tk = new FormulaTokenizer(formula, operators);
 		final StringBuilder out = new StringBuilder();
 
 		while (tk.hasMoreTokens()) {
@@ -67,8 +66,8 @@ class Formula {
 		return out.toString();
 	}
 
-	private void calculate() throws ParseException {
-		final StringTokenizer tk = new FormulaTokenizer(formula, operations.keySet());
+	private void calculate() throws ParseException, TooManyDigitsException {
+		final StringTokenizer tk = new FormulaTokenizer(formula, operators);
 
 		BigDecimal value = BigDecimal.valueOf(0);
 		BinaryOperator<BigDecimal> operation = operations.get("+");
@@ -84,6 +83,13 @@ class Formula {
 			}
 		}
 
+		final int integerDigits = String.valueOf(value.longValue()).length();
+		final int maxIntegerDigits = format.getMaximumIntegerDigits();
+
+		if (integerDigits > maxIntegerDigits) {
+			throw new TooManyDigitsException();
+		}
+
 		result = format.format(value);
 	}
 
@@ -91,7 +97,7 @@ class Formula {
 		return BigDecimal.valueOf(getDefaultDecimalFormat().parse(token.replace(NEGATE, "-")).doubleValue());
 	}
 
-	public String processAction(final char action) throws ParseException {
+	public String processAction(final char action) throws ParseException, TooManyDigitsException {
 
 		if (!isLegalAction(action)) {
 			throw new IllegalArgumentException("unknown action " + action);
@@ -107,7 +113,12 @@ class Formula {
 				break;
 
 			case SWT.BS:
-				if (!calculated && !result.isEmpty()) {
+				if (calculated || result.isEmpty()) {
+					if (formula.length() > 0) {
+						removeLastFormulaToken();
+						calculated = false;
+					}
+				} else if (!calculated && !result.isEmpty()) {
 					result = result.substring(0, result.length() - 1);
 				}
 				break;
@@ -167,6 +178,23 @@ class Formula {
 		}
 
 		return result;
+	}
+
+	private void removeLastFormulaToken() {
+		final String[] tokens = formula.toString().split(toRegex(operators));
+
+		result = tokens[tokens.length - 1];
+		formula.setLength(formula.lastIndexOf(result));
+	}
+
+	private static String toRegex(final String operators) {
+		final StringBuilder regex = new StringBuilder("[");
+
+		for (int i = 0; i < operators.length(); i++) {
+			regex.append('\\').append(operators.charAt(i));
+		}
+
+		return regex.append(']').toString();
 	}
 
 	private boolean lastCharIsOperator() {

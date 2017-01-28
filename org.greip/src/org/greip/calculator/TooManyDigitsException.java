@@ -9,11 +9,6 @@
  **/
 package org.greip.calculator;
 
-import java.util.StringTokenizer;
-
-class FormulaTokenizer extends StringTokenizer {
-
-	public FormulaTokenizer(final CharSequence formula, final String operators) {
-		super(formula.toString(), operators, true);
-	}
+class TooManyDigitsException extends Exception {
+	private static final long serialVersionUID = 1L;
 }

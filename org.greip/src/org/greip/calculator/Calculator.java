@@ -31,6 +31,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.greip.common.Util;
+import org.greip.nls.Messages;
 
 public class Calculator extends Composite {
 
@@ -116,7 +117,7 @@ public class Calculator extends Composite {
 		Util.applyDerivedFont(lblFormula, -2, SWT.NONE);
 
 		lblResult = createInfoLabel(resultPanel);
-		lblResult.setText("0");
+		lblResult.setText("0"); //$NON-NLS-1$
 		Util.applyDerivedFont(lblResult, 2, SWT.BOLD);
 	}
 
@@ -171,7 +172,11 @@ public class Calculator extends Composite {
 			lblResult.setForeground(getResultForeground());
 
 		} catch (final ParseException | ArithmeticException e) {
-			lblResult.setText("Fehler");
+			lblResult.setText(Messages.Error);
+			lblResult.setForeground(getDisplay().getSystemColor(SWT.COLOR_RED));
+
+		} catch (final TooManyDigitsException e) {
+			lblResult.setText(Messages.Overflow);
 			lblResult.setForeground(getDisplay().getSystemColor(SWT.COLOR_RED));
 		}
 
@@ -186,7 +191,6 @@ public class Calculator extends Composite {
 		});
 	}
 
-	// bla
 	private static String reverse(final String text) {
 		return new StringBuilder(text).reverse().toString();
 	}
