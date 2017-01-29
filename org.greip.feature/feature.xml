@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
       id="org.greip.feature"
-      label="greip - additional SWT controls"
+      label="greip - additional SWT widgets (Core)"
       version="1.0.0.qualifier"
       provider-name="Thomas Lorbeer">
 
