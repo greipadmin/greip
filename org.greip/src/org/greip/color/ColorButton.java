@@ -59,8 +59,19 @@ public class ColorButton extends Button {
 		return new Point(Math.max(wHint, getTextSize().x + 30), size.y);
 	}
 
+	public void setRGB(final RGB rgb) {
+		this.rgb = rgb;
+		changeImage();
+	}
+
 	public RGB getRGB() {
 		return rgb;
+	}
+
+	@Override
+	public void setText(final String string) {
+		super.setText(string);
+		changeImage();
 	}
 
 	private Point getTextSize() {
@@ -71,11 +82,6 @@ public class ColorButton extends Button {
 		}
 
 		return size;
-	}
-
-	public void setRGB(final RGB rgb) {
-		this.rgb = rgb;
-		changeImage();
 	}
 
 	private void changeImage() {
@@ -112,12 +118,6 @@ public class ColorButton extends Button {
 		gc.dispose();
 
 		setImage(image);
-	}
-
-	@Override
-	public void setText(final String string) {
-		super.setText(string);
-		changeImage();
 	}
 
 	private void disposeImage() {
