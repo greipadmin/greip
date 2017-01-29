@@ -29,7 +29,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.TypedListener;
 import org.greip.common.Util;
 
-public class ColorWheel extends Composite {
+class ColorWheel extends Composite {
 
 	private static final int DIAMETER = 127;
 

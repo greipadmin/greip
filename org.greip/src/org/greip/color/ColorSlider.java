@@ -24,7 +24,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.TypedListener;
 import org.greip.common.Util;
 
-public class ColorSlider extends Composite {
+class ColorSlider extends Composite {
 
 	private final ColorResolution resolution;
 	private ColorSliderType type = ColorSliderType.Hue;

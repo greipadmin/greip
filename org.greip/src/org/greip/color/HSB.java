@@ -11,7 +11,7 @@ package org.greip.color;
 
 import org.eclipse.swt.graphics.RGB;
 
-public final class HSB {
+final class HSB {
 
 	final float[] hsb;
 

@@ -23,7 +23,7 @@ import org.greip.nls.Messages;
 import org.greip.separator.LineStyle;
 import org.greip.separator.Separator;
 
-public abstract class AbstractColorChooser extends Composite implements IColorChooser {
+abstract class AbstractColorChooser extends Composite implements IColorChooser {
 
 	private final ColorResolution colorResolution;
 	private RGB newRGB;
