@@ -22,7 +22,7 @@ import org.greip.common.Util;
 
 class Formula {
 
-	static final char NEGATE = '\u02D7';
+	private static final char NEGATE = '\u02D7';
 
 	private final Map<String, BinaryOperator<BigDecimal>> operations = new HashMap<>();
 	private final String operators = "+-/*%";
@@ -34,7 +34,8 @@ class Formula {
 
 	private String result;
 	private boolean calculated = true;
-	private DecimalFormat format = getDefaultDecimalFormat();
+	private DecimalFormat format;
+	private char decimalSeparator;
 
 	public Formula() {
 		operations.put("+", BigDecimal::add);
@@ -43,6 +44,7 @@ class Formula {
 		operations.put("*", BigDecimal::multiply);
 		operations.put("%", (v1, v2) -> v1.multiply(v2).divide(new BigDecimal(100), 20, BigDecimal.ROUND_HALF_EVEN));
 
+		setDecimalFormat(getDefaultDecimalFormat());
 		init(BigDecimal.ZERO);
 	}
 
@@ -104,6 +106,19 @@ class Formula {
 			throw new IllegalArgumentException("unknown action " + action);
 		}
 
+		if (action == decimalSeparator) {
+			if (calculated) {
+				result = String.valueOf(decimalSeparator);
+				if (!lastCharIsOperator()) {
+					formula.setLength(0);
+				}
+			} else if (result.indexOf(decimalSeparator) == -1) {
+				result += action;
+			}
+			calculated = false;
+			return result;
+		}
+
 		switch (action) {
 			case SWT.CR:
 			case '=':
@@ -122,18 +137,6 @@ class Formula {
 				} else if (!calculated && !result.isEmpty()) {
 					result = result.substring(0, result.length() - 1);
 				}
-				break;
-
-			case ',':
-				if (calculated) {
-					result = ",";
-					if (!lastCharIsOperator()) {
-						formula.setLength(0);
-					}
-				} else if (!result.contains(",")) {
-					result += action;
-				}
-				calculated = false;
 				break;
 
 			case '±':
@@ -211,12 +214,14 @@ class Formula {
 	}
 
 	public boolean isLegalAction(final char action) {
-		return ("+-/*%0123456789,=cC±" + SWT.CR + SWT.BS).indexOf(action) != -1;
+		return ("+-/*%0123456789=cC±" + SWT.CR + SWT.BS).indexOf(action) != -1 || action == decimalSeparator;
 	}
 
 	public void setDecimalFormat(final DecimalFormat format) {
 		this.format = (DecimalFormat) format.clone();
+
 		this.format.setParseBigDecimal(true);
+		this.decimalSeparator = this.format.getDecimalFormatSymbols().getDecimalSeparator();
 	}
 
 	public DecimalFormat getDecimalFormat() {

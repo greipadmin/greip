@@ -78,9 +78,7 @@ public class CalculatorTextAdapter {
 				calculator.setValue(initialValueSupplier.get());
 
 				Util.whenNotNull(configurer, c -> c.accept(calculator));
-
-				final BigDecimal value = popup.calculate();
-				Util.whenNotNull(value, resultConsumer);
+				Util.whenNotNull(popup.calculate(), resultConsumer);
 
 				e.doit = false;
 			}
