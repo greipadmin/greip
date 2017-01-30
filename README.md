@@ -3,7 +3,7 @@ Main repository for the Greip Project. The goal of this project is to propose ne
 
 ## The widgets
 
-Currently greip contains the following widgets:
+Currently Greip contains the following widgets:
 
 * **ColorButton**, a button that represents a color and opens one of this color choosers:
  * **_ColorChooserHSB_**, selects a color by hue, brightness and saturation.
