@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
       id="org.greip.feature"
-      label="greip (Core)"
+      label="Greip Widgets"
       version="1.0.0.qualifier"
       provider-name="Thomas Lorbeer">
 
