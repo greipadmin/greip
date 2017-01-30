@@ -1,5 +1,5 @@
-# greip
-Main repository for the greip project - additional SWT widgets. The goal of this project is to propose new widgets for the SWT API.
+# Greip
+Main repository for the Greip Project - additional SWT widgets. The goal of this project is to propose new widgets for the SWT API.
 
 ## The widgets
 
@@ -119,7 +119,7 @@ public class CalculatorPopupDemo {
 }
 ```
 # Eclipse update site
-https://github.com/greipadmin/greip/raw/master/org.greip.updatesite
+https://github.com/greipadmin/greip/raw/master/updatesite
 
 # License
 Eclipse Public License, Version 1.0 (EPL-1.0). See https://www.eclipse.org/legal/epl-v10.html.
