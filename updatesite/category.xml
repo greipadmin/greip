@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/org.greip.feature_1.0.0.qualifier.jar" id="org.greip.feature" version="1.0.0.qualifier">
+      <category name="org.greip.category"/>
+   </feature>
+   <feature url="features/org.greip.nls.feature_1.0.0.qualifier.jar" id="org.greip.nls.feature" version="1.0.0.qualifier">
+      <category name="org.greip.category"/>
+   </feature>
+   <category-def name="org.greip.category" label="greip - additional SWT widgets"/>
+</site>
