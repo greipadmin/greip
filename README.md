@@ -1,5 +1,5 @@
-# Greip
-Main repository for the Greip Project - additional SWT widgets. The goal of this project is to propose new widgets for the SWT API.
+# Greip  Additional SWT Widget
+Main repository for the Greip Project. The goal of this project is to propose new widgets for the SWT API.
 
 ## The widgets
 
