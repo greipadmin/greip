@@ -23,7 +23,7 @@ import org.greip.nls.Messages;
 import org.greip.separator.LineStyle;
 import org.greip.separator.Separator;
 
-abstract class AbstractColorChooser extends Composite implements IColorChooser {
+public abstract class AbstractColorChooser extends Composite implements IColorChooser {
 
 	private final ColorResolution colorResolution;
 	private RGB newRGB;
@@ -35,7 +35,7 @@ abstract class AbstractColorChooser extends Composite implements IColorChooser {
 	private Composite previewPanel;
 	private final boolean showInfo;
 
-	public AbstractColorChooser(final Composite parent, final ColorResolution colorResolution, final boolean showInfo) {
+	protected AbstractColorChooser(final Composite parent, final ColorResolution colorResolution, final boolean showInfo) {
 		super(parent, SWT.NO_FOCUS);
 
 		this.colorResolution = colorResolution;
