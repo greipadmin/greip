@@ -9,6 +9,8 @@
  **/
 package org.greip.color;
 
+import java.util.function.Consumer;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
@@ -25,12 +27,20 @@ public class ColorButton extends Button {
 
 	private RGB rgb;
 	private Image image;
+	private IColorChooserFactory factory;
+	private Consumer<RGB> consumer;
 
 	public ColorButton(final Composite parent) {
 		super(parent, SWT.PUSH);
 
 		addListener(SWT.Resize, e -> changeImage());
 		addListener(SWT.Dispose, e -> disposeImage());
+
+		addListener(SWT.Selection, e -> {
+			if (factory != null && consumer != null) {
+				Util.whenNotNull(chooseRGB(factory), consumer);
+			}
+		});
 
 		setRGB(new RGB(255, 255, 255));
 	}
@@ -122,5 +132,13 @@ public class ColorButton extends Button {
 
 	private void disposeImage() {
 		Util.whenNotNull(image, image::dispose);
+	}
+
+	public void setColorChooserFactory(final IColorChooserFactory factory) {
+		this.factory = factory;
+	}
+
+	public void setColorConsumer(final Consumer<RGB> consumer) {
+		this.consumer = consumer;
 	}
 }
