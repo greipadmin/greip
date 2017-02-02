@@ -7,10 +7,13 @@ Currently Greip contains a small set of powerful widgets.
 
 ### ColorButton
 The ColorButton widget represents a color and displays a color selection dialog. (_[read more...](https://github.com/greipadmin/greip/wiki/ColorButton)_)
+
 ![](https://github.com/greipadmin/greip/raw/master/wiki/ColorButton.png)
 
 ### Calculator
 The Calulator widget A simple calculator, displayed as a whole widget or inside a tool window. (_[read more...](https://github.com/greipadmin/greip/wiki/Calculator)_)
+
+![](https://github.com/greipadmin/greip/raw/master/wiki/Calculator.png)
 
 ## Eclipse update site
 https://github.com/greipadmin/greip/raw/master/updatesite
