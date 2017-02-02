@@ -56,6 +56,10 @@ public abstract class Popup extends Shell {
 		controlLocation.x -= borderWidth;
 		controlLocation.y -= borderWidth;
 
+		if (control instanceof Button) {
+			controlLocation.x += 2;
+		}
+
 		final List<Rectangle> positions = new ArrayList<>();
 		// bottom
 		positions.add(new Rectangle(controlLocation.x, controlLocation.y + controlSize.y, size.x, size.y));
