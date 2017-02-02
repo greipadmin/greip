@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
 import org.greip.common.Util;
 
@@ -42,7 +43,7 @@ public class CalculatorTextAdapter {
 
 		setValueInitializer(() -> toBigDecimal(txt.getText(), new ParsePosition(0)));
 
-		txt.addListener(SWT.Verify, e -> {
+		final Listener verifyListener = e -> {
 			final String text = txt.getText();
 			final String newText = text.substring(0, e.start) + e.text + text.substring(e.end);
 			final DecimalFormatSymbols dfs = format.getDecimalFormatSymbols();
@@ -67,9 +68,9 @@ public class CalculatorTextAdapter {
 					e.doit = false;
 				}
 			}
-		});
+		};
 
-		txt.addListener(SWT.KeyDown, e -> {
+		final Listener keyDownlistener = e -> {
 			if (keyEventPredicate.test(e) && txt.isEnabled()) {
 				final CalculatorPopup popup = new CalculatorPopup(txt);
 				final Calculator calculator = popup.getCalculator();
@@ -82,6 +83,13 @@ public class CalculatorTextAdapter {
 
 				e.doit = false;
 			}
+		};
+
+		txt.addListener(SWT.Verify, verifyListener);
+		txt.addListener(SWT.KeyDown, keyDownlistener);
+		txt.addListener(SWT.Dispose, e -> {
+			txt.removeListener(SWT.Verify, verifyListener);
+			txt.removeListener(SWT.KeyDown, keyDownlistener);
 		});
 	}
 
