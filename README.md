@@ -11,7 +11,7 @@ The ColorButton widget represents a color and displays a color selection dialog.
 ![](https://github.com/greipadmin/greip/raw/master/wiki/ColorButton.png)
 
 ### Calculator
-The Calulator widget A simple calculator, displayed as a whole widget or inside a tool window. (_[read more...](https://github.com/greipadmin/greip/wiki/Calculator)_)
+A simple calculator, displayed as a whole widget or inside a tool window. (_[read more...](https://github.com/greipadmin/greip/wiki/Calculator)_)
 
 ![](https://github.com/greipadmin/greip/raw/master/wiki/Calculator.png)
 
