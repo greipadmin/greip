@@ -15,7 +15,7 @@ A simple calculator, displayed as a whole widget or inside a tool window. (_[rea
 
 ![](https://github.com/greipadmin/greip/raw/master/wiki/Calculator.png)
 
-## Eclipse update site
+# Eclipse update site
 To install Greip use this update site: https://github.com/greipadmin/greip/raw/master/updatesite.
 
 # Origin of the name
