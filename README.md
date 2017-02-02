@@ -16,7 +16,7 @@ A simple calculator, displayed as a whole widget or inside a tool window. (_[rea
 ![](https://github.com/greipadmin/greip/raw/master/wiki/Calculator.png)
 
 ## Eclipse update site
-https://github.com/greipadmin/greip/raw/master/updatesite
+To install Greip use this update site: https://github.com/greipadmin/greip/raw/master/updatesite.
 
 # Origin of the name
 Greip is a natural satellite of Saturn. Its discovery was announced on 26 June 2006. Greip is about 6 kilometres in diameter, and orbits Saturn at an average distance of 18,066 Mm in 906.556 days. Read more on [Wikipedia](https://en.wikipedia.org/wiki/Greip_(moon))...
