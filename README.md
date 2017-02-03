@@ -15,6 +15,11 @@ A simple calculator, displayed as a whole widget or inside a tool window. (_[rea
 
 ![](https://github.com/greipadmin/greip/raw/master/wiki/Calculator.png)
 
+### Picture
+This widget simply shows a Picture. Supported picture formats: PNG, BMP, JPEG, GIF (including animated GIFs), ICO and TIFF. (_[read more...](https://github.com/greipadmin/greip/wiki/Picture)_)
+
+![](https://github.com/greipadmin/greip/raw/master/wiki/Picture.png)
+
 # Eclipse update site
 To install Greip use this update site: https://github.com/greipadmin/greip/raw/master/updatesite.
 
