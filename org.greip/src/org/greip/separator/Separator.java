@@ -39,7 +39,7 @@ public class Separator extends Composite {
 	private int orientation;
 
 	private String text;
-	private final ImageDecorator imageDecorator = new ImageDecorator();
+	private final ImageDecorator imageDecorator = new ImageDecorator(this);
 	private final Set<SelectionListener> selectionListeners = new HashSet<>();
 
 	private int marginHeight;

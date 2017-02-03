@@ -18,18 +18,25 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.greip.common.Util;
 
 public final class ImageDecorator extends AbstractDecorator {
 
 	private Image[] images;
-	private int idx = 0;
+	private int idx;
 	private final ImageLoader imageLoader = new ImageLoader();
-	private int minDelay = 100;
+	private int minDelay = 50;
 	private boolean animated;
 	private boolean disposed;
 	private Color background;
+	
+	private final Composite parent;
+
+	public ImageDecorator(final Composite parent) {
+		this.parent = parent;
+	}
 
 	private synchronized Image[] createImages(final ImageData... imageData) {
 		final Display display = getDisplay();
@@ -47,26 +54,27 @@ public final class ImageDecorator extends AbstractDecorator {
 		final GC imageGC = new GC(offScreenImage);
 		final Image[] images = new Image[imageData.length];
 
-		Color bgColor = null;
 		for (int i = 0; i < imageData.length; i++) {
+			Color bgColor = null;
+
 			if (i == 0 && imageLoader.backgroundPixel != -1) {
 				bgColor = new Color(display, imageData[i].palette.getRGB(imageLoader.backgroundPixel));
 				imageGC.setBackground(bgColor);
 			}
+
 			if (imageData[i].disposalMethod == SWT.DM_FILL_BACKGROUND) {
 				final Color defaultBackground = display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
 				imageGC.setBackground(Util.nvl(background, defaultBackground));
 				imageGC.fillRectangle(0, 0, imageSize.x, imageSize.y);
 			}
+
 			imageGC.drawImage(new Image(display, imageData[i]), imageData[i].x, imageData[i].y);
-			imageGC.dispose();
 			images[i] = new Image(display, offScreenImage.getImageData());
 
-			if (bgColor != null) {
-				bgColor.dispose();
-				bgColor = null;
-			}
+			Util.whenNotNull(bgColor, bgColor::dispose);
 		}
+
+		imageGC.dispose();
 
 		return images;
 	}
@@ -100,10 +108,10 @@ public final class ImageDecorator extends AbstractDecorator {
 					animated = false;
 				} else if (images.length == 1) {
 					animated = false;
-					fireSettingsChangedEvent();
+					parent.redraw();
 				} else {
-					idx = (idx + 1) % (images.length - 1);
-					fireSettingsChangedEvent();
+					idx = ++idx % images.length;
+					parent.redraw();
 					doAnimate();
 				}
 			}
@@ -148,7 +156,7 @@ public final class ImageDecorator extends AbstractDecorator {
 		if (!animated) {
 			doAnimate();
 		}
-		fireSettingsChangedEvent();
+		parent.redraw();
 	}
 
 	public void setMinDelay(final int minDelay) {
