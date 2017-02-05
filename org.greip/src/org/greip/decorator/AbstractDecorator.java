@@ -9,17 +9,21 @@
  **/
 package org.greip.decorator;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 
 public abstract class AbstractDecorator implements IDecorator {
 
+	private final Control parent;
 	private Cursor cursor;
 
-	@Override
-	public void dispose() {
+	protected AbstractDecorator(final Control parent) {
+		this.parent = parent;
+		parent.addListener(SWT.Dispose, e -> dispose());
 	}
 
 	@Override
@@ -28,16 +32,23 @@ public abstract class AbstractDecorator implements IDecorator {
 	}
 
 	@Override
+	public void setCursor(final Cursor cursor) {
+		this.cursor = cursor;
+	}
+
+	@Override
 	public Cursor getCursor() {
 		return cursor;
 	}
 
-	protected static Display getDisplay() {
-		return Display.getCurrent();
+	protected void dispose() {
 	}
 
-	@Override
-	public void setCursor(final Cursor cursor) {
-		this.cursor = cursor;
+	protected Display getDisplay() {
+		return parent.getDisplay();
+	}
+
+	protected Control getParent() {
+		return parent;
 	}
 }

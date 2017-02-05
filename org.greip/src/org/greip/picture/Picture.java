@@ -12,13 +12,15 @@ public class Picture extends Composite {
 
 	private final ImageDecorator decorator;
 
-	public Picture(final Composite parent) {
-		super(parent, SWT.NO_FOCUS | SWT.DOUBLE_BUFFERED);
+	public Picture(final Composite parent, final int style) {
+		this(parent, style, new Point(SWT.DEFAULT, SWT.DEFAULT));
+	}
 
-		decorator = new ImageDecorator(this);
+	public Picture(final Composite parent, final int style, final Point imageSize) {
+		super(parent, style | SWT.NO_FOCUS | SWT.DOUBLE_BUFFERED);
 
+		decorator = new ImageDecorator(this, imageSize);
 		addListener(SWT.Paint, e -> decorator.doPaint(e.gc, new Point(0, 0)));
-		addListener(SWT.Dispose, e -> decorator.dispose());
 	}
 
 	@Override
@@ -26,23 +28,18 @@ public class Picture extends Composite {
 		return decorator.getSize();
 	}
 
-	public int getMinDelay() {
-		return decorator.getMinDelay();
-	}
-
 	public void loadImage(final InputStream stream) {
 		decorator.loadImage(stream);
+		setSize(decorator.getSize());
 	}
 
 	public void loadImage(final String filename) {
 		decorator.loadImage(filename);
+		setSize(decorator.getSize());
 	}
 
 	public void setImage(final Image image) {
 		decorator.setImage(image);
-	}
-
-	public void setMinDelay(final int minDelay) {
-		decorator.setMinDelay(minDelay);
+		setSize(decorator.getSize());
 	}
 }

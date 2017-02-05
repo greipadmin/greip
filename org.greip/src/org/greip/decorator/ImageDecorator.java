@@ -10,6 +10,7 @@
 package org.greip.decorator;
 
 import java.io.InputStream;
+import java.util.Arrays;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -18,29 +19,32 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.greip.common.Util;
 
 public final class ImageDecorator extends AbstractDecorator {
 
 	private Image[] images;
+	private int[] delays;
 	private int idx;
 	private final ImageLoader imageLoader = new ImageLoader();
-	private int minDelay = 50;
 	private boolean animated;
 	private boolean disposed;
-	private Color background;
-	
-	private final Composite parent;
+	private final Point scaleTo;
+	private Point imageSize;
 
-	public ImageDecorator(final Composite parent) {
-		this.parent = parent;
+	public ImageDecorator(final Control parent) {
+		this(parent, new Point(SWT.DEFAULT, SWT.DEFAULT));
 	}
 
-	private synchronized Image[] createImages(final ImageData... imageData) {
+	public ImageDecorator(final Control parent, final Point scaleTo) {
+		super(parent);
+		this.scaleTo = scaleTo;
+	}
+
+	private void createImages(final ImageData... imageData) {
 		final Display display = getDisplay();
-		final Point imageSize;
 
 		disposeImages();
 
@@ -51,88 +55,73 @@ public final class ImageDecorator extends AbstractDecorator {
 		}
 
 		final Image offScreenImage = new Image(display, imageSize.x, imageSize.y);
-		final GC imageGC = new GC(offScreenImage);
-		final Image[] images = new Image[imageData.length];
 
-		for (int i = 0; i < imageData.length; i++) {
+		images = new Image[imageData.length];
+		delays = new int[imageData.length];
+
+		Util.withResource(new GC(offScreenImage), imageGC -> {
 			Color bgColor = null;
 
-			if (i == 0 && imageLoader.backgroundPixel != -1) {
-				bgColor = new Color(display, imageData[i].palette.getRGB(imageLoader.backgroundPixel));
+			if (imageLoader.backgroundPixel != -1) {
+				bgColor = new Color(display, imageData[0].palette.getRGB(imageLoader.backgroundPixel));
 				imageGC.setBackground(bgColor);
 			}
 
-			if (imageData[i].disposalMethod == SWT.DM_FILL_BACKGROUND) {
-				final Color defaultBackground = display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
-				imageGC.setBackground(Util.nvl(background, defaultBackground));
-				imageGC.fillRectangle(0, 0, imageSize.x, imageSize.y);
+			for (int i = 0; i < imageData.length; i++) {
+				if (imageData[0].disposalMethod == SWT.DM_FILL_BACKGROUND) {
+					imageGC.fillRectangle(0, 0, imageSize.x, imageSize.y);
+				}
+
+				imageGC.drawImage(new Image(display, imageData[i]), imageData[i].x, imageData[i].y);
+
+				images[i] = new Image(display, offScreenImage.getImageData().scaledTo(getSize().x, getSize().y));
+				delays[i] = imageData[i].delayTime;
 			}
 
-			imageGC.drawImage(new Image(display, imageData[i]), imageData[i].x, imageData[i].y);
-			images[i] = new Image(display, offScreenImage.getImageData());
-
 			Util.whenNotNull(bgColor, bgColor::dispose);
-		}
+		});
+	}
 
-		imageGC.dispose();
-
-		return images;
+	private Point getImageSize() {
+		return imageSize == null ? new Point(0, 0) : imageSize;
 	}
 
 	@Override
-	public void dispose() {
-		super.dispose();
+	protected void dispose() {
 		disposeImages();
 		disposed = true;
 	}
 
 	private void disposeImages() {
-		if (images != null) {
-			for (final Image image : images) {
-				image.dispose();
-			}
-			idx = 0;
-		}
+		Util.whenNotNull(images, () -> Arrays.stream(images).forEach(Image::dispose));
 	}
 
 	private synchronized void doAnimate() {
-		final int delayTime = images[idx].getImageData().delayTime * 10;
-		final int usedDelay = Math.max(getMinDelay(), delayTime);
-
 		animated = true;
 
-		getDisplay().timerExec(usedDelay, new Runnable() {
-			@Override
-			public void run() {
-				if (disposed || images == null) {
-					animated = false;
-				} else if (images.length == 1) {
-					animated = false;
-					parent.redraw();
-				} else {
-					idx = ++idx % images.length;
-					parent.redraw();
-					doAnimate();
-				}
+		getDisplay().timerExec(Math.max(5, delays[idx]) * 10, () -> {
+			if (disposed || images == null) {
+				animated = false;
+			} else if (images.length == 1) {
+				animated = false;
+				getParent().redraw();
+			} else {
+				idx = ++idx % images.length;
+				getParent().redraw();
+				doAnimate();
 			}
 		});
 	}
 
 	@Override
 	public void doPaint(final GC gc, final int x, final int y) {
-		if (images != null) {
-			gc.fillRectangle(x, y, getSize().x - 1, getSize().y - 1);
-			gc.drawImage(images[idx], x, y);
-		}
-	}
-
-	public int getMinDelay() {
-		return minDelay;
+		Util.whenNotNull(images, () -> gc.drawImage(images[idx], x, y));
 	}
 
 	@Override
 	public Point getSize() {
-		return images == null ? new Point(0, 0) : new Point(images[0].getBounds().width, images[0].getBounds().height);
+		final Point imageSize = getImageSize();
+		return new Point(scaleTo.x == SWT.DEFAULT ? imageSize.x : scaleTo.x, scaleTo.y == SWT.DEFAULT ? imageSize.y : scaleTo.y);
 	}
 
 	public void loadImage(final InputStream stream) {
@@ -143,23 +132,17 @@ public final class ImageDecorator extends AbstractDecorator {
 		setImages(imageLoader.load(filename));
 	}
 
-	public void setBackground(final Color background) {
-		this.background = background;
-	}
-
 	public void setImage(final Image image) {
 		setImages(image.getImageData());
 	}
 
-	private void setImages(final ImageData... imageDatas) {
-		this.images = createImages(imageDatas);
+	private synchronized void setImages(final ImageData... imageDatas) {
+		createImages(imageDatas);
+		idx = 0;
+
 		if (!animated) {
 			doAnimate();
 		}
-		parent.redraw();
-	}
-
-	public void setMinDelay(final int minDelay) {
-		this.minDelay = minDelay;
+		getParent().redraw();
 	}
 }

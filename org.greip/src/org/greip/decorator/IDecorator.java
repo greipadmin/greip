@@ -15,8 +15,6 @@ import org.eclipse.swt.graphics.Point;
 
 public interface IDecorator {
 
-	void dispose();
-
 	void doPaint(GC gc, int x, int y);
 
 	void doPaint(GC gc, Point pos);

@@ -9,12 +9,7 @@
  **/
 package org.greip.separator;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -24,8 +19,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
-import org.greip.GREIP;
+import org.greip.Greip;
 import org.greip.common.Util;
 import org.greip.decorator.ImageDecorator;
 
@@ -40,7 +34,6 @@ public class Separator extends Composite {
 
 	private String text;
 	private final ImageDecorator imageDecorator = new ImageDecorator(this);
-	private final Set<SelectionListener> selectionListeners = new HashSet<>();
 
 	private int marginHeight;
 	private int marginWidth;
@@ -61,25 +54,14 @@ public class Separator extends Composite {
 		setLineStyle(lineStyle);
 
 		addListener(SWT.Paint, this::onPaint);
-		addListener(SWT.Dispose, e -> imageDecorator.dispose());
+		addListener(SWT.MouseDown, this::onMouseDown);
+	}
 
-		addListener(SWT.MouseDown, new Listener() {
-			private void fireSelectionEvent(final Event event, final int detail) {
-				final SelectionEvent e = new SelectionEvent(event);
-				e.detail = detail;
+	private void onMouseDown(final Event event) {
+		final Rectangle bounds = getImageBounds();
 
-				selectionListeners.forEach(l -> l.widgetSelected(e));
-			}
-
-			@Override
-			public void handleEvent(final Event event) {
-				if (getImageBounds().contains(event.x, event.y)) {
-					fireSelectionEvent(event, GREIP.DECORATOR);
-				} else {
-					fireSelectionEvent(event, SWT.None);
-				}
-			}
-		});
+		event.detail = bounds.contains(event.x, event.y) ? Greip.DECORATOR : SWT.NONE;
+		notifyListeners(SWT.Selection, event);
 	}
 
 	private void onPaint(final Event e) {
@@ -156,10 +138,6 @@ public class Separator extends Composite {
 		}
 
 		tr.dispose();
-	}
-
-	public void addSelectionListener(final SelectionListener selectionListener) {
-		selectionListeners.add(selectionListener);
 	}
 
 	@Override
@@ -266,10 +244,6 @@ public class Separator extends Composite {
 
 	private boolean isVertical() {
 		return orientation == SWT.VERTICAL;
-	}
-
-	public void removeSelectionListener(final SelectionListener selectionListener) {
-		selectionListeners.remove(selectionListener);
 	}
 
 	@Override
