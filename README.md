@@ -25,6 +25,7 @@ Available translations:
 * French
 * Spain
 * Portuguese
+* Italian
 
 # Eclipse update site
 To install Greip use this update site: https://github.com/greipadmin/greip/raw/master/updatesite.
