@@ -11,6 +11,7 @@ package org.greip.common;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Cursor;
@@ -110,6 +111,14 @@ public final class Util {
 	public static <R extends Resource> void withResource(final R resource, final Consumer<R> consumer) {
 		try {
 			consumer.accept(resource);
+		} finally {
+			resource.dispose();
+		}
+	}
+
+	public static <R extends Resource, O> O withResource(final R resource, final Function<R, O> consumer) {
+		try {
+			return consumer.apply(resource);
 		} finally {
 			resource.dispose();
 		}

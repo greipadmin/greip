@@ -10,7 +10,6 @@
 package org.greip.decorator;
 
 import java.io.InputStream;
-import java.util.Arrays;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -25,28 +24,20 @@ import org.greip.common.Util;
 
 public final class ImageDecorator extends AbstractDecorator {
 
-	private Image[] images;
-	private int[] delays;
-	private int idx;
 	private final ImageLoader imageLoader = new ImageLoader();
+
+	private ImageData[] images;
+	private int idx;
 	private boolean animated;
-	private boolean disposed;
-	private final Point scaleTo;
-	private Point imageSize;
+	private Point scaleTo = new Point(SWT.DEFAULT, SWT.DEFAULT);
+	private Point imageSize = new Point(0, 0);
 
 	public ImageDecorator(final Control parent) {
-		this(parent, new Point(SWT.DEFAULT, SWT.DEFAULT));
-	}
-
-	public ImageDecorator(final Control parent, final Point scaleTo) {
 		super(parent);
-		this.scaleTo = scaleTo;
 	}
 
 	private void createImages(final ImageData... imageData) {
 		final Display display = getDisplay();
-
-		disposeImages();
 
 		if (imageData.length == 1) {
 			imageSize = new Point(imageData[0].width, imageData[0].height);
@@ -54,53 +45,45 @@ public final class ImageDecorator extends AbstractDecorator {
 			imageSize = new Point(imageLoader.logicalScreenWidth, imageLoader.logicalScreenHeight);
 		}
 
-		final Image offScreenImage = new Image(display, imageSize.x, imageSize.y);
+		images = new ImageData[imageData.length];
 
-		images = new Image[imageData.length];
-		delays = new int[imageData.length];
+		Util.withResource(new Image(display, imageSize.x, imageSize.y), drawingArea -> {
+			Util.withResource(new GC(drawingArea), gc -> {
+				Color bgColor = null;
 
-		Util.withResource(new GC(offScreenImage), imageGC -> {
-			Color bgColor = null;
-
-			if (imageLoader.backgroundPixel != -1) {
-				bgColor = new Color(display, imageData[0].palette.getRGB(imageLoader.backgroundPixel));
-				imageGC.setBackground(bgColor);
-			}
-
-			for (int i = 0; i < imageData.length; i++) {
-				if (imageData[0].disposalMethod == SWT.DM_FILL_BACKGROUND) {
-					imageGC.fillRectangle(0, 0, imageSize.x, imageSize.y);
+				if (imageLoader.backgroundPixel != -1) {
+					bgColor = new Color(display, imageData[0].palette.getRGB(imageLoader.backgroundPixel));
+					gc.setBackground(bgColor);
 				}
 
-				imageGC.drawImage(new Image(display, imageData[i]), imageData[i].x, imageData[i].y);
+				for (int i = 0; i < imageData.length; i++) {
+					if (imageData[0].disposalMethod == SWT.DM_FILL_BACKGROUND) {
+						gc.fillRectangle(0, 0, imageSize.x, imageSize.y);
+					}
+					images[i] = createFrame(drawingArea, gc, imageData[i]);
+				}
 
-				images[i] = new Image(display, offScreenImage.getImageData().scaledTo(getSize().x, getSize().y));
-				delays[i] = imageData[i].delayTime;
-			}
-
-			Util.whenNotNull(bgColor, bgColor::dispose);
+				Util.whenNotNull(bgColor, bgColor::dispose);
+			});
 		});
 	}
 
-	private Point getImageSize() {
-		return imageSize == null ? new Point(0, 0) : imageSize;
-	}
+	private ImageData createFrame(final Image drawingArea, final GC gc, final ImageData imageData) {
+		return Util.withResource(new Image(getDisplay(), imageData), img -> {
+			gc.drawImage(img, imageData.x, imageData.y);
 
-	@Override
-	protected void dispose() {
-		disposeImages();
-		disposed = true;
-	}
+			final ImageData frameData = drawingArea.getImageData();
+			frameData.delayTime = imageData.delayTime;
 
-	private void disposeImages() {
-		Util.whenNotNull(images, () -> Arrays.stream(images).forEach(Image::dispose));
+			return frameData;
+		});
 	}
 
 	private synchronized void doAnimate() {
 		animated = true;
 
-		getDisplay().timerExec(Math.max(5, delays[idx]) * 10, () -> {
-			if (disposed || images == null) {
+		getDisplay().timerExec(Math.max(5, images[idx].delayTime) * 10, () -> {
+			if (getParent().isDisposed() || images == null) {
 				animated = false;
 			} else if (images.length == 1) {
 				animated = false;
@@ -115,13 +98,24 @@ public final class ImageDecorator extends AbstractDecorator {
 
 	@Override
 	public void doPaint(final GC gc, final int x, final int y) {
-		Util.whenNotNull(images, () -> gc.drawImage(images[idx], x, y));
+		if (images != null) {
+			Util.withResource(new Image(getDisplay(), images[idx]), img -> {
+				gc.setInterpolation(SWT.HIGH);
+				gc.drawImage(img, x, y, imageSize.x, imageSize.y, x, y, getSize().x, getSize().y);
+			});
+		}
 	}
 
 	@Override
 	public Point getSize() {
-		final Point imageSize = getImageSize();
-		return new Point(scaleTo.x == SWT.DEFAULT ? imageSize.x : scaleTo.x, scaleTo.y == SWT.DEFAULT ? imageSize.y : scaleTo.y);
+		if (scaleTo.x == SWT.DEFAULT && scaleTo.y == SWT.DEFAULT) {
+			return imageSize;
+		} else if (scaleTo.x == SWT.DEFAULT) {
+			return new Point(imageSize.x * scaleTo.y / imageSize.y, scaleTo.y);
+		} else if (scaleTo.y == SWT.DEFAULT) {
+			return new Point(scaleTo.x, scaleTo.x * imageSize.y / imageSize.x);
+		}
+		return scaleTo;
 	}
 
 	public void loadImage(final InputStream stream) {
@@ -144,5 +138,10 @@ public final class ImageDecorator extends AbstractDecorator {
 			doAnimate();
 		}
 		getParent().redraw();
+	}
+
+	public void scaleTo(final Point scaleTo) {
+		this.scaleTo = scaleTo;
+		doAnimate();
 	}
 }

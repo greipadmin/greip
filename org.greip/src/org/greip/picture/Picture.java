@@ -13,13 +13,9 @@ public class Picture extends Composite {
 	private final ImageDecorator decorator;
 
 	public Picture(final Composite parent, final int style) {
-		this(parent, style, new Point(SWT.DEFAULT, SWT.DEFAULT));
-	}
-
-	public Picture(final Composite parent, final int style, final Point imageSize) {
 		super(parent, style | SWT.NO_FOCUS | SWT.DOUBLE_BUFFERED);
 
-		decorator = new ImageDecorator(this, imageSize);
+		decorator = new ImageDecorator(this);
 		addListener(SWT.Paint, e -> decorator.doPaint(e.gc, new Point(0, 0)));
 	}
 
@@ -41,5 +37,9 @@ public class Picture extends Composite {
 	public void setImage(final Image image) {
 		decorator.setImage(image);
 		setSize(decorator.getSize());
+	}
+
+	public void scaleTo(final Point scaleTo) {
+		decorator.scaleTo(scaleTo);
 	}
 }
