@@ -16,6 +16,16 @@ This widget simply shows a Picture. Supported picture formats: PNG, BMP, JPEG, G
 
 ![](https://github.com/greipadmin/greip/raw/master/wiki/Picture.png)
 
+# Localization
+All widgets are fully localized in a separate fragment. You can add more localizations by creating your own localization fragment.
+
+Available translations:
+* English
+* German
+* French
+* Spain
+* Portuguese
+
 # Eclipse update site
 To install Greip use this update site: https://github.com/greipadmin/greip/raw/master/updatesite.
 
