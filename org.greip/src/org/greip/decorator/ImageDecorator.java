@@ -79,7 +79,7 @@ public final class ImageDecorator extends AbstractDecorator {
 		});
 	}
 
-	private synchronized void doAnimate() {
+	private void doAnimate() {
 		animated = true;
 
 		getDisplay().timerExec(Math.max(5, images[idx].delayTime) * 10, () -> {
@@ -130,7 +130,7 @@ public final class ImageDecorator extends AbstractDecorator {
 		setImages(image.getImageData());
 	}
 
-	private synchronized void setImages(final ImageData... imageDatas) {
+	private void setImages(final ImageData... imageDatas) {
 		createImages(imageDatas);
 		idx = 0;
 
