@@ -16,6 +16,11 @@ This widget simply shows a Picture. Supported picture formats: PNG, BMP, JPEG, G
 
 ![](https://github.com/greipadmin/greip/raw/master/wiki/Picture.png)
 
+## Separator
+The Separator widget represents a separator line with text and image. (_[read more...](https://github.com/greipadmin/greip/wiki/Separator)_)
+
+![](https://github.com/greipadmin/greip/raw/master/wiki/Separator.png)
+
 # Localization
 All widgets are fully localized in a separate fragment. You can add more localizations by creating your own localization fragment.
 
