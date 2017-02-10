@@ -39,13 +39,16 @@ public final class ImageDecorator extends AbstractDecorator {
 	private void createImages(final ImageData... imageData) {
 		final Display display = getDisplay();
 
+		images = new ImageData[imageData.length];
+
 		if (imageData.length == 1) {
 			imageSize = new Point(imageData[0].width, imageData[0].height);
-		} else {
-			imageSize = new Point(imageLoader.logicalScreenWidth, imageLoader.logicalScreenHeight);
+			images[0] = imageData[0];
+
+			return;
 		}
 
-		images = new ImageData[imageData.length];
+		imageSize = new Point(imageLoader.logicalScreenWidth, imageLoader.logicalScreenHeight);
 
 		Util.withResource(new Image(display, imageSize.x, imageSize.y), drawingArea -> {
 			Util.withResource(new GC(drawingArea), gc -> {
@@ -69,7 +72,11 @@ public final class ImageDecorator extends AbstractDecorator {
 	}
 
 	private ImageData createFrame(final Image drawingArea, final GC gc, final ImageData imageData) {
-		return Util.withResource(new Image(getDisplay(), imageData), img -> {
+		return Util.withResource(new Image(getDisplay(), imageData, imageData.getTransparencyMask()), img -> {
+//			if (imageData.disposalMethod != SWT.DM_FILL_NONE) {
+//				gc.setBackground(getParent().getBackground());
+//				gc.fillRectangle(0, 0, imageSize.x, imageSize.y);
+//			}
 			gc.drawImage(img, imageData.x, imageData.y);
 
 			final ImageData frameData = drawingArea.getImageData();
@@ -100,8 +107,15 @@ public final class ImageDecorator extends AbstractDecorator {
 	public void doPaint(final GC gc, final int x, final int y) {
 		if (images != null) {
 			Util.withResource(new Image(getDisplay(), images[idx]), img -> {
-				gc.setInterpolation(SWT.HIGH);
-				gc.drawImage(img, x, y, imageSize.x, imageSize.y, x, y, getSize().x, getSize().y);
+				Util.withResource(new Image(getDisplay(), getSize().x, getSize().y), tmpImg -> {
+					Util.withResource(new GC(tmpImg), tmpGC -> {
+						tmpGC.setBackground(getParent().getBackground());
+						tmpGC.fillRectangle(0, 0, getSize().x, getSize().y);
+						tmpGC.setInterpolation(SWT.HIGH);
+						tmpGC.drawImage(img, 0, 0, imageSize.x, imageSize.y, 0, 0, getSize().x, getSize().y);
+					});
+					gc.drawImage(tmpImg, x, y);
+				});
 			});
 		}
 	}

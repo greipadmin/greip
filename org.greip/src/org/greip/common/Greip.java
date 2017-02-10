@@ -7,7 +7,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  **/
-package org.greip;
+package org.greip.common;
 
 public class Greip {
 

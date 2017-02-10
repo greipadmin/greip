@@ -19,7 +19,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
-import org.greip.Greip;
+import org.greip.common.Greip;
 import org.greip.common.Util;
 import org.greip.decorator.ImageDecorator;
 
@@ -50,8 +50,8 @@ public class Separator extends Composite {
 	public Separator(final Composite parent, final int orientation, final LineStyle lineStyle) {
 		super(parent, SWT.DOUBLE_BUFFERED | SWT.NO_FOCUS);
 
-		setOrientation(orientation);
-		setLineStyle(lineStyle);
+		this.orientation = orientation;
+		this.lineStyle = lineStyle;
 
 		addListener(SWT.Paint, this::onPaint);
 		addListener(SWT.MouseDown, this::onMouseDown);
@@ -110,8 +110,7 @@ public class Separator extends Composite {
 				e.gc.setLineStyle(lineStyle.getValue());
 				e.gc.setLineCap(lineCap);
 
-				if (lineDashs != null) {
-					e.gc.setLineStyle(SWT.LINE_CUSTOM);
+				if (lineStyle == LineStyle.Custom) {
 					e.gc.setLineDash(lineDashs);
 				}
 
@@ -126,12 +125,11 @@ public class Separator extends Composite {
 			final int x = (imageBounds.width > 0 ? imageBounds.width + spacing : 0) + margin;
 			final int textWidth = Math.min(textSize.x, width - imageBounds.width - indent - 2 * margin - getSpacingCount() * spacing - 20);
 
-			e.gc.fillRectangle(indent + margin, 0, x - margin + textWidth + spacing + (indent == 0 || textWidth == 0 ? 0 : spacing), height);
+			e.gc.fillRectangle(indent + margin, 0, x - margin + textWidth + spacing + (indent == 0 ? 0 : spacing), height);
 			imageDecorator.doPaint(e.gc, imageBounds.x, imageBounds.y);
 
 			if (textWidth > 0) {
 				final String shortenText = Util.shortenText(e.gc, getText(), textWidth, SWT.DRAW_MNEMONIC);
-				e.gc.setAntialias(SWT.ON);
 				e.gc.setForeground(getForeground());
 				e.gc.drawText(shortenText, x + indent + (indent == 0 ? 0 : spacing), (height - textSize.y) / 2, SWT.DRAW_MNEMONIC);
 			}
@@ -310,6 +308,11 @@ public class Separator extends Composite {
 
 	public void setText(final String text) {
 		this.text = text;
+		redraw();
+	}
+
+	public void setImage(final String filename) {
+		imageDecorator.loadImage(filename);
 		redraw();
 	}
 }
