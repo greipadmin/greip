@@ -9,6 +9,8 @@
  **/
 package org.greip.separator;
 
+import java.io.InputStream;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
@@ -37,20 +39,20 @@ public class Separator extends Composite {
 
 	private int marginHeight;
 	private int marginWidth;
-	private int indent;
-	private int spacing;
+	private int indent = 5;
+	private int spacing = 3;
 
 	private Color lineColor;
 	private Color background;
 
-	public Separator(final Composite parent, final int orientation) {
-		this(parent, orientation, LineStyle.ShadowIn);
+	public Separator(final Composite parent, final int style) {
+		this(parent, style, LineStyle.ShadowIn);
 	}
 
-	public Separator(final Composite parent, final int orientation, final LineStyle lineStyle) {
-		super(parent, SWT.DOUBLE_BUFFERED | SWT.NO_FOCUS);
+	public Separator(final Composite parent, final int style, final LineStyle lineStyle) {
+		super(parent, style & ~SWT.HORIZONTAL & ~SWT.VERTICAL | SWT.DOUBLE_BUFFERED | SWT.NO_FOCUS);
 
-		this.orientation = orientation;
+		this.orientation = (style & SWT.VERTICAL) != 0 ? SWT.VERTICAL : SWT.HORIZONTAL;
 		this.lineStyle = lineStyle;
 
 		addListener(SWT.Paint, this::onPaint);
@@ -122,7 +124,7 @@ public class Separator extends Composite {
 		final Point textSize = e.gc.textExtent(getText(), SWT.DRAW_MNEMONIC);
 
 		if (imageBounds.width != 0 || textSize.x != 0) {
-			final int x = (imageBounds.width > 0 ? imageBounds.width + spacing : 0) + margin;
+			final int x = (imageBounds.width > 0 ? imageBounds.width + spacing : 0) + margin - 1;
 			final int textWidth = Math.min(textSize.x, width - imageBounds.width - indent - 2 * margin - getSpacingCount() * spacing - 20);
 
 			e.gc.fillRectangle(indent + margin, 0, x - margin + textWidth + spacing + (indent == 0 ? 0 : spacing), height);
@@ -143,8 +145,10 @@ public class Separator extends Composite {
 		final Point textSize = getTextSize();
 		final int x = imageDecorator.getSize().x + textSize.x + indent + getSpacingCount() * spacing + 20;
 		final int y = Math.max(imageDecorator.getSize().y, Math.max(textSize.y, getLineWidth()));
+		final int marginX = 2 * (marginWidth + getBorderWidth());
+		final int marginY = 2 * (marginHeight + getBorderWidth());
 
-		return isVertical() ? new Point(y + 2 * marginWidth, x + 2 * marginHeight) : new Point(x + 2 * marginWidth, y + 2 * marginHeight);
+		return isVertical() ? new Point(y + marginX, x + marginY) : new Point(x + marginX, y + marginY);
 	}
 
 	@Override
@@ -158,7 +162,7 @@ public class Separator extends Composite {
 		final Rectangle size = getClientArea();
 		final int height = isVertical() ? size.width : size.height;
 
-		return new Rectangle(indent + (indent == 0 ? 0 : spacing) + margin, (height - imageSize.y) / 2, imageSize.x, imageSize.y);
+		return new Rectangle(indent + (indent == 0 ? 0 : spacing) + margin - 1, (height - imageSize.y) / 2, imageSize.x, imageSize.y);
 	}
 
 	public int getIndent() {
@@ -255,6 +259,16 @@ public class Separator extends Composite {
 		redraw();
 	}
 
+	public void loadImage(final InputStream stream) {
+		imageDecorator.loadImage(stream);
+		redraw();
+	}
+
+	public void loadImage(final String filename) {
+		imageDecorator.loadImage(filename);
+		redraw();
+	}
+
 	public void setIndent(final int indent) {
 		this.indent = indent;
 		redraw();
@@ -308,11 +322,6 @@ public class Separator extends Composite {
 
 	public void setText(final String text) {
 		this.text = text;
-		redraw();
-	}
-
-	public void setImage(final String filename) {
-		imageDecorator.loadImage(filename);
 		redraw();
 	}
 }
