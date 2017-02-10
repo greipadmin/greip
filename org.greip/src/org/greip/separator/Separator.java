@@ -50,19 +50,20 @@ public class Separator extends Composite {
 	}
 
 	public Separator(final Composite parent, final int style, final LineStyle lineStyle) {
-		super(parent, style & ~SWT.HORIZONTAL & ~SWT.VERTICAL | SWT.DOUBLE_BUFFERED | SWT.NO_FOCUS);
+		super(parent, SWT.DOUBLE_BUFFERED);
 
 		this.orientation = (style & SWT.VERTICAL) != 0 ? SWT.VERTICAL : SWT.HORIZONTAL;
 		this.lineStyle = lineStyle;
 
 		addListener(SWT.Paint, this::onPaint);
-		addListener(SWT.MouseDown, this::onMouseDown);
+		addListener(SWT.MouseUp, this::onMouseDown);
 	}
 
-	private void onMouseDown(final Event event) {
+	private void onMouseDown(final Event e) {
 		final Rectangle bounds = getImageBounds();
 
-		event.detail = bounds.contains(event.x, event.y) ? Greip.DECORATOR : SWT.NONE;
+		final Event event = new Event();
+		event.detail = bounds.contains(e.x, e.y) ? Greip.IMAGE : SWT.NONE;
 		notifyListeners(SWT.Selection, event);
 	}
 

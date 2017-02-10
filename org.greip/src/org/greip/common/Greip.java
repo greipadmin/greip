@@ -13,4 +13,5 @@ public class Greip {
 
 	public static final int LINK = 1;
 	public static final int DECORATOR = 2;
+	public static final int IMAGE = 2;
 }
