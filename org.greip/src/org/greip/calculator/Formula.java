@@ -22,10 +22,13 @@ import org.greip.common.Util;
 
 class Formula {
 
-	private static final char NEGATE = '\u02D7';
+	static final char NEGATE = '\u02D7';
+	static final char SIGN = '\u00B1';
+	static final char DIVIDE = '\u00F7';
+	static final char MULTIPLY = '\u00D7';
 
 	private final Map<String, BinaryOperator<BigDecimal>> operations = new HashMap<>();
-	private final String operators = "+-/*%";
+	private final String operators = "+-%" + DIVIDE + MULTIPLY;
 	private final StringBuilder formula = new StringBuilder();
 
 	public static DecimalFormat getDefaultDecimalFormat() {
@@ -40,9 +43,9 @@ class Formula {
 	public Formula() {
 		operations.put("+", BigDecimal::add);
 		operations.put("-", BigDecimal::subtract);
-		operations.put("/", (v1, v2) -> v1.divide(v2, 20, BigDecimal.ROUND_HALF_EVEN));
-		operations.put("*", BigDecimal::multiply);
 		operations.put("%", (v1, v2) -> v1.multiply(v2).divide(new BigDecimal(100), 20, BigDecimal.ROUND_HALF_EVEN));
+		operations.put(String.valueOf(DIVIDE), (v1, v2) -> v1.divide(v2, 20, BigDecimal.ROUND_HALF_EVEN));
+		operations.put(String.valueOf(MULTIPLY), BigDecimal::multiply);
 
 		setDecimalFormat(getDefaultDecimalFormat());
 		init(BigDecimal.ZERO);
@@ -101,6 +104,10 @@ class Formula {
 	}
 
 	public String processAction(final char action) throws ParseException, TooManyDigitsException {
+		return process(String.valueOf(action).replace('/', DIVIDE).replace('*', MULTIPLY).charAt(0));
+	}
+
+	private String process(final char action) throws ParseException, TooManyDigitsException {
 
 		if (!isLegalAction(action)) {
 			throw new IllegalArgumentException("unknown action " + action);
@@ -139,21 +146,21 @@ class Formula {
 				}
 				break;
 
-			case '±':
+			case SIGN:
 				if (!calculated && !result.isEmpty()) {
-					if (result.indexOf(Formula.NEGATE) == 0) {
+					if (result.indexOf(NEGATE) == 0) {
 						result = result.substring(1);
 					} else {
-						result = Formula.NEGATE + result;
+						result = NEGATE + result;
 					}
 				}
 				break;
 
 			case '+':
 			case '-':
-			case '*':
-			case '/':
 			case '%':
+			case MULTIPLY:
+			case DIVIDE:
 				if (!calculated) {
 					formula.append(result);
 				}
@@ -214,7 +221,7 @@ class Formula {
 	}
 
 	public boolean isLegalAction(final char action) {
-		return ("+-/*%0123456789=cC±" + SWT.CR + SWT.BS).indexOf(action) != -1 || action == decimalSeparator;
+		return ("+-/*%0123456789=cC" + SIGN + MULTIPLY + DIVIDE + SWT.CR + SWT.BS).indexOf(action) != -1 || action == decimalSeparator;
 	}
 
 	public void setDecimalFormat(final DecimalFormat format) {

@@ -45,7 +45,7 @@ public class Calculator extends Composite {
 			}),
 		CTRL_MINUS(
 			(e, c) -> e.keyCode == '-' && e.stateMask == SWT.CTRL,
-			(e, c) -> c.processAction('±')),
+			(e, c) -> c.processAction('ï¿½')),
 		CTRL_CR(
 			(e, c) -> e.keyCode == SWT.CR && e.stateMask == SWT.CTRL,
 			(e, c) -> {
@@ -135,8 +135,8 @@ public class Calculator extends Composite {
 		new Label(this, SWT.LEFT).setLayoutData(GridDataFactory.fillDefaults().span(3, 1).create());
 		createSmallButton('\u2715', 'C', 3);
 		createSmallButton('\u2190', SWT.BS, 0);
-		createButtonsFor('7', '8', '9', SPACER, '/', '%');
-		createButtonsFor('4', '5', '6', SPACER, '*', '±');
+		createButtonsFor('7', '8', '9', SPACER, Formula.DIVIDE, '%');
+		createButtonsFor('4', '5', '6', SPACER, Formula.MULTIPLY, Formula.SIGN);
 		createButtonsFor('1', '2', '3', SPACER, '-');
 		createButton('=', 1, 2, 0);
 		createButton('0', 2, 1, 0);
