@@ -21,6 +21,11 @@ The Separator widget represents a separator line with text and image. (_[read mo
 
 ![](https://github.com/greipadmin/greip/raw/master/wiki/Separator.png)
 
+## StyledLabel
+The StyledLabel widget represents a label with text formatting. (_[read more...](https://github.com/greipadmin/greip/wiki/StyledLabel)_)
+
+![](https://github.com/greipadmin/greip/raw/master/wiki/StyledLabel.png)
+
 # Localization
 All widgets are fully localized in a separate fragment. You can add more localizations by creating your own localization fragment.
 
