@@ -11,5 +11,6 @@ Require-Bundle: org.eclipse.swt;bundle-version="3.105.0",
 Export-Package: org.greip.calculator,
  org.greip.color,
  org.greip.common,
+ org.greip.label,
  org.greip.picture,
  org.greip.separator
