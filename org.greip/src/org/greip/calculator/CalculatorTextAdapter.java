@@ -87,6 +87,7 @@ public class CalculatorTextAdapter {
 
 		txt.addListener(SWT.Verify, verifyListener);
 		txt.addListener(SWT.KeyDown, keyDownlistener);
+
 		txt.addListener(SWT.Dispose, e -> {
 			txt.removeListener(SWT.Verify, verifyListener);
 			txt.removeListener(SWT.KeyDown, keyDownlistener);
@@ -101,9 +102,9 @@ public class CalculatorTextAdapter {
 		this.format = (DecimalFormat) format.clone();
 		this.format.setParseBigDecimal(true);
 
-		this.verifyFormat = (DecimalFormat) this.format.clone();
-		this.verifyFormat.setMaximumFractionDigits(format.getMaximumFractionDigits() + 1);
-		this.verifyFormat.setMaximumIntegerDigits(format.getMaximumIntegerDigits() + 1);
+		verifyFormat = (DecimalFormat) this.format.clone();
+		verifyFormat.setMaximumFractionDigits(format.getMaximumFractionDigits() + 1);
+		verifyFormat.setMaximumIntegerDigits(format.getMaximumIntegerDigits() + 1);
 	}
 
 	public void setValueInitializer(final Supplier<BigDecimal> initialValueSupplier) {
