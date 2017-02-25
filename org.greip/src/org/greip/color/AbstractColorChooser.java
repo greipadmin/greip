@@ -19,6 +19,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Spinner;
+import org.greip.common.Util;
 import org.greip.nls.Messages;
 import org.greip.separator.LineStyle;
 import org.greip.separator.Separator;
@@ -85,6 +86,11 @@ public abstract class AbstractColorChooser extends Composite implements IColorCh
 
 			oldColor.dispose();
 			newColor.dispose();
+		});
+
+		previewPanel.addListener(SWT.MouseDown, e -> {
+			final Rectangle size = previewPanel.getClientArea();
+			Util.when(e.x > size.x / 2, () -> setRGB(rgb));
 		});
 	}
 
