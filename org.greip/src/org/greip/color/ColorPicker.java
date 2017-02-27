@@ -36,7 +36,7 @@ public class ColorPicker extends AbstractColorChooser {
 	private Table table;
 
 	public ColorPicker(final Composite parent, final RGB... colors) {
-		super(parent, null, false);
+		super(parent, null, false, false);
 
 		if (colors != null && colors.length > 0) {
 			this.rgbs = Arrays.asList(colors);

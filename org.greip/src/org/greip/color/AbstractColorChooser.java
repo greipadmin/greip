@@ -35,23 +35,25 @@ public abstract class AbstractColorChooser extends Composite implements IColorCh
 	private Spinner spiBlue;
 	private Composite previewPanel;
 	private final boolean showInfo;
+	private ColorHistory historyPanel;
 
-	protected AbstractColorChooser(final Composite parent, final ColorResolution colorResolution, final boolean showInfo) {
+	protected AbstractColorChooser(final Composite parent, final ColorResolution colorResolution, final boolean showInfo,
+			final boolean showHistory) {
 		super(parent, SWT.NO_FOCUS);
 
 		this.colorResolution = colorResolution;
 		this.showInfo = showInfo;
-		this.rgb = new RGB(255, 255, 255);
-		this.newRGB = rgb;
+		this.newRGB = new RGB(0, 0, 0);
 
-		setLayout(GridLayoutFactory.fillDefaults().numColumns(2).spacing(0, 0).create());
+		setLayout(GridLayoutFactory.fillDefaults().numColumns(3).spacing(0, 0).create());
 		setBackgroundMode(SWT.INHERIT_FORCE);
+		addListener(SWT.Selection, e -> ColorHistoryList.INSTANCE.add(getRGB()));
 
+		if (showHistory) createHistoryPanel();
 		createColorChooserPanel();
+		if (showInfo) createInfoPanel();
 
-		if (showInfo) {
-			createInfoPanel();
-		}
+		setRGB(getBackground().getRGB());
 	}
 
 	protected abstract Composite createColorChooserPanel();
@@ -73,25 +75,30 @@ public abstract class AbstractColorChooser extends Composite implements IColorCh
 		previewPanel = new Composite(infoPanel, SWT.NO_FOCUS);
 		previewPanel.setLayoutData(GridDataFactory.swtDefaults().hint(60, 30).span(2, 1).indent(7, 7).align(SWT.CENTER, SWT.BOTTOM).create());
 		previewPanel.addListener(SWT.Paint, e -> {
-			final Rectangle size = previewPanel.getClientArea();
+			final Rectangle bounds = previewPanel.getClientArea();
 			final Color oldColor = new Color(e.display, rgb);
 			final Color newColor = new Color(e.display, getRGB());
 
 			e.gc.setForeground(e.display.getSystemColor(SWT.COLOR_GRAY));
-			e.gc.drawRectangle(0, 0, size.width - 1, size.height - 3);
+			e.gc.drawRectangle(0, 0, bounds.width - 1, bounds.height - 3);
 			e.gc.setBackground(newColor);
-			e.gc.fillRectangle(1, 1, size.width / 2, size.height - 4);
+			e.gc.fillRectangle(1, 1, bounds.width / 2, bounds.height - 4);
 			e.gc.setBackground(oldColor);
-			e.gc.fillRectangle(size.width / 2, 1, (size.width - 2) / 2, size.height - 4);
+			e.gc.fillRectangle(bounds.width / 2, 1, (bounds.width - 2) / 2, bounds.height - 4);
 
 			oldColor.dispose();
 			newColor.dispose();
 		});
 
 		previewPanel.addListener(SWT.MouseDown, e -> {
-			final Rectangle size = previewPanel.getClientArea();
-			Util.when(e.x > size.x / 2, () -> setRGB(rgb));
+			final Rectangle bounds = previewPanel.getClientArea();
+			Util.when(e.x > bounds.width / 2, () -> setRGB(rgb));
 		});
+	}
+
+	private void createHistoryPanel() {
+		historyPanel = new ColorHistory(this);
+		historyPanel.setLayoutData(GridDataFactory.fillDefaults().grab(true, true).create());
 	}
 
 	private static Spinner createRGBSpinner(final Composite parent, final String label) {

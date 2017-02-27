@@ -17,9 +17,9 @@ public final class ColorChooserHSB extends AbstractColorChooser {
 
 	private IColorSliderConnector connector;
 
-	public ColorChooserHSB(final Composite parent, final ColorResolution colorResolution, final boolean showInfo) {
-		super(parent, colorResolution, showInfo);
-		setRGB(getBackground().getRGB());
+	public ColorChooserHSB(final Composite parent, final ColorResolution colorResolution, final boolean showInfo,
+			final boolean showHistory) {
+		super(parent, colorResolution, showInfo, showHistory);
 	}
 
 	@Override

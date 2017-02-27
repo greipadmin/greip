@@ -21,8 +21,9 @@ public class ColorWheelChooser extends AbstractColorChooser {
 	private ColorWheel colorWheel;
 	private ColorSlider brightnessSlider;
 
-	public ColorWheelChooser(final Composite parent, final ColorResolution colorResolution, final boolean showInfo) {
-		super(parent, colorResolution, showInfo);
+	public ColorWheelChooser(final Composite parent, final ColorResolution colorResolution, final boolean showInfo,
+			final boolean showHistory) {
+		super(parent, colorResolution, showInfo, showHistory);
 	}
 
 	private void createColorWheel(final Composite parent) {

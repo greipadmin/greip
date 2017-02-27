@@ -17,8 +17,9 @@ public final class ColorChooserRGB extends AbstractColorChooser {
 
 	private IColorSliderConnector connector;
 
-	public ColorChooserRGB(final Composite parent, final ColorResolution colorResolution, final boolean showInfo) {
-		super(parent, colorResolution, showInfo);
+	public ColorChooserRGB(final Composite parent, final ColorResolution colorResolution, final boolean showInfo,
+			final boolean showHistory) {
+		super(parent, colorResolution, showInfo, showHistory);
 	}
 
 	@Override
