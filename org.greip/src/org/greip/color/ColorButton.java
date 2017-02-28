@@ -12,6 +12,7 @@ package org.greip.color;
 import java.util.function.Consumer;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -23,6 +24,12 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.greip.common.Util;
 
+/**
+ * The <code>ColorButton</code> is a button that displays a color and/or text
+ * and allows the user to change the color selection.
+ *
+ * @see Button
+ */
 public class ColorButton extends Button {
 
 	private RGB rgb;
@@ -30,6 +37,23 @@ public class ColorButton extends Button {
 	private IColorChooserFactory factory;
 	private Consumer<RGB> consumer;
 
+	/**
+	 * Constructs a new instance of this class given its parent.
+	 *
+	 * @param parent
+	 *           a composite control which will be the parent of the new instance
+	 *           (cannot be null)
+	 *
+	 * @exception IllegalArgumentException
+	 *               <ul>
+	 *               <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
+	 *               </ul>
+	 * @exception SWTException
+	 *               <ul>
+	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *               thread that created the parent</li>
+	 *               </ul>
+	 */
 	public ColorButton(final Composite parent) {
 		super(parent, SWT.PUSH);
 
@@ -50,6 +74,16 @@ public class ColorButton extends Button {
 		// allow subclassing
 	}
 
+	/**
+	 * Opens the color chooser and allows the user to select a color.
+	 *
+	 * @param factory
+	 *           The color chooser factory.
+	 *
+	 * @return The selected color or null, when the user cancels the dialog.
+	 *
+	 * @see IColorChooserFactory
+	 */
 	public RGB chooseRGB(final IColorChooserFactory factory) {
 		final ColorChooserPopup colorChooserPopup = new ColorChooserPopup(this);
 
@@ -69,11 +103,22 @@ public class ColorButton extends Button {
 		return new Point(Math.max(wHint, getTextSize().x + 30), size.y);
 	}
 
+	/**
+	 * Sets the RGB value for the color and update the control.
+	 *
+	 * @param rgb
+	 *           RGB value
+	 */
 	public void setRGB(final RGB rgb) {
 		this.rgb = rgb;
 		changeImage();
 	}
 
+	/**
+	 * Gets the selected RGB.
+	 *
+	 * @return RGB
+	 */
 	public RGB getRGB() {
 		return rgb;
 	}
@@ -134,10 +179,24 @@ public class ColorButton extends Button {
 		Util.whenNotNull(image, image::dispose);
 	}
 
+	/**
+	 * Sets the factory for creating the color chooser.
+	 *
+	 * @param factory
+	 *           The factory instance.
+	 *
+	 * @see IColorChooserFactory
+	 */
 	public void setColorChooserFactory(final IColorChooserFactory factory) {
 		this.factory = factory;
 	}
 
+	/**
+	 * Sets the consumer for the selected color.
+	 *
+	 * @param consumer
+	 *           The color consumer.
+	 */
 	public void setColorConsumer(final Consumer<RGB> consumer) {
 		this.consumer = consumer;
 	}

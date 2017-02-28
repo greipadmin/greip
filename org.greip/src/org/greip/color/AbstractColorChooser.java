@@ -24,7 +24,7 @@ import org.greip.nls.Messages;
 import org.greip.separator.LineStyle;
 import org.greip.separator.Separator;
 
-public abstract class AbstractColorChooser extends Composite implements IColorChooser {
+public abstract class AbstractColorChooser extends Composite {
 
 	private final ColorResolution colorResolution;
 	private RGB newRGB;
@@ -128,13 +128,23 @@ public abstract class AbstractColorChooser extends Composite implements IColorCh
 		}
 	}
 
-	@Override
+	/**
+	 * Set the initial color. When the exact color is not available in the color
+	 * chooser, the nearest color is selected.
+	 *
+	 * @param rgb
+	 *           The colors RGB value.
+	 */
 	public void setRGB(final RGB rgb) {
 		this.rgb = rgb;
 		setNewRGB(rgb);
 	}
 
-	@Override
+	/**
+	 * Gets the current selected color.
+	 *
+	 * @return The colors RGB value.
+	 */
 	public final RGB getRGB() {
 		return newRGB;
 	}
