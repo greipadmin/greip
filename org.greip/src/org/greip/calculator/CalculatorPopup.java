@@ -17,9 +17,10 @@ import org.eclipse.swt.widgets.Control;
 import org.greip.common.Popup;
 import org.greip.common.Util;
 
-public class CalculatorPopup extends Popup {
+class CalculatorPopup extends Popup {
 
 	private final Calculator calculator;
+	private BigDecimal value;
 
 	public CalculatorPopup(final Control control) {
 		super(control);
@@ -27,8 +28,11 @@ public class CalculatorPopup extends Popup {
 		setLayout(new FillLayout());
 
 		calculator = new Calculator(this);
-		calculator.addListener(SWT.Selection, e -> close());
 		calculator.addListener(SWT.Traverse, e -> Util.when(e.detail == SWT.TRAVERSE_ESCAPE, this::close));
+		calculator.addListener(SWT.Selection, e -> {
+			value = calculator.getValue();
+			close();
+		});
 	}
 
 	public final Calculator getCalculator() {
@@ -37,6 +41,6 @@ public class CalculatorPopup extends Popup {
 
 	public final BigDecimal calculate() {
 		open();
-		return calculator.getValue();
+		return value;
 	}
 }

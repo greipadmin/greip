@@ -99,7 +99,7 @@ class Formula {
 		result = format.format(value);
 	}
 
-	private BigDecimal toBigDecimal(final String token) throws ParseException {
+	private static BigDecimal toBigDecimal(final String token) throws ParseException {
 		return BigDecimal.valueOf(getDefaultDecimalFormat().parse(token.replace(NEGATE, '-')).doubleValue());
 	}
 

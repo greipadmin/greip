@@ -19,6 +19,7 @@ import java.util.function.BiPredicate;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.dnd.Clipboard;
 import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
@@ -33,7 +34,16 @@ import org.eclipse.swt.widgets.Text;
 import org.greip.common.Util;
 import org.greip.nls.Messages;
 
-public class Calculator extends Composite {
+/**
+ * Instances of this class represent a calculator. Typically a calculator is
+ * used in combination with an text widget. In this case use
+ * <code>Calculator</code> and {@link CalculatorTextAdapter}.
+ *
+ * @see CalculatorTextAdapter
+ *
+ * @author Thomas Lorbeer
+ */
+public final class Calculator extends Composite {
 
 	private enum KeyHandlers {
 		CTRL_C(
@@ -86,6 +96,19 @@ public class Calculator extends Composite {
 	private Color resultBackground;
 	private Color resultForeground;
 
+	/**
+	 * Constructs a new instance of this class given its parent.
+	 *
+	 * @param parent
+	 *           a composite control which will be the parent of the new instance
+	 *           (cannot be null)
+	 *
+	 * @exception SWTException
+	 *               <ul>
+	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *               thread that created the parent</li>
+	 *               </ul>
+	 */
 	public Calculator(final Composite parent) {
 		super(parent, SWT.NONE);
 
@@ -146,11 +169,11 @@ public class Calculator extends Composite {
 	private void createButtonsFor(final char... actions) {
 		int indent = 0;
 
-		for (int i = 0; i < actions.length; i++) {
-			if (actions[i] == SPACER) {
+		for (final char action : actions) {
+			if (action == SPACER) {
 				indent = 3;
 			} else {
-				createButton(actions[i], 1, 1, indent);
+				createButton(action, 1, 1, indent);
 				indent = 0;
 			}
 		}
@@ -167,7 +190,7 @@ public class Calculator extends Composite {
 
 		btn.setText(text);
 		btn.addListener(SWT.Selection, e -> processAction(action));
-		btn.addListener(SWT.Traverse, e -> e.doit = (e.detail != SWT.TRAVERSE_RETURN));
+		btn.addListener(SWT.Traverse, e -> e.doit = e.detail != SWT.TRAVERSE_RETURN);
 
 		return btn;
 	}
@@ -213,36 +236,156 @@ public class Calculator extends Composite {
 		notifyListeners(SWT.Selection, new Event());
 	}
 
+	/**
+	 * Sets the initial value.
+	 *
+	 * @param value
+	 *           The initial value.
+	 *
+	 * @exception SWTException
+	 *               <ul>
+	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *               disposed</li>
+	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *               thread that created the receiver</li>
+	 *               </ul>
+	 */
 	public void setValue(final BigDecimal value) {
+		checkWidget();
 		formula.init(value);
 		processAction('=');
 	}
 
+	/**
+	 * Gets the current value.
+	 *
+	 * @return The current value.
+	 *
+	 * @exception SWTException
+	 *               <ul>
+	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *               disposed</li>
+	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *               thread that created the receiver</li>
+	 *               </ul>
+	 */
 	public BigDecimal getValue() {
+		checkWidget();
 		return value;
 	}
 
+	/**
+	 * Sets the format for number formatting. The default format is
+	 * "#0.##########".
+	 *
+	 * @param format
+	 *           The new format.
+	 *
+	 * @exception SWTException
+	 *               <ul>
+	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *               disposed</li>
+	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *               thread that created the receiver</li>
+	 *               </ul>
+	 */
 	public void setDecimalFormat(final DecimalFormat format) {
+		checkWidget();
 		formula.setDecimalFormat(format);
 		processAction('=');
 	}
 
-	private Color getResultForeground() {
+	/**
+	 * Returns the results foreground color.
+	 *
+	 * @return the results foreground color
+	 *
+	 * @exception SWTException
+	 *               <ul>
+	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *               disposed</li>
+	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *               thread that created the receiver</li>
+	 *               </ul>
+	 */
+	public Color getResultForeground() {
+		checkWidget();
 		return Util.nvl(resultForeground, getDisplay().getSystemColor(SWT.COLOR_INFO_FOREGROUND));
 	}
 
+	/**
+	 * Sets the results foreground color to the color specified by the argument,
+	 * or to <code>SWT.COLOR_INFO_FOREGROUND</code> if the argument is null.
+	 *
+	 * @param resultForeground
+	 *           the new color (or null)
+	 *
+	 * @exception IllegalArgumentException
+	 *               <ul>
+	 *               <li>ERROR_INVALID_ARGUMENT - if the argument has been
+	 *               disposed</li>
+	 *               </ul>
+	 * @exception SWTException
+	 *               <ul>
+	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *               disposed</li>
+	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *               thread that created the receiver</li>
+	 *               </ul>
+	 */
 	public void setResultForeground(final Color resultForeground) {
+		checkWidget();
+		Util.whenNotNull(resultForeground, c -> Util.when(c.isDisposed(), () -> SWT.error(SWT.ERROR_INVALID_ARGUMENT)));
+
 		this.resultForeground = resultForeground;
 
 		lblResult.setForeground(resultForeground);
 		lblFormula.setForeground(resultForeground);
 	}
 
-	private Color getResultBackground() {
+	/**
+	 * Returns the results background color.
+	 *
+	 * @return the results background color
+	 *
+	 * @exception SWTException
+	 *               <ul>
+	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *               disposed</li>
+	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *               thread that created the receiver</li>
+	 *               </ul>
+	 */
+	public Color getResultBackground() {
+		checkWidget();
 		return Util.nvl(resultBackground, getDisplay().getSystemColor(SWT.COLOR_INFO_BACKGROUND));
 	}
 
+	/**
+	 * Sets the results area background color to the color specified by the
+	 * argument, or to <code>SWT.COLOR_INFO_BACKGROUND</code> if the argument is
+	 * null.
+	 *
+	 * @param resultBackground
+	 *           the new color (or null)
+	 *
+	 * @exception IllegalArgumentException
+	 *               <ul>
+	 *               <li>ERROR_INVALID_ARGUMENT - if the argument has been
+	 *               disposed</li>
+	 *               </ul>
+	 * @exception SWTException
+	 *               <ul>
+	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *               disposed</li>
+	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *               thread that created the receiver</li>
+	 *               </ul>
+	 */
 	public void setResultBackground(final Color resultBackground) {
+		checkWidget();
+		Util.whenNotNull(resultBackground, c -> Util.when(c.isDisposed(), () -> SWT.error(SWT.ERROR_INVALID_ARGUMENT)));
+
 		this.resultBackground = resultBackground;
 
 		lblResult.setBackground(resultBackground);
