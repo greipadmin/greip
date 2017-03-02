@@ -20,6 +20,7 @@ public final class ColorChooserRGB extends AbstractColorChooser {
 	public ColorChooserRGB(final Composite parent, final ColorResolution colorResolution, final boolean showInfo,
 			final boolean showHistory) {
 		super(parent, colorResolution, showInfo, showHistory);
+		setRGB(getBackground().getRGB());
 	}
 
 	@Override

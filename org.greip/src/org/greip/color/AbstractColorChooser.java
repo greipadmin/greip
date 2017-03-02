@@ -52,8 +52,6 @@ public abstract class AbstractColorChooser extends Composite {
 		if (showHistory) createHistoryPanel();
 		createColorChooserPanel();
 		if (showInfo) createInfoPanel();
-
-		setRGB(getBackground().getRGB());
 	}
 
 	protected abstract Composite createColorChooserPanel();

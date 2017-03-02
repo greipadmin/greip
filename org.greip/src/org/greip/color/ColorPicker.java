@@ -26,7 +26,7 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.greip.common.Util;
 
-public class ColorPicker extends AbstractColorChooser {
+public final class ColorPicker extends AbstractColorChooser {
 
 	private static final int ITEM_HEIGHT = 20;
 	private static final int ITEM_WIDTH = 80;
@@ -46,6 +46,8 @@ public class ColorPicker extends AbstractColorChooser {
 
 		createTableItems(table);
 		table.getParent().setLayoutData(new GridData(ITEM_WIDTH + getScrollBarWidth(), Math.min(MAX_ITEMS, rgbs.size()) * ITEM_HEIGHT));
+
+		setRGB(getBackground().getRGB());
 	}
 
 	@Override

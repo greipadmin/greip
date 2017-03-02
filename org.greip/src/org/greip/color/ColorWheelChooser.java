@@ -16,7 +16,7 @@ import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 
-public class ColorWheelChooser extends AbstractColorChooser {
+public final class ColorWheelChooser extends AbstractColorChooser {
 
 	private ColorWheel colorWheel;
 	private ColorSlider brightnessSlider;
@@ -24,6 +24,7 @@ public class ColorWheelChooser extends AbstractColorChooser {
 	public ColorWheelChooser(final Composite parent, final ColorResolution colorResolution, final boolean showInfo,
 			final boolean showHistory) {
 		super(parent, colorResolution, showInfo, showHistory);
+		setRGB(getBackground().getRGB());
 	}
 
 	private void createColorWheel(final Composite parent) {
