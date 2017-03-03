@@ -1,9 +1,9 @@
 /**
  * Copyright (c) 2016 by Thomas Lorbeer
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License v1.0 which
+ * accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
  **/
@@ -41,18 +41,18 @@ public class ColorButton extends Button {
 	 * Constructs a new instance of this class given its parent.
 	 *
 	 * @param parent
-	 *           a composite control which will be the parent of the new instance
-	 *           (cannot be null)
+	 *        a composite control which will be the parent of the new instance
+	 *        (cannot be null)
 	 *
 	 * @exception IllegalArgumentException
-	 *               <ul>
-	 *               <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
+	 *            </ul>
 	 * @exception SWTException
-	 *               <ul>
-	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *               thread that created the parent</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the parent</li>
+	 *            </ul>
 	 */
 	public ColorButton(final Composite parent) {
 		super(parent, SWT.PUSH);
@@ -78,7 +78,7 @@ public class ColorButton extends Button {
 	 * Opens the color chooser and allows the user to select a color.
 	 *
 	 * @param factory
-	 *           The color chooser factory.
+	 *        The color chooser factory.
 	 *
 	 * @return The selected color or null, when the user cancels the dialog.
 	 *
@@ -107,7 +107,7 @@ public class ColorButton extends Button {
 	 * Sets the RGB value for the color and update the control.
 	 *
 	 * @param rgb
-	 *           RGB value
+	 *        RGB value
 	 */
 	public void setRGB(final RGB rgb) {
 		this.rgb = rgb;
@@ -183,7 +183,7 @@ public class ColorButton extends Button {
 	 * Sets the factory for creating the color chooser.
 	 *
 	 * @param factory
-	 *           The factory instance.
+	 *        The factory instance.
 	 *
 	 * @see IColorChooserFactory
 	 */
@@ -195,7 +195,7 @@ public class ColorButton extends Button {
 	 * Sets the consumer for the selected color.
 	 *
 	 * @param consumer
-	 *           The color consumer.
+	 *        The color consumer.
 	 */
 	public void setColorConsumer(final Consumer<RGB> consumer) {
 		this.consumer = consumer;

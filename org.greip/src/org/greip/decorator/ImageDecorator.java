@@ -1,9 +1,9 @@
 /**
  * Copyright (c) 2016 by Thomas Lorbeer
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License v1.0 which
+ * accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
  **/
@@ -122,7 +122,9 @@ public final class ImageDecorator extends AbstractDecorator {
 
 	@Override
 	public Point getSize() {
-		if (scaleTo.x == SWT.DEFAULT && scaleTo.y == SWT.DEFAULT) {
+		if (images == null) {
+			return new Point(0, 0);
+		} else if (scaleTo.x == SWT.DEFAULT && scaleTo.y == SWT.DEFAULT) {
 			return imageSize;
 		} else if (scaleTo.x == SWT.DEFAULT) {
 			return new Point(imageSize.x * scaleTo.y / imageSize.y, scaleTo.y);
@@ -141,7 +143,11 @@ public final class ImageDecorator extends AbstractDecorator {
 	}
 
 	public void setImage(final Image image) {
-		setImages(image.getImageData());
+		if (image == null) {
+			images = null;
+		} else {
+			setImages(image.getImageData());
+		}
 	}
 
 	private void setImages(final ImageData... imageDatas) {

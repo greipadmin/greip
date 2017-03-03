@@ -1,9 +1,9 @@
 /**
  * Copyright (c) 2016 by Thomas Lorbeer
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License v1.0 which
+ * accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
  **/
@@ -100,14 +100,14 @@ public final class Calculator extends Composite {
 	 * Constructs a new instance of this class given its parent.
 	 *
 	 * @param parent
-	 *           a composite control which will be the parent of the new instance
-	 *           (cannot be null)
+	 *        a composite control which will be the parent of the new instance
+	 *        (cannot be null)
 	 *
 	 * @exception SWTException
-	 *               <ul>
-	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *               thread that created the parent</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the parent</li>
+	 *            </ul>
 	 */
 	public Calculator(final Composite parent) {
 		super(parent, SWT.NONE);
@@ -240,15 +240,15 @@ public final class Calculator extends Composite {
 	 * Sets the initial value.
 	 *
 	 * @param value
-	 *           The initial value.
+	 *        The initial value.
 	 *
 	 * @exception SWTException
-	 *               <ul>
-	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *               disposed</li>
-	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *               thread that created the receiver</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
 	 */
 	public void setValue(final BigDecimal value) {
 		checkWidget();
@@ -262,12 +262,12 @@ public final class Calculator extends Composite {
 	 * @return The current value.
 	 *
 	 * @exception SWTException
-	 *               <ul>
-	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *               disposed</li>
-	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *               thread that created the receiver</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
 	 */
 	public BigDecimal getValue() {
 		checkWidget();
@@ -279,15 +279,15 @@ public final class Calculator extends Composite {
 	 * "#0.##########".
 	 *
 	 * @param format
-	 *           The new format.
+	 *        The new format.
 	 *
 	 * @exception SWTException
-	 *               <ul>
-	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *               disposed</li>
-	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *               thread that created the receiver</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
 	 */
 	public void setDecimalFormat(final DecimalFormat format) {
 		checkWidget();
@@ -301,12 +301,12 @@ public final class Calculator extends Composite {
 	 * @return the results foreground color
 	 *
 	 * @exception SWTException
-	 *               <ul>
-	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *               disposed</li>
-	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *               thread that created the receiver</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
 	 */
 	public Color getResultForeground() {
 		checkWidget();
@@ -318,20 +318,20 @@ public final class Calculator extends Composite {
 	 * or to <code>SWT.COLOR_INFO_FOREGROUND</code> if the argument is null.
 	 *
 	 * @param resultForeground
-	 *           the new color (or null)
+	 *        the new color (or null)
 	 *
 	 * @exception IllegalArgumentException
-	 *               <ul>
-	 *               <li>ERROR_INVALID_ARGUMENT - if the argument has been
-	 *               disposed</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the argument has been
+	 *            disposed</li>
+	 *            </ul>
 	 * @exception SWTException
-	 *               <ul>
-	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *               disposed</li>
-	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *               thread that created the receiver</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
 	 */
 	public void setResultForeground(final Color resultForeground) {
 		checkWidget();
@@ -349,12 +349,12 @@ public final class Calculator extends Composite {
 	 * @return the results background color
 	 *
 	 * @exception SWTException
-	 *               <ul>
-	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *               disposed</li>
-	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *               thread that created the receiver</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
 	 */
 	public Color getResultBackground() {
 		checkWidget();
@@ -367,20 +367,20 @@ public final class Calculator extends Composite {
 	 * null.
 	 *
 	 * @param resultBackground
-	 *           the new color (or null)
+	 *        the new color (or null)
 	 *
 	 * @exception IllegalArgumentException
-	 *               <ul>
-	 *               <li>ERROR_INVALID_ARGUMENT - if the argument has been
-	 *               disposed</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the argument has been
+	 *            disposed</li>
+	 *            </ul>
 	 * @exception SWTException
-	 *               <ul>
-	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *               disposed</li>
-	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *               thread that created the receiver</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
 	 */
 	public void setResultBackground(final Color resultBackground) {
 		checkWidget();

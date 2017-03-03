@@ -1,9 +1,9 @@
 /**
  * Copyright (c) 2017 by Thomas Lorbeer
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License v1.0 which
+ * accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
  **/
@@ -66,20 +66,20 @@ public class StyledLabel extends Label {
 	 * </p>
 	 *
 	 * @param parent
-	 *           a composite control which will be the parent of the new instance
-	 *           (cannot be null)
+	 *        a composite control which will be the parent of the new instance
+	 *        (cannot be null)
 	 * @param style
-	 *           the style of control to construct
+	 *        the style of control to construct
 	 *
 	 * @exception IllegalArgumentException
-	 *               <ul>
-	 *               <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
+	 *            </ul>
 	 * @exception SWTException
-	 *               <ul>
-	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *               thread that created the parent</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the parent</li>
+	 *            </ul>
 	 *
 	 * @see SWT#SEPARATOR
 	 * @see SWT#HORIZONTAL
@@ -186,19 +186,19 @@ public class StyledLabel extends Label {
 	 * </p>
 	 *
 	 * @param listener
-	 *           the listener which should be notified
+	 *        the listener which should be notified
 	 *
 	 * @exception IllegalArgumentException
-	 *               <ul>
-	 *               <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+	 *            </ul>
 	 * @exception SWTException
-	 *               <ul>
-	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *               disposed</li>
-	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *               thread that created the receiver</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
 	 *
 	 * @see SelectionListener
 	 * @see #removeSelectionListener
@@ -218,19 +218,19 @@ public class StyledLabel extends Label {
 	 * when a link is selected by the user.
 	 *
 	 * @param listener
-	 *           the listener which should no longer be notified
+	 *        the listener which should no longer be notified
 	 *
 	 * @exception IllegalArgumentException
-	 *               <ul>
-	 *               <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+	 *            </ul>
 	 * @exception SWTException
-	 *               <ul>
-	 *               <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *               disposed</li>
-	 *               <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *               thread that created the receiver</li>
-	 *               </ul>
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
 	 *
 	 * @see SelectionListener
 	 * @see #addSelectionListener

@@ -1,9 +1,9 @@
 /**
  * Copyright (c) 2016 by Thomas Lorbeer
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License v1.0 which
+ * accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
  **/
@@ -61,9 +61,10 @@ public abstract class AbstractColorChooser extends Composite {
 		infoPanel.setLayout(GridLayoutFactory.fillDefaults().numColumns(3).extendedMargins(0, 10, 10, 10).spacing(3, 5).create());
 		infoPanel.setLayoutData(GridDataFactory.fillDefaults().grab(true, true).create());
 
-		final Separator line = new Separator(infoPanel, SWT.VERTICAL, LineStyle.Dot);
+		final Separator line = new Separator(infoPanel, SWT.VERTICAL);
 		line.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, true, 1, 4));
 		line.setLineColor(getDisplay().getSystemColor(SWT.COLOR_DARK_GRAY));
+		line.setLineStyle(LineStyle.Dot);
 		line.setMarginWidth(0);
 
 		spiRed = createRGBSpinner(infoPanel, Messages.Red);
@@ -131,7 +132,7 @@ public abstract class AbstractColorChooser extends Composite {
 	 * chooser, the nearest color is selected.
 	 *
 	 * @param rgb
-	 *           The colors RGB value.
+	 *        The colors RGB value.
 	 */
 	public void setRGB(final RGB rgb) {
 		this.rgb = rgb;
