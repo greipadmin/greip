@@ -73,10 +73,6 @@ public final class ImageDecorator extends AbstractDecorator {
 
 	private ImageData createFrame(final Image drawingArea, final GC gc, final ImageData imageData) {
 		return Util.withResource(new Image(getDisplay(), imageData, imageData.getTransparencyMask()), img -> {
-//			if (imageData.disposalMethod != SWT.DM_FILL_NONE) {
-//				gc.setBackground(getParent().getBackground());
-//				gc.fillRectangle(0, 0, imageSize.x, imageSize.y);
-//			}
 			gc.drawImage(img, imageData.x, imageData.y);
 
 			final ImageData frameData = drawingArea.getImageData();

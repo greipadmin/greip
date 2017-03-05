@@ -25,18 +25,15 @@ import org.greip.common.Util;
 
 /**
  * Instances of this class represent a non-selectable user interface object that
- * displays a formatted string and/or image. When SEPARATOR is specified,
- * displays a single vertical or horizontal line.
+ * displays a formatted string and/or image.
  * <p>
- * Shadow styles are hints and may not be honored by the platform. To create a
- * separator label with the default shadow style for the platform, do not
- * specify a shadow style.
+ * Shadow styles are hints and may not be honored by the platform.
  * </p>
  * <dl>
  * <dt><b>Styles:</b></dt>
- * <dd>SEPARATOR, HORIZONTAL, VERTICAL</dd>
+ * <dd>HORIZONTAL, VERTICAL</dd>
  * <dd>SHADOW_IN, SHADOW_OUT, SHADOW_NONE</dd>
- * <dd>CENTER, LEFT, RIGHT, WRAP</dd>
+ * <dd>CENTER, LEFT, RIGHT</dd>
  * <dt><b>Events:</b></dt>
  * <dd>(none)</dd>
  * </dl>
@@ -81,7 +78,6 @@ public class StyledLabel extends Label {
 	 *            that created the parent</li>
 	 *            </ul>
 	 *
-	 * @see SWT#SEPARATOR
 	 * @see SWT#HORIZONTAL
 	 * @see SWT#VERTICAL
 	 * @see SWT#SHADOW_IN
@@ -90,7 +86,6 @@ public class StyledLabel extends Label {
 	 * @see SWT#CENTER
 	 * @see SWT#LEFT
 	 * @see SWT#RIGHT
-	 * @see SWT#WRAP
 	 */
 	public StyledLabel(final Composite parent, final int style) {
 		super(parent, style & ~SWT.RIGHT & ~SWT.CENTER | SWT.DOUBLE_BUFFERED);

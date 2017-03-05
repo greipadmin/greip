@@ -37,6 +37,8 @@ import org.greip.decorator.ImageDecorator;
  * <p>
  * Note: Only one of HORIZONTAL and VERTICAL may be specified.
  * </p>
+ * 
+ * @author Thomas Lorbeer
  */
 public class Separator extends Composite {
 

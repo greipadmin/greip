@@ -10,7 +10,7 @@
 package org.greip.label;
 
 /**
- * A LinkDescriptor describes an link tag in pseudo html code used by
+ * A LinkDescriptor describes a link tag in pseudo html code used by
  * {@link FormattedText} class.
  *
  * @author Thomas Lorbeer
