@@ -9,9 +9,6 @@
  **/
 package org.greip.color;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
@@ -36,7 +33,7 @@ class ColorSlider extends Composite {
 	private int colorSteps;
 	private float stepSize;
 
-	private List<RGB> rgbs;
+	private RGB[] rgbs;
 	private int rgbIndex;
 	private RGB currentRGB;
 	private HSB originalHSB;
@@ -62,7 +59,7 @@ class ColorSlider extends Composite {
 		if (e.keyCode == SWT.TAB) {
 			traverse(e.stateMask == SWT.SHIFT ? SWT.TRAVERSE_TAB_PREVIOUS : SWT.TRAVERSE_TAB_NEXT, e);
 		} else if (e.keyCode == SWT.ARROW_RIGHT || e.keyCode == (vertical ? SWT.ARROW_DOWN : SWT.ARROW_UP)) {
-			setSelectedRGB(Math.min(rgbIndex + 1, rgbs.size() - 1));
+			setSelectedRGB(Math.min(rgbIndex + 1, rgbs.length - 1));
 		} else if (e.keyCode == SWT.ARROW_LEFT || e.keyCode == (vertical ? SWT.ARROW_UP : SWT.ARROW_DOWN)) {
 			setSelectedRGB(Math.max(rgbIndex - 1, 0));
 		}
@@ -84,27 +81,23 @@ class ColorSlider extends Composite {
 	}
 
 	private void handleMouseUp(final Event e) {
-		currentRGB = rgbs.get(rgbIndex);
+		currentRGB = rgbs[rgbIndex];
 		notifyListeners(SWT.DefaultSelection, new Event());
 	}
 
 	private void initColors() {
 		final int size = vertical ? getBarBounds().height : getBarBounds().width;
 
-		colorSteps = resolution.hueSteps == -1 ? size : resolution.hueSteps;
-		rgbs = new ArrayList<>();
+		final int hueSteps = resolution.hueSteps == -1 ? size : resolution.hueSteps;
+		colorSteps = type == ColorSliderType.Hue ? hueSteps - 1 : hueSteps;
+		rgbs = new RGB[colorSteps];
 
 		for (int i = 0; i < colorSteps; i++) {
-			rgbs.add(type.createSegmentRGB(originalHSB, 1.0f / (colorSteps - 1) * i));
-		}
-
-		if (type == ColorSliderType.Hue) {
-			colorSteps--;
-			rgbs.remove(colorSteps);
+			rgbs[i] = type.createSegmentRGB(originalHSB, 1.0f / (hueSteps - 1) * i);
 		}
 
 		stepSize = size / (float) colorSteps;
-		rgbIndex = Util.getNearestColor(rgbs, currentRGB);
+		rgbIndex = Util.getSimilarColor(rgbs, currentRGB);
 
 		redraw();
 	}
@@ -157,7 +150,7 @@ class ColorSlider extends Composite {
 				bounds = new Rectangle((int) (increment * i) + 4, barBounds.y + 1, (int) increment + 1, getBarHeight());
 			}
 
-			Util.withResource(new Color(gc.getDevice(), rgbs.get(i)), c -> {
+			Util.withResource(new Color(gc.getDevice(), rgbs[i]), c -> {
 				gc.setBackground(c);
 				gc.fillRectangle(bounds);
 			});

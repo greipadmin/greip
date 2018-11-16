@@ -9,7 +9,6 @@
  **/
 package org.greip.common;
 
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -72,15 +71,15 @@ public final class Util {
 		return result;
 	}
 
-	public static int getNearestColor(final List<RGB> rgbs, final RGB rgb) {
-		final float[] h1 = rgb.getHSB();
-
+	public static int getSimilarColor(final RGB[] rgbs, final RGB rgb) {
+		int minDiff = Integer.MAX_VALUE;
 		int idx = 0;
-		float minDiff = Float.MAX_VALUE;
 
-		for (int i = 0; i < rgbs.size(); i++) {
-			final float[] h2 = rgbs.get(i).getHSB();
-			final float diff = Math.abs(h1[0] - h2[0]) + Math.abs((h1[1] - h2[1]) * 45) + Math.abs((h1[2] - h2[2]) * 45);
+		for (int i = 0; i < rgbs.length; i++) {
+			final int deltaRed = rgbs[i].red - rgb.red;
+			final int deltaGreen = rgbs[i].green - rgb.green;
+			final int deltaBlue = rgbs[i].blue - rgb.blue;
+			final int diff = deltaRed * deltaRed + deltaGreen * deltaGreen + deltaBlue * deltaBlue;
 
 			if (diff < minDiff) {
 				minDiff = diff;

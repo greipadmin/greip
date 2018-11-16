@@ -9,9 +9,6 @@
  **/
 package org.greip.color;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.RGB;
@@ -32,20 +29,20 @@ public final class ColorPicker extends AbstractColorChooser {
 	private static final int ITEM_WIDTH = 80;
 	private static final int MAX_ITEMS = 10;
 
-	private List<RGB> rgbs;
+	private RGB[] rgbs;
 	private Table table;
 
 	public ColorPicker(final Composite parent, final RGB... colors) {
 		super(parent, null, false, false);
 
 		if (colors != null && colors.length > 0) {
-			this.rgbs = Arrays.asList(colors);
+			this.rgbs = colors;
 		} else {
-			this.rgbs = new ColorList(getDisplay());
+			this.rgbs = new ColorList(getDisplay()).toArray(new RGB[0]);
 		}
 
 		createTableItems(table);
-		table.getParent().setLayoutData(new GridData(ITEM_WIDTH + getScrollBarWidth(), Math.min(MAX_ITEMS, rgbs.size()) * ITEM_HEIGHT));
+		table.getParent().setLayoutData(new GridData(ITEM_WIDTH + getScrollBarWidth(), Math.min(MAX_ITEMS, rgbs.length) * ITEM_HEIGHT));
 
 		setRGB(getBackground().getRGB());
 	}
@@ -92,17 +89,19 @@ public final class ColorPicker extends AbstractColorChooser {
 	}
 
 	private void createTableItems(final Table table) {
-		rgbs.forEach(rgb -> new TableItem(table, SWT.NONE).setData(rgb));
+		for (final RGB rgb2 : rgbs) {
+			new TableItem(table, SWT.NONE).setData(rgb2);
+		}
 	}
 
 	private int getScrollBarWidth() {
 		final ScrollBar vBar = table.getVerticalBar();
-		return rgbs.size() > MAX_ITEMS ? vBar.getSize().x : 0;
+		return rgbs.length > MAX_ITEMS ? vBar.getSize().x : 0;
 	}
 
 	@Override
 	public void setRGB(final RGB rgb) {
 		super.setRGB(rgb);
-		table.setSelection(Util.getNearestColor(rgbs, rgb));
+		table.setSelection(Util.getSimilarColor(rgbs, rgb));
 	}
 }

@@ -9,11 +9,8 @@
  **/
 package org.greip.color;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionListener;
@@ -22,6 +19,7 @@ import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Composite;
@@ -32,13 +30,23 @@ import org.greip.common.Util;
 class ColorWheel extends Composite {
 
 	private static final int DIAMETER = 127;
+	private static final int RADIUS = DIAMETER / 2;
+
+	private static class ColorData {
+		private final RGB[] rgbs;
+		private final Point[] points;
+
+		public ColorData(final List<RGB> rgbs, final List<Point> points) {
+			this.rgbs = rgbs.toArray(new RGB[rgbs.size()]);
+			this.points = points.toArray(new Point[points.size()]);
+		}
+	}
 
 	private ColorResolution colorResolution;
 	private Image image;
 	private RGB rgb = new RGB(255, 255, 255);
-	private RGB[] rgbs;
-	private Point[] points;
 	private Color bgColor;
+	private ColorData colorData;
 
 	public ColorWheel(final Composite parent, final ColorResolution colorResolution) {
 		super(parent, SWT.DOUBLE_BUFFERED | SWT.NO_FOCUS);
@@ -55,8 +63,8 @@ class ColorWheel extends Composite {
 			e.gc.drawImage(image, 0, 0);
 			e.gc.setForeground(e.display.getSystemColor(SWT.COLOR_BLACK));
 
-			final int rgbIndex = Util.getNearestColor(Arrays.asList(rgbs), rgb);
-			final Point p = points[rgbIndex];
+			final int rgbIndex = Util.getSimilarColor(colorData.rgbs, rgb);
+			final Point p = colorData.points[rgbIndex];
 
 			e.gc.setAntialias(SWT.OFF);
 			e.gc.setLineWidth(1);
@@ -67,7 +75,7 @@ class ColorWheel extends Composite {
 		addListener(SWT.MouseMove, e -> {
 			if (circleContains(e.x, e.y)) {
 				if (e.stateMask == SWT.BUTTON1) {
-					setRGB(getColorAt(e.x, e.y));
+					setRGB(getColorFromImage(e.x, e.y));
 					notifyListeners(SWT.Selection, e);
 				}
 				setCursor(cursor);
@@ -78,7 +86,7 @@ class ColorWheel extends Composite {
 
 		addListener(SWT.MouseDown, e -> {
 			if (circleContains(e.x, e.y)) {
-				setRGB(getColorAt(e.x, e.y));
+				setRGB(getColorFromImage(e.x, e.y));
 				notifyListeners(SWT.Selection, e);
 			}
 		});
@@ -91,7 +99,7 @@ class ColorWheel extends Composite {
 
 	private void recreateColorWheelImage() {
 		disposeColorWheelImage();
-		image = createColorWheelImage();
+		createColorWheelImage();
 		bgColor = getBackground();
 	}
 
@@ -112,11 +120,18 @@ class ColorWheel extends Composite {
 	}
 
 	private static boolean circleContains(final int x, final int y) {
-		final Point center = new Point(DIAMETER / 2, DIAMETER / 2);
-		final double radius = Math.pow((DIAMETER - 2) / 2, 2);
-		final double xy2 = Math.pow(y - center.y, 2) + Math.pow(x - center.x, 2);
+		return distanceToCenter(x, y) < RADIUS;
+	}
 
-		return radius - xy2 > 0;
+	private static double distanceToCenter(final int x, final int y) {
+		return distanceBetween(x, y, RADIUS, RADIUS);
+	}
+
+	private static double distanceBetween(final int x1, final int y1, final int x2, final double y2) {
+		final int diffX = x1 - x2;
+		final double diffY = y1 - y2;
+
+		return Math.sqrt(diffX * diffX + diffY * diffY);
 	}
 
 	public void addSelectionListener(final SelectionListener listener) {
@@ -135,20 +150,43 @@ class ColorWheel extends Composite {
 		return new Point(DIAMETER, DIAMETER);
 	}
 
-	private Image createColorWheelImage() {
-		final Display display = getDisplay();
-		final Image image = new Image(display, DIAMETER, DIAMETER);
-		final GC gc = new GC(image);
+	private void createColorWheelImage() {
+		final long t = System.currentTimeMillis();
 
-		if (colorResolution != ColorResolution.Maximal) {
-			gc.setAntialias(SWT.ON);
+		if (colorResolution == ColorResolution.Maximal) {
+			createFullResolutionImage();
+		} else {
+			createLowResolutionImage();
 		}
+
+		Util.withResource(new GC(image), gc -> {
+			gc.setAntialias(SWT.ON);
+			gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
+			gc.fillOval(RADIUS - 2, RADIUS - 2, 5, 5);
+
+			gc.setForeground(getBackground());
+			gc.setLineWidth(3);
+			gc.drawOval(0, 0, DIAMETER - 1, DIAMETER - 1);
+		});
+
+		System.out.println("createImage (" + (System.currentTimeMillis() - t) + "ms)");
+	}
+
+	private void createLowResolutionImage() {
+		final Display display = getDisplay();
+
+		image = new Image(display, DIAMETER, DIAMETER);
+		final GC gc = new GC(image);
 
 		gc.setBackground(getBackground());
 		gc.fillRectangle(0, 0, DIAMETER, DIAMETER);
+		gc.setAntialias(SWT.ON);
 
-		final Map<Point, RGB> rgbMap = new HashMap<>();
-		rgbMap.put(new Point(DIAMETER / 2, DIAMETER / 2), new RGB(255, 255, 255));
+		final List<RGB> rgbList = new ArrayList<>();
+		final List<Point> pointList = new ArrayList<>();
+
+		rgbList.add(new RGB(255, 255, 255));
+		pointList.add(new Point(RADIUS, RADIUS));
 
 		final float saturationSteps = colorResolution.saturationSteps;
 		final float decrement = 1.0f / saturationSteps;
@@ -165,63 +203,65 @@ class ColorWheel extends Composite {
 			for (int i = 0; i < hueSteps; i++) {
 				final float startAngle = 360.f / hueSteps * i;
 				final RGB rgb = new RGB(startAngle, 1 - decrement * j, 1.0f);
-				final Color color = new Color(display, rgb);
 
-				gc.setBackground(color);
-				gc.fillArc(p, p, diameter, diameter, Math.round(startAngle), arcAngle);
-				color.dispose();
+				Util.withResource(new Color(display, rgb), c -> {
+					gc.setBackground(c);
+					gc.fillArc(p, p, diameter, diameter, Math.round(startAngle), arcAngle);
+				});
 
-				if (colorResolution != ColorResolution.Maximal) {
-					final double arc = (startAngle + arcAngle / 2) * Math.PI / 180;
-					final int centerX = (int) (Math.round(radius * Math.cos(arc) + DIAMETER / 2));
-					final int centerY = (int) (Math.round(radius * Math.sin(-arc) + DIAMETER / 2));
-					final Point center = new Point(centerX, centerY);
+				final double arc = (startAngle + arcAngle / 2) * Math.PI / 180;
+				final int centerX = (int) Math.round(radius * Math.cos(arc) + RADIUS);
+				final int centerY = (int) Math.round(radius * Math.sin(-arc) + RADIUS);
 
-					rgbMap.put(center, rgb);
-				}
+				rgbList.add(rgb);
+				pointList.add(new Point(centerX, centerY));
 			}
 		}
 
-		gc.setAntialias(SWT.ON);
-		gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
-		gc.fillOval(DIAMETER / 2 - 2, DIAMETER / 2 - 2, 5, 5);
-
-		if (colorResolution == ColorResolution.Maximal) {
-			final ImageData data = image.getImageData();
-
-			for (int x = 0; x < DIAMETER; x++) {
-				for (int y = 0; y < DIAMETER; y++) {
-					if (circleContains(x, y)) {
-						final int pixel = data.getPixel(x, y);
-						rgbMap.put(new Point(x, y), data.palette.getRGB(pixel));
-					}
-				}
-			}
-		}
-
-		gc.setForeground(getBackground());
-		gc.setLineWidth(4);
-		gc.drawOval(-1, -1, DIAMETER + 2, DIAMETER + 2);
 		gc.dispose();
+		colorData = new ColorData(rgbList, pointList);
+	}
 
-		this.rgbs = new RGB[rgbMap.size()];
-		this.points = new Point[rgbMap.size()];
+	private void createFullResolutionImage() {
+		final PaletteData palette = new PaletteData(0xFF, 0xFF00, 0xFF0000);
+		final ImageData imageData = new ImageData(DIAMETER, DIAMETER, 24, palette);
+		final int background = getBackground().getRGB().hashCode();
 
-		final Iterator<Entry<Point, RGB>> it = rgbMap.entrySet().iterator();
-		for (int i = 0; i < rgbMap.size(); i++) {
-			final Entry<Point, RGB> entry = it.next();
-			rgbs[i] = entry.getValue();
-			points[i] = entry.getKey();
+		final List<RGB> rgbList = new ArrayList<>();
+		final List<Point> pointList = new ArrayList<>();
+
+		for (int x = 0; x < DIAMETER; x++) {
+			for (int y = 0; y < DIAMETER; y++) {
+				final double a = distanceToCenter(x, y);
+
+				if (a > RADIUS) {
+					imageData.setPixel(x, y, background);
+
+				} else {
+					final double c = distanceBetween(x, y, RADIUS, RADIUS - a);
+					final float gamma = (float) (Math.asin(c / (2 * a)) / Math.PI * 360);
+
+					final float hue = x < RADIUS ? gamma : 360.0f - gamma;
+					final float saturation = (float) (a / RADIUS);
+
+					final RGB rgb = new RGB(hue, saturation, 1.0f);
+					imageData.setPixel(x, y, rgb.hashCode());
+
+					rgbList.add(rgb);
+					pointList.add(new Point(x, y));
+				}
+			}
 		}
 
-		return image;
+		image = new Image(getDisplay(), imageData);
+		colorData = new ColorData(rgbList, pointList);
 	}
 
 	private int getHueSteps(final int width) {
-		return colorResolution == ColorResolution.Maximal ? (int) (Math.PI * width) : colorResolution.hueSteps;
+		return colorResolution == ColorResolution.Maximal ? (int) (Math.PI * width / 4) : colorResolution.hueSteps;
 	}
 
-	private RGB getColorAt(final int x, final int y) {
+	private RGB getColorFromImage(final int x, final int y) {
 		final ImageData data = image.getImageData();
 		final int pixel = data.getPixel(x, y);
 
