@@ -24,38 +24,28 @@ class ColorHistoryList {
 
 	static ColorHistoryList INSTANCE = new ColorHistoryList();
 
-	private final List<RGB> history = new ArrayList<>();
+	public void add(final RGB rgb) {
+		final List<Integer> history = new ArrayList<>();
+		final Integer rgbInt = Integer.valueOf(rgb.hashCode());
 
-	private ColorHistoryList() {
-
-		for (int i = 0;; i++) {
-			final int rgbInt = preferences.getInt("color_" + i, SWT.DEFAULT);
-
-			if (rgbInt == SWT.DEFAULT) {
-				break;
-			}
-
-			history.add(i, new RGB(255, 255, 255));
+		for (int i = 0; i < size(); i++) {
+			history.add(Integer.valueOf(preferences.getInt("color_" + i, SWT.DEFAULT)));
 		}
-	}
 
-	public boolean add(final RGB rgb) {
-		history.remove(rgb);
-		history.add(0, rgb);
-		if (history.size() == 10) history.remove(9);
+		history.remove(rgbInt);
+		history.add(0, rgbInt);
 
-		updatePreferences();
-
-		return true;
+		for (int i = 0; i < size(); i++) {
+			preferences.putInt("color_" + i, history.get(i).intValue());
+		}
 	}
 
 	public RGB get(final int index) {
-		return history.size() > index ? history.get(index) : null;
+		final int rgbInt = preferences.getInt("color_" + index, SWT.DEFAULT);
+		return rgbInt == SWT.DEFAULT ? null : new RGB(rgbInt & 0xFF, rgbInt >> 8 & 0xFF, rgbInt >> 16 & 0xFF);
 	}
 
-	private void updatePreferences() {
-		for (int i = 0; i < history.size(); i++) {
-			preferences.putInt("color_", history.get(i).hashCode());
-		}
+	public int size() {
+		return 9;
 	}
 }
