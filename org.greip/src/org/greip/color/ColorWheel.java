@@ -24,6 +24,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.TypedListener;
 import org.greip.common.Util;
 
@@ -87,7 +88,13 @@ class ColorWheel extends Composite {
 		addListener(SWT.MouseDown, e -> {
 			if (circleContains(e.x, e.y)) {
 				setRGB(getColorFromImage(e.x, e.y));
-				notifyListeners(SWT.Selection, e);
+				notifyListeners(SWT.Modify, e);
+			}
+		});
+
+		addListener(SWT.MouseDoubleClick, e -> {
+			if (circleContains(e.x, e.y)) {
+				notifyListeners(SWT.Selection, new Event());
 			}
 		});
 
@@ -151,7 +158,6 @@ class ColorWheel extends Composite {
 	}
 
 	private void createColorWheelImage() {
-		final long t = System.currentTimeMillis();
 
 		if (colorResolution == ColorResolution.Maximal) {
 			createFullResolutionImage();
@@ -168,8 +174,6 @@ class ColorWheel extends Composite {
 			gc.setLineWidth(3);
 			gc.drawOval(0, 0, DIAMETER - 1, DIAMETER - 1);
 		});
-
-		System.out.println("createImage (" + (System.currentTimeMillis() - t) + "ms)");
 	}
 
 	private void createLowResolutionImage() {
@@ -206,10 +210,10 @@ class ColorWheel extends Composite {
 
 				Util.withResource(new Color(display, rgb), c -> {
 					gc.setBackground(c);
-					gc.fillArc(p, p, diameter, diameter, Math.round(startAngle), arcAngle);
+					gc.fillArc(p, p, diameter, diameter, Math.round(startAngle + 90.0f - arcAngle / 2), arcAngle);
 				});
 
-				final double arc = (startAngle + arcAngle / 2) * Math.PI / 180;
+				final double arc = (startAngle + 90.0f) * Math.PI / 180;
 				final int centerX = (int) Math.round(radius * Math.cos(arc) + RADIUS);
 				final int centerY = (int) Math.round(radius * Math.sin(-arc) + RADIUS);
 

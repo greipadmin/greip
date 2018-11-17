@@ -15,6 +15,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Event;
 
 public final class ColorWheelChooser extends AbstractColorChooser {
 
@@ -30,8 +31,8 @@ public final class ColorWheelChooser extends AbstractColorChooser {
 	private void createColorWheel(final Composite parent) {
 		colorWheel = new ColorWheel(parent, getColorResolution());
 		colorWheel.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, false, false, 1, 5));
-		colorWheel.addListener(SWT.Selection, e -> setNewRGB(determineNewRGB()));
-		colorWheel.addListener(SWT.MouseDoubleClick, e -> notifyListeners(SWT.Selection, e));
+		colorWheel.addListener(SWT.Modify, e -> setNewRGB(determineNewRGB()));
+		colorWheel.addListener(SWT.Selection, e -> notifyListeners(SWT.Selection, new Event()));
 	}
 
 	private RGB determineNewRGB() {

@@ -32,13 +32,7 @@ abstract class AbstractColorSliderConnector implements IColorSliderConnector {
 		sliders.forEach(s -> s.setHSB(new HSB(rgb)));
 	}
 
-	protected final float[] getValues() {
-		final float[] values = new float[sliders.size()];
-
-		for (int i = 0; i < sliders.size(); i++) {
-			values[i] = sliders.get(i).getValue();
-		}
-
-		return values;
+	protected final double[] getValues() {
+		return sliders.stream().mapToDouble(ColorSlider::getValue).toArray();
 	}
 }

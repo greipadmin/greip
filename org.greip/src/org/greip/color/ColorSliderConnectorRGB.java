@@ -23,7 +23,7 @@ public final class ColorSliderConnectorRGB extends AbstractColorSliderConnector 
 
 	@Override
 	public RGB getRGB() {
-		final float[] values = getValues();
+		final double[] values = getValues();
 		return new RGB((int) (values[0] * 255), (int) (values[1] * 255), (int) (values[2] * 255));
 	}
 }

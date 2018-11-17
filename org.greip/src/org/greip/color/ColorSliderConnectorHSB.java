@@ -25,8 +25,8 @@ public final class ColorSliderConnectorHSB extends AbstractColorSliderConnector 
 	}
 
 	private HSB getHSB() {
-		final float[] values = getValues();
-		return new HSB(values[0] * 360, values[1], values[2]);
+		final double[] values = getValues();
+		return new HSB((float) values[0] * 360, (float) values[1], (float) values[2]);
 	}
 
 	@Override

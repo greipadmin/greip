@@ -17,6 +17,7 @@ import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Spinner;
 import org.greip.common.Util;
@@ -73,6 +74,7 @@ public abstract class AbstractColorChooser extends Composite {
 
 		previewPanel = new Composite(infoPanel, SWT.NO_FOCUS);
 		previewPanel.setLayoutData(GridDataFactory.swtDefaults().hint(60, 30).span(2, 1).indent(7, 7).align(SWT.CENTER, SWT.BOTTOM).create());
+
 		previewPanel.addListener(SWT.Paint, e -> {
 			final Rectangle bounds = previewPanel.getClientArea();
 			final Color oldColor = new Color(e.display, rgb);
@@ -92,6 +94,11 @@ public abstract class AbstractColorChooser extends Composite {
 		previewPanel.addListener(SWT.MouseDown, e -> {
 			final Rectangle bounds = previewPanel.getClientArea();
 			Util.when(e.x > bounds.width / 2, () -> setRGB(rgb));
+		});
+
+		previewPanel.addListener(SWT.MouseDoubleClick, e -> {
+			final Rectangle bounds = previewPanel.getClientArea();
+			Util.when(e.x < bounds.width / 2, () -> notifyListeners(SWT.Selection, new Event()));
 		});
 	}
 
