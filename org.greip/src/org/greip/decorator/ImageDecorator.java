@@ -27,6 +27,7 @@ public final class ImageDecorator extends AbstractDecorator {
 	private final ImageLoader imageLoader = new ImageLoader();
 
 	private ImageData[] images;
+	private ImageData[] scaledImages;
 	private int idx;
 	private boolean animated;
 	private Point scaleTo = new Point(SWT.DEFAULT, SWT.DEFAULT);
@@ -40,6 +41,7 @@ public final class ImageDecorator extends AbstractDecorator {
 		final Display display = getDisplay();
 
 		images = new ImageData[imageData.length];
+		scaledImages = new ImageData[imageData.length];
 
 		if (imageData.length == 1) {
 			imageSize = new Point(imageData[0].width, imageData[0].height);
@@ -64,6 +66,7 @@ public final class ImageDecorator extends AbstractDecorator {
 						gc.fillRectangle(0, 0, imageSize.x, imageSize.y);
 					}
 					images[i] = createFrame(drawingArea, gc, imageData[i]);
+					scaledImages[i] = images[i];
 				}
 
 				Util.whenNotNull(bgColor, color -> color.dispose());
@@ -102,20 +105,30 @@ public final class ImageDecorator extends AbstractDecorator {
 	@Override
 	public synchronized void doPaint(final GC gc, final int x, final int y) {
 		if (images != null) {
-			final Point size = getSize();
+			Util.withResource(new Image(getDisplay(), getScaledImage(idx)), (Image img) -> gc.drawImage(img, x, y));
+		}
+	}
 
-			Util.withResource(new Image(getDisplay(), images[idx]), img -> {
-				Util.withResource(new Image(getDisplay(), size.x, size.y), tmpImg -> {
-					Util.withResource(new GC(tmpImg), tmpGC -> {
+	private ImageData getScaledImage(final int idx) {
+		final Point size = getSize();
+		final Point oldScaledSize = new Point(scaledImages[idx].width, scaledImages[idx].height);
+
+		if (!oldScaledSize.equals(size)) {
+			Util.withResource(new Image(getDisplay(), size.x, size.y), tmpImg -> {
+				Util.withResource(new GC(tmpImg), tmpGC -> {
+					Util.withResource(new Image(getDisplay(), images[idx]), img -> {
 						tmpGC.setBackground(getParent().getBackground());
 						tmpGC.fillRectangle(0, 0, size.x, size.y);
 						tmpGC.setInterpolation(SWT.HIGH);
 						tmpGC.drawImage(img, 0, 0, imageSize.x, imageSize.y, 0, 0, size.x, size.y);
 					});
-					gc.drawImage(tmpImg, x, y);
+
+					scaledImages[idx] = tmpImg.getImageData();
 				});
 			});
 		}
+
+		return scaledImages[idx];
 	}
 
 	@Override
