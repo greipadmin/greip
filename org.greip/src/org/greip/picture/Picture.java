@@ -33,6 +33,7 @@ import org.greip.decorator.ImageDecorator;
 public class Picture extends Composite {
 
 	private final ImageDecorator decorator;
+	private Point scaleTo;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -72,7 +73,14 @@ public class Picture extends Composite {
 		super(parent, style | SWT.DOUBLE_BUFFERED);
 
 		decorator = new ImageDecorator(this);
-		addListener(SWT.Paint, e -> decorator.doPaint(e.gc, new Point(0, 0)));
+		addListener(SWT.Paint, e -> {
+			if (scaleTo == null && e.height > 0 && e.width > 0) {
+				decorator.scaleTo(new Point(e.width, e.height));
+			}
+			decorator.doPaint(e.gc, new Point(0, 0));
+		});
+
+		scaleTo(new Point(SWT.DEFAULT, SWT.DEFAULT));
 	}
 
 	@Override
@@ -183,7 +191,8 @@ public class Picture extends Composite {
 	 */
 	public void scaleTo(final Point scaleTo) {
 		checkWidget();
-		if (scaleTo == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-		decorator.scaleTo(scaleTo);
+		this.scaleTo = scaleTo;
+		decorator.scaleTo(scaleTo == null ? new Point(SWT.DEFAULT, SWT.DEFAULT) : scaleTo);
+		setSize(decorator.getSize());
 	}
 }

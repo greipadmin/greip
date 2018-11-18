@@ -66,7 +66,7 @@ public final class ImageDecorator extends AbstractDecorator {
 					images[i] = createFrame(drawingArea, gc, imageData[i]);
 				}
 
-				Util.whenNotNull(bgColor, bgColor::dispose);
+				Util.whenNotNull(bgColor, color -> color.dispose());
 			});
 		});
 	}
@@ -82,7 +82,7 @@ public final class ImageDecorator extends AbstractDecorator {
 		});
 	}
 
-	private void doAnimate() {
+	private synchronized void doAnimate() {
 		animated = true;
 
 		getDisplay().timerExec(Math.max(5, images[idx].delayTime) * 10, () -> {
@@ -93,22 +93,24 @@ public final class ImageDecorator extends AbstractDecorator {
 				getParent().redraw();
 			} else {
 				idx = ++idx % images.length;
-				getParent().redraw();
 				doAnimate();
+				getParent().redraw();
 			}
 		});
 	}
 
 	@Override
-	public void doPaint(final GC gc, final int x, final int y) {
+	public synchronized void doPaint(final GC gc, final int x, final int y) {
 		if (images != null) {
+			final Point size = getSize();
+
 			Util.withResource(new Image(getDisplay(), images[idx]), img -> {
-				Util.withResource(new Image(getDisplay(), getSize().x, getSize().y), tmpImg -> {
+				Util.withResource(new Image(getDisplay(), size.x, size.y), tmpImg -> {
 					Util.withResource(new GC(tmpImg), tmpGC -> {
 						tmpGC.setBackground(getParent().getBackground());
-						tmpGC.fillRectangle(0, 0, getSize().x, getSize().y);
+						tmpGC.fillRectangle(0, 0, size.x, size.y);
 						tmpGC.setInterpolation(SWT.HIGH);
-						tmpGC.drawImage(img, 0, 0, imageSize.x, imageSize.y, 0, 0, getSize().x, getSize().y);
+						tmpGC.drawImage(img, 0, 0, imageSize.x, imageSize.y, 0, 0, size.x, size.y);
 					});
 					gc.drawImage(tmpImg, x, y);
 				});
@@ -138,7 +140,7 @@ public final class ImageDecorator extends AbstractDecorator {
 		setImages(imageLoader.load(filename));
 	}
 
-	public void setImage(final Image image) {
+	public synchronized void setImage(final Image image) {
 		if (image == null) {
 			images = null;
 		} else {
@@ -146,7 +148,7 @@ public final class ImageDecorator extends AbstractDecorator {
 		}
 	}
 
-	private void setImages(final ImageData... imageDatas) {
+	private synchronized void setImages(final ImageData... imageDatas) {
 		createImages(imageDatas);
 		idx = 0;
 
@@ -158,6 +160,5 @@ public final class ImageDecorator extends AbstractDecorator {
 
 	public void scaleTo(final Point scaleTo) {
 		this.scaleTo = scaleTo;
-		doAnimate();
 	}
 }
