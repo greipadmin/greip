@@ -44,7 +44,9 @@ class HtmlMarkupParser extends DefaultHandler {
 		BR,
 		LINK,
 		UL,
-		LI
+		LI,
+		SUB,
+		SUP
 	}
 
 	private final List<Tag> tagStack = new ArrayList<>();
@@ -52,6 +54,8 @@ class HtmlMarkupParser extends DefaultHandler {
 
 	private int fontStyle;
 	private int fontHeight;
+	private boolean subscript;
+	private boolean superscript;
 
 	private boolean underline;
 	private boolean strikeout;
@@ -81,6 +85,8 @@ class HtmlMarkupParser extends DefaultHandler {
 		this.fontHeight = 0;
 		this.underline = false;
 		this.strikeout = false;
+		this.subscript = false;
+		this.superscript = false;
 		this.link = null;
 
 		styledString = new StyledString();
@@ -110,10 +116,16 @@ class HtmlMarkupParser extends DefaultHandler {
 			underline = true;
 		else if (t == Tag.S)
 			strikeout = true;
-		else if (t == Tag.STYLE) {
+		else if (t == Tag.SUB) {
+			if (superscript) throw new SAXException("Close tag <SUP> before open SUB>.");
+			subscript = true;
+		} else if (t == Tag.SUP) {
+			if (subscript) throw new SAXException("Close tag <SUB> before open SUP>.");
+			superscript = true;
+		} else if (t == Tag.STYLE) {
 			foreground = getRGB(attributes.getValue("fg"));
 			background = getRGB(attributes.getValue("bg"));
-			fontHeight = toInt(attributes.getValue("size"));
+			fontHeight = toInt(attributes.getValue("size"), 10);
 		}
 
 		if (t == Tag.LINK) {
@@ -135,7 +147,8 @@ class HtmlMarkupParser extends DefaultHandler {
 
 		if (link != null) link.setUrl(text);
 
-		final TextStyler styler = new TextStyler(getFont(), getColor(background), getColor(foreground), underline, strikeout, link);
+		final TextStyler styler = new TextStyler(getFont(), getColor(background), getColor(foreground), underline, strikeout, link,
+				getRise());
 
 		styledString.append(text);
 		styledString.setStyle(styledString.length() - length, length, styler);
@@ -155,6 +168,10 @@ class HtmlMarkupParser extends DefaultHandler {
 			underline = false;
 		else if (t == Tag.S)
 			strikeout = false;
+		else if (t == Tag.SUB)
+			subscript = false;
+		else if (t == Tag.SUP)
+			superscript = false;
 		else if (t == Tag.STYLE) {
 			foreground = null;
 			background = null;
@@ -180,12 +197,12 @@ class HtmlMarkupParser extends DefaultHandler {
 	private static RGB getRGB(final String color) throws SAXException {
 		if (color == null) return null;
 		if (!color.matches("#[0-9A-Fa-f]{6}")) throw new SAXException("invalid color definition \"" + color + '"');
-		return new RGB(Integer.parseInt(color.substring(1, 3), 16), Integer.parseInt(color.substring(3, 5), 16),
-				Integer.parseInt(color.substring(5, 7), 16));
+
+		return new RGB(toInt(color.substring(1, 3), 16), toInt(color.substring(3, 5), 16), toInt(color.substring(5, 7), 16));
 	}
 
-	private static int toInt(final String value) {
-		return value == null ? 0 : Integer.parseInt(value);
+	private static int toInt(final String value, final int radix) {
+		return value == null ? 0 : Integer.parseInt(value, radix);
 	}
 
 	private Color getColor(final RGB rgb) {
@@ -199,12 +216,23 @@ class HtmlMarkupParser extends DefaultHandler {
 	private Font getFont() {
 		final FontData fontData = defaultFont.getFontData()[0];
 		fontData.setStyle(fontStyle);
-		fontData.setHeight(fontHeight == 0 ? fontData.getHeight() : fontHeight);
+		fontData.setHeight(getFontHeight());
 
 		final String name = fontData.toString();
 
 		if (!fontRegistry.hasValueFor(name)) fontRegistry.put(name, new FontData[] { fontData });
 
 		return fontRegistry.get(name);
+	}
+
+	private int getFontHeight() {
+		final FontData fontData = defaultFont.getFontData()[0];
+		final int height = fontHeight == 0 ? fontData.getHeight() : fontHeight;
+
+		return subscript || superscript ? (int) (height * 0.7f) : height;
+	}
+
+	private int getRise() {
+		return superscript ? getFontHeight() - 1 : subscript ? -3 : 0;
 	}
 }

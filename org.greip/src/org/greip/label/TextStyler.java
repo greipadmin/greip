@@ -22,15 +22,17 @@ class TextStyler extends Styler {
 	private final boolean underline;
 	private final boolean strikeout;
 	private final Object data;
+	private final int rise;
 
 	public TextStyler(final Font font, final Color background, final Color foreground, final boolean underline, final boolean strikeout,
-			final Object data) {
+			final Object data, final int rise) {
 		this.font = font;
 		this.background = background;
 		this.foreground = foreground;
 		this.underline = underline;
 		this.strikeout = strikeout;
 		this.data = data;
+		this.rise = rise;
 	}
 
 	@Override
@@ -41,5 +43,6 @@ class TextStyler extends Styler {
 		style.foreground = foreground;
 		style.background = background;
 		style.data = data;
+		style.rise = rise;
 	}
 }
