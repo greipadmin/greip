@@ -2,7 +2,7 @@
 <feature
       id="org.greip.nls.feature"
       label="Greip Language Pack"
-      version="1.0.0.qualifier"
+      version="1.0.1.qualifier"
       provider-name="Thomas Lorbeer">
 
    <description url="http://www.example.com/description">
@@ -159,14 +159,14 @@ This Agreement is governed by the laws of the State of New York and the intellec
    </license>
 
    <requires>
-      <import plugin="org.greip" version="1.0.0" match="greaterOrEqual"/>
+      <import plugin="org.greip" version="1.0.1" match="greaterOrEqual"/>
    </requires>
 
    <plugin
          id="org.greip.nl1"
          download-size="0"
          install-size="0"
-         version="0.0.0"
+         version="1.0.1.qualifier"
          fragment="true"
          unpack="false"/>
 
