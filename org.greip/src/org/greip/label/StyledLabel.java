@@ -9,6 +9,8 @@
  **/
 package org.greip.label;
 
+import java.util.function.Consumer;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.events.SelectionEvent;
@@ -16,12 +18,15 @@ import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.TypedListener;
+import org.greip.common.Greip;
 import org.greip.common.Util;
+import org.greip.tile.Alignment;
+import org.greip.tile.LinkRange;
+import org.greip.tile.MarkupText;
+import org.xml.sax.SAXException;
 
 /**
  * Instances of this class represent a non-selectable user interface object that
@@ -46,9 +51,10 @@ import org.greip.common.Util;
  *
  * @author Thomas Lorbeer
  */
-public class StyledLabel extends Label {
+public class StyledLabel extends Composite {
 
-	private final FormattedText formattedText = new FormattedText(getDisplay());
+	private final MarkupText markupText = new MarkupText(getDisplay());
+	private String text = "";
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -86,31 +92,30 @@ public class StyledLabel extends Label {
 	 * @see SWT#CENTER
 	 * @see SWT#LEFT
 	 * @see SWT#RIGHT
+	 * @see Greip#JUSTIFY
 	 */
 	public StyledLabel(final Composite parent, final int style) {
-		super(parent, style & ~SWT.RIGHT & ~SWT.CENTER | SWT.DOUBLE_BUFFERED);
+		super(parent, SWT.DOUBLE_BUFFERED);
 
-		formattedText.setAlignment(getAlignment(style));
-		formattedText.setFont(super.getFont());
-		formattedText.setForeground(super.getForeground());
-		formattedText.setOrientation(super.getOrientation());
+		markupText.setAlignment(Alignment.valueOf(style));
+		markupText.setFont(super.getFont());
+		markupText.setForeground(super.getForeground());
+		markupText.setOrientation(getOrientation());
 
 		addListener(SWT.Paint, e -> {
 			final Point size = getSize();
-			final Point imageSize = getImageSize();
-			final int maxWidth = size.x - imageSize.x - 2 * getBorderWidth() - 2;
-			final int maxHeight = size.y - 2 * getBorderWidth();
 
-			formattedText.layout(maxWidth, maxHeight).draw(e.gc, 2 + imageSize.x, 0);
+			markupText.layout(getText(), size.x, size.y);
+			markupText.getTextLayout().draw(e.gc, 1, 0);
 		});
 
 		addListener(SWT.MouseMove, e -> {
-			final LinkDescriptor link = formattedText.getLinkAtLocation(e.x, e.y);
+			final LinkRange link = markupText.getLinkAtLocation(e.x, e.y);
 			setCursor(link != null ? e.display.getSystemCursor(SWT.CURSOR_HAND) : null);
 		});
 
 		addListener(SWT.MouseDown, e -> {
-			final LinkDescriptor link = formattedText.getLinkAtLocation(e.x, e.y);
+			final LinkRange link = markupText.getLinkAtLocation(e.x, e.y);
 
 			Util.whenNotNull(link, () -> {
 				final Event event = new Event();
@@ -120,54 +125,98 @@ public class StyledLabel extends Label {
 		});
 
 		addListener(SWT.MouseExit, e -> setCursor(null));
-		addListener(SWT.Dispose, e -> formattedText.dispose());
 	}
 
-	@Override
-	protected void checkSubclass() {
-		// allow subclassing
-	}
-
-	@Override
+	/**
+	 * Returns the receiver's text, which will be an empty string if it has never
+	 * been set.
+	 *
+	 * @return the receiver's text
+	 *
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
+	 */
 	public String getText() {
 		checkWidget();
-		return formattedText.getText();
+		return text;
 	}
 
-	@Override
+	/**
+	 * Sets the receiver's text.
+	 * <p>
+	 * The text can contains some pseudo-HTML tags for formatting:
+	 * <ul>
+	 * <li><b>&ltbr/&gt</b> for adding a line break
+	 * <li><b>&lti&gt</b> to render text in italic
+	 * <li><b>&ltu&gt</b> to render text in underline
+	 * <li><b>&ltb&gt</b> to render text in bold
+	 * <li><b>&lts&gt</b> to render strikeout text
+	 * <li><b>&ltsub&gt</b> to render subscript text
+	 * <li><b>&ltsup&gt</b> to render superscript text
+	 * <li><b>&ltstyle fg="{color}" bg="{color}" size="{size}"
+	 * font="{name}"&gt</b> to define text foreground and background color as
+	 * HTML color code (e.g. #FFAABB) and font size in pixels. All attributes are
+	 * optional.
+	 * <li><b>&ltlink id="{id}" url="{url}"&gt</b> to define a link. The
+	 * attributes id and url are accessible from selection listeners.
+	 * </ul>
+	 *
+	 * @param text
+	 *        the new text
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the text is null</li>
+	 *            </ul>
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
+	 */
 	public void setText(final String text) {
-		formattedText.setText(text);
+		checkWidget();
+		if (text == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+
+		this.text = text;
 		redraw();
 	}
 
 	@Override
 	public Font getFont() {
 		checkWidget();
-		return formattedText.getFont();
+		return markupText.getFont();
 	}
 
 	@Override
 	public void setFont(final Font font) {
-		formattedText.setFont(font);
+		markupText.setFont(font);
 		redraw();
 	}
 
 	@Override
 	public Color getForeground() {
 		checkWidget();
-		return formattedText.getForeground();
+		return markupText.getForeground();
 	}
 
 	@Override
 	public void setForeground(final Color color) {
-		formattedText.setForeground(color);
+		markupText.setForeground(color);
 		redraw();
 	}
 
 	@Override
 	public void setOrientation(final int orientation) {
 		super.setOrientation(orientation);
-		formattedText.setOrientation(orientation);
+		if (getOrientation() == SWT.RIGHT_TO_LEFT) markupText.setOrientation(orientation);
 	}
 
 	/**
@@ -200,7 +249,6 @@ public class StyledLabel extends Label {
 	 * @see SelectionEvent
 	 */
 	public void addSelectionListener(final SelectionListener listener) {
-		checkWidget();
 		if (listener == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 
 		final TypedListener typedListener = new TypedListener(listener);
@@ -231,7 +279,6 @@ public class StyledLabel extends Label {
 	 * @see #addSelectionListener
 	 */
 	public void removeSelectionListener(final SelectionListener listener) {
-		checkWidget();
 		if (listener == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 
 		removeListener(SWT.Selection, listener);
@@ -240,31 +287,62 @@ public class StyledLabel extends Label {
 
 	@Override
 	public Point computeSize(final int wHint, final int hHint, final boolean changed) {
+		final MarkupText markupText = new MarkupText(getDisplay());
+
+		markupText.setFont(getFont());
+		markupText.layout(getText(), wHint, hHint);
+
+		return markupText.getSize();
+	}
+
+	/**
+	 * Set the exception handler for handling SAXExceptions.
+	 *
+	 * @param exceptionHandler
+	 *        the exception handler
+	 */
+	public void setExceptionHandler(final Consumer<SAXException> exceptionHandler) {
+		markupText.setExceptionHandler(exceptionHandler);
+	}
+
+	/**
+	 * Controls how text will be displayed in the receiver. The argument should
+	 * be one of <code>SWT.LEFT</code>, <code>SWT.RIGHT</code>,
+	 * <code>SWT.CENTER</code> or <code>Greip.JUSTIFY</code>.
+	 *
+	 * @param alignment
+	 *        the new alignment
+	 *
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
+	 */
+	public void setAlignment(final int alignment) {
+		markupText.setAlignment(Alignment.valueOf(alignment));
+		redraw();
+	}
+
+	/**
+	 * Returns a value which describes the position of the text in the receiver.
+	 * The value will be one of <code>SWT.LEFT</code>, <code>SWT.RIGHT</code>,
+	 * <code>SWT.CENTER</code> or <code>Greip.JUSTIFY</code>.
+	 *
+	 * @return the alignment
+	 *
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
+	 */
+	public int getAlignment() {
 		checkWidget();
-
-		final Point imageSize = getImageSize();
-		final int width = wHint == SWT.DEFAULT ? wHint : wHint - 2 * getBorderWidth() - 2;
-		final int height = hHint == SWT.DEFAULT ? hHint : hHint - 2 * getBorderWidth();
-		final Rectangle bounds = formattedText.layout(width - imageSize.x, height).getBounds();
-
-		return new Point(bounds.width + imageSize.x + 2 * getBorderWidth(), Math.max(bounds.height, imageSize.y) + 2 * getBorderWidth());
-	}
-
-	private static int getAlignment(final int style) {
-		if ((style & SWT.RIGHT) != 0)
-			return SWT.RIGHT;
-		else if ((style & SWT.CENTER) != 0) return SWT.CENTER;
-		return SWT.LEFT;
-	}
-
-	private Point getImageSize() {
-		final Point imageSize;
-		if (getImage() != null) {
-			final Rectangle bounds = getImage().getBounds();
-			imageSize = new Point(bounds.width + 5, bounds.height);
-		} else {
-			imageSize = new Point(0, 0);
-		}
-		return imageSize;
+		return markupText.getAlignment().style;
 	}
 }

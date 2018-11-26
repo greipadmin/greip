@@ -42,6 +42,7 @@ public abstract class AbstractDecorator implements IDecorator {
 	}
 
 	protected void dispose() {
+		// nothing to do
 	}
 
 	protected Display getDisplay() {
@@ -50,5 +51,9 @@ public abstract class AbstractDecorator implements IDecorator {
 
 	protected Control getParent() {
 		return parent;
+	}
+
+	protected void redraw() {
+		parent.redraw();
 	}
 }

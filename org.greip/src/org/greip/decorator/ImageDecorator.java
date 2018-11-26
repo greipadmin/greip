@@ -31,6 +31,7 @@ public final class ImageDecorator extends AbstractDecorator {
 	private int idx;
 	private boolean animated;
 	private Point scaleTo = new Point(SWT.DEFAULT, SWT.DEFAULT);
+	private Color background;
 	private Point imageSize = new Point(0, 0);
 
 	public ImageDecorator(final Control parent) {
@@ -46,6 +47,7 @@ public final class ImageDecorator extends AbstractDecorator {
 		if (imageData.length == 1) {
 			imageSize = new Point(imageData[0].width, imageData[0].height);
 			images[0] = imageData[0];
+			scaledImages[0] = images[0];
 
 			return;
 		}
@@ -59,6 +61,8 @@ public final class ImageDecorator extends AbstractDecorator {
 				if (imageLoader.backgroundPixel != -1) {
 					bgColor = new Color(display, imageData[0].palette.getRGB(imageLoader.backgroundPixel));
 					gc.setBackground(bgColor);
+				} else if (background != null) {
+					gc.setBackground(background);
 				}
 
 				for (int i = 0; i < imageData.length; i++) {
@@ -105,7 +109,7 @@ public final class ImageDecorator extends AbstractDecorator {
 	@Override
 	public synchronized void doPaint(final GC gc, final int x, final int y) {
 		if (images != null) {
-			Util.withResource(new Image(getDisplay(), getScaledImage(idx)), (Image img) -> gc.drawImage(img, x, y));
+			Util.withResource(new Image(getDisplay(), getScaledImage(idx)), (final Image img) -> gc.drawImage(img, x, y));
 		}
 	}
 
@@ -119,7 +123,11 @@ public final class ImageDecorator extends AbstractDecorator {
 					Util.withResource(new Image(getDisplay(), images[idx]), img -> {
 						tmpGC.setBackground(getParent().getBackground());
 						tmpGC.fillRectangle(0, 0, size.x, size.y);
-						tmpGC.setInterpolation(SWT.HIGH);
+						if (size.x < images[0].width && size.y < images[0].height) {
+							tmpGC.setInterpolation(SWT.LOW);
+						} else {
+							tmpGC.setInterpolation(SWT.HIGH);
+						}
 						tmpGC.drawImage(img, 0, 0, imageSize.x, imageSize.y, 0, 0, size.x, size.y);
 					});
 
@@ -173,5 +181,9 @@ public final class ImageDecorator extends AbstractDecorator {
 
 	public void scaleTo(final Point scaleTo) {
 		this.scaleTo = scaleTo;
+	}
+
+	public void setBackground(final Color background) {
+		this.background = background;
 	}
 }
