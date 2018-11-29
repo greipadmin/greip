@@ -28,8 +28,8 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.TypedListener;
 import org.greip.common.Greip;
 import org.greip.common.Util;
-import org.greip.markup.HtmlMarkupParser;
 import org.greip.markup.Anchor;
+import org.greip.markup.HtmlMarkupParser;
 import org.greip.markup.MarkupText;
 import org.greip.tile.Alignment;
 
@@ -107,6 +107,7 @@ public class StyledLabel extends Label {
 		markupText.setFont(super.getFont());
 		markupText.setForeground(super.getForeground());
 		markupText.setOrientation(getOrientation());
+		markupText.setWrap((style & SWT.WRAP) != 0);
 
 		tmpImage = createTemporaryImage();
 		setImage(tmpImage);
@@ -118,7 +119,8 @@ public class StyledLabel extends Label {
 			final Point offset = getOffset();
 
 			markupText.layout(getText(), size.x - offset.x, size.y - offset.y);
-			markupText.getTextLayout().draw(e.gc, offset.x - getBorderWidth(), 0);
+			final int y = (size.y - markupText.getSize().y) / 2;
+			markupText.getTextLayout().draw(e.gc, offset.x - getBorderWidth(), y);
 		});
 
 		addListener(SWT.MouseMove, e -> {
@@ -145,7 +147,7 @@ public class StyledLabel extends Label {
 	}
 
 	private int getTextIndent() {
-		return getImage() == tmpImage ? 0 : getImage().getBounds().width + 5;
+		return getImage() == null ? 0 : getImage().getBounds().width + 5;
 	}
 
 	@Override
@@ -159,11 +161,21 @@ public class StyledLabel extends Label {
 		final Point offset = getOffset();
 
 		markupText.setFont(getFont());
+		markupText.setWrap(isWrap());
+
 		markupText.layout(getText(), wHint == SWT.DEFAULT ? SWT.DEFAULT : wHint - offset.x,
 				hHint == SWT.DEFAULT ? SWT.DEFAULT : hHint - offset.y);
 
 		final Point textSize = markupText.getSize();
-		return new Point(textSize.x + offset.x, textSize.y + offset.y);
+
+		return new Point(textSize.x + offset.x, Math.max(textSize.y + offset.y, getMinHeight()));
+	}
+
+	private int getMinHeight() {
+		final int borderWidth = 2 * getBorderWidth();
+		final Image image = getImage();
+
+		return (image == null ? 0 : image.getBounds().height) + borderWidth;
 	}
 
 	private Point getOffset() {
@@ -238,6 +250,12 @@ public class StyledLabel extends Label {
 	public void setForeground(final Color color) {
 		markupText.setForeground(color);
 		redraw();
+	}
+
+	@Override
+	public Image getImage() {
+		final Image image = super.getImage();
+		return image == tmpImage ? null : image;
 	}
 
 	@Override
@@ -323,6 +341,27 @@ public class StyledLabel extends Label {
 	 */
 	public void setExceptionHandler(final Consumer<ParseException> exceptionHandler) {
 		markupText.setExceptionHandler(exceptionHandler);
+	}
+
+	/**
+	 * Returns the current line wrap behaviour.
+	 *
+	 * @return returns <code>true</code> if line wrap behaviou enabled, otherwise
+	 *         <code>false</code>.
+	 */
+	public boolean isWrap() {
+		return markupText.isWrap();
+	}
+
+	/**
+	 * Enables or disables the automatic line wrap behavior.
+	 *
+	 * @param wrap
+	 *        the new line wrap behaviour
+	 */
+	public void setWrap(final boolean wrap) {
+		markupText.setWrap(wrap);
+		redraw();
 	}
 
 	/**

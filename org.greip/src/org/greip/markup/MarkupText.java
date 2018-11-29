@@ -63,7 +63,7 @@ public class MarkupText {
 			final StringBuilder buf = new StringBuilder(text).append("...");
 
 			do {
-				buf.deleteCharAt(buf.length() - 4);
+				buf.deleteCharAt(buf.length() - Math.min(4, buf.length()));
 				applyTextAndStyles(buf.toString(), styleRanges, true);
 			} while (textLayout.getLineCount() > 1);
 		}
