@@ -81,8 +81,10 @@ public class MarkupText {
 				textLayout.setStyle(range, range.start, Math.min(range.start + range.length - 1, text.length() - (shorten ? 4 : 1)));
 
 				if (range instanceof Anchor) {
-					links.put(new Point(range.start, range.length), ((Anchor) range).href);
-					range.data = ((Anchor) range).href;
+					final Anchor anchor = (Anchor) range;
+
+					links.put(new Point(range.start, range.length), anchor.href);
+					range.data = anchor.href;
 				}
 			}
 		}
