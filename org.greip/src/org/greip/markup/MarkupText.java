@@ -80,9 +80,9 @@ public class MarkupText {
 				range.foreground = Util.nvl(range.foreground, getForeground());
 				textLayout.setStyle(range, range.start, Math.min(range.start + range.length - 1, text.length() - (shorten ? 4 : 1)));
 
-				if (range instanceof LinkRange) {
-					links.put(new Point(range.start, range.length), ((LinkRange) range).getId());
-					range.data = ((LinkRange) range).getId();
+				if (range instanceof Anchor) {
+					links.put(new Point(range.start, range.length), ((Anchor) range).href);
+					range.data = ((Anchor) range).href;
 				}
 			}
 		}
@@ -132,18 +132,18 @@ public class MarkupText {
 		return links;
 	}
 
-	public LinkRange getLinkAtLocation(final int x, final int y) {
+	public Anchor getLinkAtLocation(final int x, final int y) {
 		final int offset = textLayout.getOffset(x, y, new int[1]);
 		final TextStyle style = textLayout.getStyle(offset);
 
-		if (style instanceof LinkRange) {
+		if (style instanceof Anchor) {
 			final TextStyle[] styles = textLayout.getStyles();
 			final int[] ranges = textLayout.getRanges();
 
 			for (int i = 0; i < styles.length; i++) {
 				if (styles[i] == style) {
 					final Rectangle bounds = textLayout.getBounds(ranges[i * 2], ranges[i * 2 + 1]);
-					return bounds.contains(x, y) ? (LinkRange) style : null;
+					return bounds.contains(x, y) ? (Anchor) style : null;
 				}
 			}
 		}

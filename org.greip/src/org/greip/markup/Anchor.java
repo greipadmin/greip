@@ -10,14 +10,11 @@ package org.greip.markup;
 
 import org.eclipse.swt.custom.StyleRange;
 
-public final class LinkRange extends StyleRange {
-	private final String id;
+public final class Anchor extends StyleRange {
 
-	public LinkRange(final String id) {
-		this.id = id;
-	}
+	public final String href;
 
-	public String getId() {
-		return id;
+	public Anchor(final String href) {
+		this.href = href;
 	}
 }

@@ -152,7 +152,7 @@ public class HtmlMarkupParser implements IMarkupParser {
 
 		@Override
 		public void characters(final char[] ch, final int start, final int length) throws SAXException {
-			currentStyleRange = link == null ? new StyleRange() : new LinkRange(link.length() == 0 ? new String(ch, start, length) : link);
+			currentStyleRange = link == null ? new StyleRange() : new Anchor(link.length() == 0 ? new String(ch, start, length) : link);
 			currentStyleRange.start = plainText.length();
 			currentStyleRange.underline = underline;
 			currentStyleRange.strikeout = strikeout;

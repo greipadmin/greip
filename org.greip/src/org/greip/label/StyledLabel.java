@@ -29,7 +29,7 @@ import org.eclipse.swt.widgets.TypedListener;
 import org.greip.common.Greip;
 import org.greip.common.Util;
 import org.greip.markup.HtmlMarkupParser;
-import org.greip.markup.LinkRange;
+import org.greip.markup.Anchor;
 import org.greip.markup.MarkupText;
 import org.greip.tile.Alignment;
 
@@ -122,12 +122,12 @@ public class StyledLabel extends Label {
 		});
 
 		addListener(SWT.MouseMove, e -> {
-			final LinkRange link = markupText.getLinkAtLocation(e.x, e.y);
+			final Anchor link = markupText.getLinkAtLocation(e.x, e.y);
 			setCursor(link == null ? null : e.display.getSystemCursor(SWT.CURSOR_HAND));
 		});
 
 		addListener(SWT.MouseDown, e -> {
-			final LinkRange link = markupText.getLinkAtLocation(e.x, e.y);
+			final Anchor link = markupText.getLinkAtLocation(e.x, e.y);
 
 			Util.whenNotNull(link, () -> {
 				final Event event = new Event();
