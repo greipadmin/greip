@@ -1,9 +1,11 @@
-package org.greip.tile;
+package org.greip.markup;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -26,7 +28,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-class MarkupParser implements IMarkupParser {
+public class HtmlMarkupParser implements IMarkupParser {
 
 	private enum Tag {
 		BODY,
@@ -272,10 +274,14 @@ class MarkupParser implements IMarkupParser {
 	 * @see org.greip.tile.IMarkupParser#parse(java.lang.String)
 	 */
 	@Override
-	public void parse(final String html) throws SAXException {
+	public void parse(final String markup) throws ParseException {
 		final MarkupHandler handler = new MarkupHandler(getDefaultFont());
 
+		styleRanges = Collections.emptyList();
+		plainText = markup;
+
 		try {
+			final String html = "<body>" + markup + "</body>";
 			final SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
 			parser.parse(new ByteArrayInputStream(html.getBytes(StandardCharsets.UTF_8)), handler);
 
@@ -284,6 +290,9 @@ class MarkupParser implements IMarkupParser {
 
 		} catch (IOException | ParserConfigurationException e) {
 			throw new IllegalStateException(e);
+
+		} catch (final SAXException e) {
+			throw new ParseException(e.getMessage(), 0);
 		}
 	}
 
@@ -301,8 +310,8 @@ class MarkupParser implements IMarkupParser {
 	 * @see org.greip.tile.IMarkupParser#getStyleRanges()
 	 */
 	@Override
-	public List<StyleRange> getStyleRanges() {
-		return styleRanges;
+	public StyleRange[] getStyleRanges() {
+		return styleRanges.toArray(new StyleRange[styleRanges.size()]);
 	}
 
 	/*

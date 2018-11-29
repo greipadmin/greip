@@ -6,16 +6,16 @@
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  *
  **/
-package org.greip.tile;
+package org.greip.markup;
 
-import java.util.List;
+import java.text.ParseException;
 
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.graphics.Font;
 import org.xml.sax.SAXException;
 
 /**
- * 
+ *
  * @author Thomas Lorbeer
  */
 public interface IMarkupParser {
@@ -25,14 +25,13 @@ public interface IMarkupParser {
 	 *
 	 * @throws SAXException
 	 */
-	void parse(String html) throws SAXException;
+	void parse(String markup) throws ParseException;
 
 	String getPlainText();
 
-	List<StyleRange> getStyleRanges();
+	StyleRange[] getStyleRanges();
 
 	Font getDefaultFont();
 
 	void setDefaultFont(Font defaultFont);
-
 }

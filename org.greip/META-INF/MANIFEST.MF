@@ -13,6 +13,7 @@ Export-Package: org.greip.calculator,
  org.greip.common,
  org.greip.decorator,
  org.greip.label,
+ org.greip.markup,
  org.greip.picture,
  org.greip.separator,
  org.greip.tile

@@ -29,6 +29,8 @@ import org.eclipse.swt.widgets.Listener;
 import org.greip.common.Greip;
 import org.greip.common.Util;
 import org.greip.decorator.IDecorator;
+import org.greip.markup.HtmlMarkupParser;
+import org.greip.markup.MarkupText;
 
 public class Tile extends Composite {
 
@@ -374,7 +376,7 @@ public class Tile extends Composite {
 	}
 
 	private TextLayout createTextLayout(final int index, final int maxWidth, final int maxHeight) {
-		final MarkupText markupText = new MarkupText(getDisplay());
+		final MarkupText markupText = new MarkupText(getDisplay(), new HtmlMarkupParser());
 
 		markupText.setFont(getFont(index));
 		markupText.setForeground(getForeground(index));

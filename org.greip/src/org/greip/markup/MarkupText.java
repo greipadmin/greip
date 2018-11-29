@@ -1,5 +1,7 @@
-package org.greip.tile;
+package org.greip.markup;
 
+import java.text.ParseException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +18,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.TextLayout;
 import org.eclipse.swt.graphics.TextStyle;
 import org.greip.common.Util;
-import org.xml.sax.SAXException;
+import org.greip.tile.Alignment;
 
 public class MarkupText {
 
@@ -26,17 +28,17 @@ public class MarkupText {
 	private Font font;
 	private Color foreground;
 	private boolean wrap = true;
-	private Optional<Consumer<SAXException>> exceptionHandler = Optional.empty();
+	private Optional<Consumer<ParseException>> exceptionHandler = Optional.empty();
 	private final TextLayout textLayout;
+	private final IMarkupParser parser;
 
-	public MarkupText(final Device device) {
+	public MarkupText(final Device device, final IMarkupParser parser) {
 		this.device = device;
+		this.parser = parser;
 		this.textLayout = new TextLayout(device);
 	}
 
 	public void layout(final String markupText, final int maxWidth, final int maxHeight) {
-		final IMarkupParser parser = new MarkupParser();
-
 		textLayout.setWidth(maxWidth == SWT.DEFAULT ? SWT.DEFAULT : Math.max(maxWidth, 1));
 		textLayout.setAlignment(getAlignment().style);
 		textLayout.setJustify(getAlignment() == Alignment.Justify);
@@ -45,15 +47,16 @@ public class MarkupText {
 		String plainText;
 		try {
 			parser.setDefaultFont(getFont());
-			parser.parse("<body>" + markupText + "</body>");
+			parser.parse(markupText);
 			plainText = parser.getPlainText();
 
-		} catch (final SAXException e) {
+		} catch (final ParseException e) {
 			exceptionHandler.ifPresent(c -> c.accept(e));
 			plainText = markupText;
 		}
 
-		applyTextAndStyles(plainText, parser.getStyleRanges(), false);
+		final List<StyleRange> styleRanges = Arrays.asList(parser.getStyleRanges());
+		applyTextAndStyles(plainText, styleRanges, false);
 
 		if (!wrap && textLayout.getLineCount() > 1) {
 			final String text = plainText.substring(0, Math.min(plainText.length(), textLayout.getLineOffsets()[1] + 20));
@@ -61,7 +64,7 @@ public class MarkupText {
 
 			do {
 				buf.deleteCharAt(buf.length() - 4);
-				applyTextAndStyles(buf.toString(), parser.getStyleRanges(), true);
+				applyTextAndStyles(buf.toString(), styleRanges, true);
 			} while (textLayout.getLineCount() > 1);
 		}
 	}
@@ -131,12 +134,21 @@ public class MarkupText {
 
 	public LinkRange getLinkAtLocation(final int x, final int y) {
 		final int offset = textLayout.getOffset(x, y, new int[1]);
-		final Rectangle bounds = textLayout.getBounds(offset, offset);
+		final TextStyle style = textLayout.getStyle(offset);
 
-		if (x > bounds.x + bounds.width) return null;
+		if (style instanceof LinkRange) {
+			final TextStyle[] styles = textLayout.getStyles();
+			final int[] ranges = textLayout.getRanges();
 
-		final TextStyle textStyle = textLayout.getStyle(offset);
-		return textStyle instanceof LinkRange ? (LinkRange) textStyle : null;
+			for (int i = 0; i < styles.length; i++) {
+				if (styles[i] == style) {
+					final Rectangle bounds = textLayout.getBounds(ranges[i * 2], ranges[i * 2 + 1]);
+					return bounds.contains(x, y) ? (LinkRange) style : null;
+				}
+			}
+		}
+
+		return null;
 	}
 
 	public TextLayout getTextLayout() {
@@ -148,7 +160,7 @@ public class MarkupText {
 		return new Point(bounds.width + 20, bounds.height);
 	}
 
-	public void setExceptionHandler(final Consumer<SAXException> exceptionHandler) {
+	public void setExceptionHandler(final Consumer<ParseException> exceptionHandler) {
 		this.exceptionHandler = Optional.ofNullable(exceptionHandler);
 	}
 }

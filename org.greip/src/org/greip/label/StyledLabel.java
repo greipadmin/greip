@@ -9,6 +9,7 @@
  **/
 package org.greip.label;
 
+import java.text.ParseException;
 import java.util.function.Consumer;
 
 import org.eclipse.swt.SWT;
@@ -17,16 +18,20 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.TypedListener;
 import org.greip.common.Greip;
 import org.greip.common.Util;
+import org.greip.markup.HtmlMarkupParser;
+import org.greip.markup.LinkRange;
+import org.greip.markup.MarkupText;
 import org.greip.tile.Alignment;
-import org.greip.tile.LinkRange;
-import org.greip.tile.MarkupText;
-import org.xml.sax.SAXException;
 
 /**
  * Instances of this class represent a non-selectable user interface object that
@@ -51,10 +56,11 @@ import org.xml.sax.SAXException;
  *
  * @author Thomas Lorbeer
  */
-public class StyledLabel extends Composite {
+public class StyledLabel extends Label {
 
-	private final MarkupText markupText = new MarkupText(getDisplay());
+	private final MarkupText markupText = new MarkupText(getDisplay(), new HtmlMarkupParser());
 	private String text = "";
+	private final Image tmpImage;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -95,23 +101,29 @@ public class StyledLabel extends Composite {
 	 * @see Greip#JUSTIFY
 	 */
 	public StyledLabel(final Composite parent, final int style) {
-		super(parent, SWT.DOUBLE_BUFFERED);
+		super(parent, style & ~SWT.RIGHT & ~SWT.CENTER & ~Greip.JUSTIFY);
 
 		markupText.setAlignment(Alignment.valueOf(style));
 		markupText.setFont(super.getFont());
 		markupText.setForeground(super.getForeground());
 		markupText.setOrientation(getOrientation());
 
+		tmpImage = createTemporaryImage();
+		setImage(tmpImage);
+
+		addListener(SWT.Dispose, e -> tmpImage.dispose());
+
 		addListener(SWT.Paint, e -> {
 			final Point size = getSize();
+			final Point offset = getOffset();
 
-			markupText.layout(getText(), size.x, size.y);
-			markupText.getTextLayout().draw(e.gc, 1, 0);
+			markupText.layout(getText(), size.x - offset.x, size.y - offset.y);
+			markupText.getTextLayout().draw(e.gc, offset.x - getBorderWidth(), 0);
 		});
 
 		addListener(SWT.MouseMove, e -> {
 			final LinkRange link = markupText.getLinkAtLocation(e.x, e.y);
-			setCursor(link != null ? e.display.getSystemCursor(SWT.CURSOR_HAND) : null);
+			setCursor(link == null ? null : e.display.getSystemCursor(SWT.CURSOR_HAND));
 		});
 
 		addListener(SWT.MouseDown, e -> {
@@ -123,8 +135,120 @@ public class StyledLabel extends Composite {
 				notifyListeners(SWT.Selection, event);
 			});
 		});
+	}
 
-		addListener(SWT.MouseExit, e -> setCursor(null));
+	private Image createTemporaryImage() {
+		final ImageData data = new ImageData(1, 1, 24, new PaletteData(0x0000FF, 0x00FF00, 0xFF0000));
+		data.setAlpha(0, 0, 0);
+
+		return new Image(getDisplay(), data);
+	}
+
+	private int getTextIndent() {
+		return getImage() == tmpImage ? 0 : getImage().getBounds().width + 5;
+	}
+
+	@Override
+	protected void checkSubclass() {
+		// allow subclassing
+	}
+
+	@Override
+	public Point computeSize(final int wHint, final int hHint, final boolean changed) {
+		final MarkupText markupText = new MarkupText(getDisplay(), new HtmlMarkupParser());
+		final Point offset = getOffset();
+
+		markupText.setFont(getFont());
+		markupText.layout(getText(), wHint == SWT.DEFAULT ? SWT.DEFAULT : wHint - offset.x,
+				hHint == SWT.DEFAULT ? SWT.DEFAULT : hHint - offset.y);
+
+		final Point textSize = markupText.getSize();
+		return new Point(textSize.x + offset.x, textSize.y + offset.y);
+	}
+
+	private Point getOffset() {
+		final int borderWidth = 2 * getBorderWidth();
+		final int textIndent = getTextIndent();
+
+		return new Point(borderWidth + textIndent + 1, borderWidth + 2);
+	}
+
+	/**
+	 * Returns a value which describes the position of the text in the receiver.
+	 * The value will be one of <code>SWT.LEFT</code>, <code>SWT.RIGHT</code>,
+	 * <code>SWT.CENTER</code> or <code>Greip.JUSTIFY</code>.
+	 *
+	 * @return the alignment
+	 *
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
+	 */
+	@Override
+	public int getAlignment() {
+		checkWidget();
+		return markupText.getAlignment().style;
+	}
+
+	/**
+	 * Controls how text will be displayed in the receiver. The argument should
+	 * be one of <code>SWT.LEFT</code>, <code>SWT.RIGHT</code>,
+	 * <code>SWT.CENTER</code> or <code>Greip.JUSTIFY</code>.
+	 *
+	 * @param alignment
+	 *        the new alignment
+	 *
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
+	 */
+	@Override
+	public void setAlignment(final int alignment) {
+		markupText.setAlignment(Alignment.valueOf(alignment));
+		redraw();
+	}
+
+	@Override
+	public Font getFont() {
+		checkWidget();
+		return markupText.getFont();
+	}
+
+	@Override
+	public void setFont(final Font font) {
+		markupText.setFont(font);
+		redraw();
+	}
+
+	@Override
+	public Color getForeground() {
+		checkWidget();
+		return markupText.getForeground();
+	}
+
+	@Override
+	public void setForeground(final Color color) {
+		markupText.setForeground(color);
+		redraw();
+	}
+
+	@Override
+	public void setImage(final Image image) {
+		super.setImage(image == null ? tmpImage : image);
+	}
+
+	@Override
+	public void setOrientation(final int orientation) {
+		super.setOrientation(orientation);
+		markupText.setOrientation(getOrientation());
 	}
 
 	/**
@@ -141,6 +265,7 @@ public class StyledLabel extends Composite {
 	 *            that created the receiver</li>
 	 *            </ul>
 	 */
+	@Override
 	public String getText() {
 		checkWidget();
 		return text;
@@ -181,6 +306,7 @@ public class StyledLabel extends Composite {
 	 *            that created the receiver</li>
 	 *            </ul>
 	 */
+	@Override
 	public void setText(final String text) {
 		checkWidget();
 		if (text == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -189,34 +315,14 @@ public class StyledLabel extends Composite {
 		redraw();
 	}
 
-	@Override
-	public Font getFont() {
-		checkWidget();
-		return markupText.getFont();
-	}
-
-	@Override
-	public void setFont(final Font font) {
-		markupText.setFont(font);
-		redraw();
-	}
-
-	@Override
-	public Color getForeground() {
-		checkWidget();
-		return markupText.getForeground();
-	}
-
-	@Override
-	public void setForeground(final Color color) {
-		markupText.setForeground(color);
-		redraw();
-	}
-
-	@Override
-	public void setOrientation(final int orientation) {
-		super.setOrientation(orientation);
-		if (getOrientation() == SWT.RIGHT_TO_LEFT) markupText.setOrientation(orientation);
+	/**
+	 * Set the exception handler for handling parse exceptions.
+	 *
+	 * @param exceptionHandler
+	 *        the exception handler
+	 */
+	public void setExceptionHandler(final Consumer<ParseException> exceptionHandler) {
+		markupText.setExceptionHandler(exceptionHandler);
 	}
 
 	/**
@@ -283,66 +389,5 @@ public class StyledLabel extends Composite {
 
 		removeListener(SWT.Selection, listener);
 		removeListener(SWT.DefaultSelection, listener);
-	}
-
-	@Override
-	public Point computeSize(final int wHint, final int hHint, final boolean changed) {
-		final MarkupText markupText = new MarkupText(getDisplay());
-
-		markupText.setFont(getFont());
-		markupText.layout(getText(), wHint, hHint);
-
-		return markupText.getSize();
-	}
-
-	/**
-	 * Set the exception handler for handling SAXExceptions.
-	 *
-	 * @param exceptionHandler
-	 *        the exception handler
-	 */
-	public void setExceptionHandler(final Consumer<SAXException> exceptionHandler) {
-		markupText.setExceptionHandler(exceptionHandler);
-	}
-
-	/**
-	 * Controls how text will be displayed in the receiver. The argument should
-	 * be one of <code>SWT.LEFT</code>, <code>SWT.RIGHT</code>,
-	 * <code>SWT.CENTER</code> or <code>Greip.JUSTIFY</code>.
-	 *
-	 * @param alignment
-	 *        the new alignment
-	 *
-	 * @exception SWTException
-	 *            <ul>
-	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *            disposed</li>
-	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
-	 *            that created the receiver</li>
-	 *            </ul>
-	 */
-	public void setAlignment(final int alignment) {
-		markupText.setAlignment(Alignment.valueOf(alignment));
-		redraw();
-	}
-
-	/**
-	 * Returns a value which describes the position of the text in the receiver.
-	 * The value will be one of <code>SWT.LEFT</code>, <code>SWT.RIGHT</code>,
-	 * <code>SWT.CENTER</code> or <code>Greip.JUSTIFY</code>.
-	 *
-	 * @return the alignment
-	 *
-	 * @exception SWTException
-	 *            <ul>
-	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *            disposed</li>
-	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
-	 *            that created the receiver</li>
-	 *            </ul>
-	 */
-	public int getAlignment() {
-		checkWidget();
-		return markupText.getAlignment().style;
 	}
 }

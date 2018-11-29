@@ -6,7 +6,7 @@
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  *
  **/
-package org.greip.tile;
+package org.greip.markup;
 
 import org.eclipse.swt.custom.StyleRange;
 
