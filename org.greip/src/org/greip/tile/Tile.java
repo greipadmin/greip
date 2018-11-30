@@ -1,18 +1,22 @@
+/**
+ * Copyright (c) 2018 by Thomas Lorbeer
+ *
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License v1.0 which
+ * accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ **/
 package org.greip.tile;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseTrackAdapter;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
@@ -26,6 +30,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.TypedListener;
 import org.greip.common.Greip;
 import org.greip.common.Util;
 import org.greip.decorator.IDecorator;
@@ -36,19 +41,18 @@ public class Tile extends Composite {
 
 	private class SelectionHandler implements Listener {
 
-		private void fireSelectionEvent(final Event event, final int detail, final Object data) {
-			final SelectionEvent e = new SelectionEvent(event);
+		private void fireSelectionEvent(final int detail, final Object data) {
+			final Event e = new Event();
 			e.detail = detail;
 			e.data = data;
 
-			for (final SelectionListener selectionListener : selectionListeners) {
-				selectionListener.widgetSelected(e);
-			}
+			notifyListeners(SWT.Selection, e);
 		}
 
 		private Rectangle getLineBounds(final TextLayout layout, final int offset) {
 			final int lineIndex = layout.getLineIndex(offset);
 			final int[] lineOffsets = layout.getLineOffsets();
+
 			return layout.getBounds(lineOffsets[lineIndex], lineOffsets[lineIndex + 1] - 1);
 		}
 
@@ -87,11 +91,11 @@ public class Tile extends Composite {
 			final String linkId = getLinkAt(event.x, event.y);
 
 			if (linkId != null) {
-				fireSelectionEvent(event, Greip.LINK, linkId);
+				fireSelectionEvent(Greip.LINK, linkId);
 			} else if (getDecoratorBounds().contains(event.x, event.y)) {
-				fireSelectionEvent(event, Greip.DECORATOR, null);
+				fireSelectionEvent(Greip.DECORATOR, null);
 			} else {
-				fireSelectionEvent(event, SWT.NONE, null);
+				fireSelectionEvent(SWT.NONE, null);
 			}
 		}
 
@@ -117,9 +121,9 @@ public class Tile extends Composite {
 			this.pos = pos;
 		}
 
-		Rectangle getBounds() {
+		public Rectangle getBounds() {
 			final Rectangle bounds = layout.getBounds();
-			return new Rectangle(pos.x, pos.y, bounds.width, bounds.height);
+			return new Rectangle(pos.x, pos.y, bounds.width, layout.getText().isEmpty() ? 0 : bounds.height);
 		}
 	}
 
@@ -131,14 +135,12 @@ public class Tile extends Composite {
 		public boolean wrap;
 	}
 
-	private final Set<SelectionListener> selectionListeners = new HashSet<>();
-
 	private int decoratorAlignment = SWT.LEFT;
 	private int marginHeight = 0;
 	private int marginWidth = 0;
 	private IDecorator decorator;
-	private int imageSpacing;
-	private int titleSpacing;
+	private int decoratorSpacing;
+	private int textSpacing;
 	private int borderWidth;
 	private Color borderColor;
 	private int edgeRadius;
@@ -150,10 +152,6 @@ public class Tile extends Composite {
 
 	public Tile(final Composite parent) {
 		super(parent, SWT.DOUBLE_BUFFERED);
-
-//		if (parent instanceof TileBar) {
-//			((TileBar) parent).addItem(this);
-//		}
 
 		if ((getStyle() & SWT.V_SCROLL) > 0) {
 			getVerticalBar().setVisible(false);
@@ -248,33 +246,21 @@ public class Tile extends Composite {
 
 		addListener(SWT.MouseMove, linkHandler);
 		addListener(SWT.MouseDown, linkHandler);
-
-		addDisposeListener(new DisposeListener() {
-			@Override
-			public void widgetDisposed(final DisposeEvent e) {
-				disposeBackgroundColors();
-			}
-		});
+		addListener(SWT.Dispose, e -> disposeBackgroundColors());
 
 		setBackground(getBackground());
 		setMargins(10, 10, 5, 10);
 		setDecoratorAlignment(SWT.RIGHT);
 	}
 
-//	public Tile(final TileBar parent, final int style) {
-//		this(parent);
-//		parent.addItem(this);
-//	}
-
-	public void addSelectionListener(final SelectionListener selectionListener) {
-		selectionListeners.add(selectionListener);
+	public int addText(final String text, final Alignment alignment) {
+		return addText(text, alignment, null, null, true);
 	}
 
-	public void addText(final String text, final Alignment alignment) {
-		addText(text, alignment, null, null, true);
-	}
+	public int addText(final String text, final Alignment alignment, final Font font, final Color foreground, final boolean wrap) {
+		checkWidget();
+		if (text == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 
-	public void addText(final String text, final Alignment alignment, final Font font, final Color foreground, final boolean wrap) {
 		final TextDescriptor descriptor = new TextDescriptor();
 		descriptor.text = text;
 		descriptor.alignment = alignment;
@@ -283,24 +269,13 @@ public class Tile extends Composite {
 		descriptor.wrap = wrap;
 
 		textDescriptors.add(descriptor);
-
 		redraw();
+
+		return textDescriptors.size() - 1;
 	}
 
 	public void clear() {
 		textDescriptors.clear();
-	}
-
-	private int computeMaxTextWidth(final int maxWidth) {
-		int width = 0;
-
-		if (decoratorAlignment == SWT.TOP || decoratorAlignment == SWT.BOTTOM) {
-			width = maxWidth - 2 * marginWidth;
-		} else {
-			width = maxWidth - 2 * marginWidth - getDecoratorSize().x - getImageSpacing();
-		}
-
-		return Math.max(10, width - 2 * borderWidth);
 	}
 
 	@Override
@@ -317,14 +292,193 @@ public class Tile extends Composite {
 		final Point decoratorSize = getDecoratorSize();
 
 		if ((decoratorAlignment & SWT.LEFT) > 0 || (decoratorAlignment & SWT.RIGHT) > 0) {
-			size.x += decoratorSize.x + getImageSpacing() + width;
+			size.x += decoratorSize.x + getDecoratorSpacing() + width;
 			size.y += Math.max(decoratorSize.y, height);
+
+		} else if (decoratorAlignment == SWT.CENTER) {
+			final int nonEmptyTextCount = getNonEmptyTextCount();
+
+			size.x += Math.max(decoratorSize.x, width);
+			size.y += decoratorSize.y + height + Math.min(nonEmptyTextCount, 2) * getDecoratorSpacing()
+					- (nonEmptyTextCount >= 2 ? textSpacing : 0);
+
 		} else {
 			size.x += Math.max(decoratorSize.x, width);
-			size.y += decoratorSize.y + getImageSpacing() + height;
+			size.y += decoratorSize.y + getDecoratorSpacing() + height;
 		}
 
 		return size;
+	}
+
+	public Alignment getAlignment(final int index) {
+		return getTextDescriptor(index).alignment;
+	}
+
+	public void setAlignment(final int index, final Alignment alignment) {
+		getTextDescriptor(index).alignment = alignment;
+		redraw();
+	}
+
+	@Override
+	public void setBackground(final Color color) {
+		super.setBackground(color);
+		disposeBackgroundColors();
+
+		final Display display = getDisplay();
+		final RGB backgroundRGB = color.getRGB();
+
+		dimmedBackground[0] = new Color(display, Util.getDimmedRGB(backgroundRGB, 0.07f));
+		dimmedBackground[1] = new Color(display, Util.getDimmedRGB(backgroundRGB, -0.02f));
+		dimmedBackground[2] = new Color(display, Util.getDimmedRGB(backgroundRGB, -0.07f));
+		dimmedBackground[3] = new Color(display, Util.getDimmedRGB(backgroundRGB, 0.25f));
+	}
+
+	public Color getBorderColor() {
+		return borderColor != null ? borderColor : getDisplay().getSystemColor(SWT.COLOR_WIDGET_BORDER);
+	}
+
+	public void setBorderColor(final Color borderColor) {
+		this.borderColor = borderColor;
+		redraw();
+	}
+
+	@Override
+	public int getBorderWidth() {
+		return borderWidth;
+	}
+
+	public void setBorderWidth(final int borderWith) {
+		this.borderWidth = borderWith;
+		redraw();
+	}
+
+	public IDecorator getDecorator() {
+		return decorator;
+	}
+
+	public void setDecorator(final IDecorator decorator) {
+		this.decorator = decorator;
+		redraw();
+	}
+
+	public int getDecoratorAlignment() {
+		return decoratorAlignment;
+	}
+
+	public void setDecoratorAlignment(final int alignment) {
+		switch (alignment) {
+			case SWT.LEFT:
+			case SWT.RIGHT:
+			case SWT.TOP:
+			case SWT.BOTTOM:
+			case SWT.CENTER:
+			case SWT.LEFT | SWT.TOP:
+			case SWT.RIGHT | SWT.TOP:
+			case SWT.LEFT | SWT.BOTTOM:
+			case SWT.RIGHT | SWT.BOTTOM:
+				this.decoratorAlignment = alignment;
+				redraw();
+				break;
+
+			default:
+				SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+	}
+
+	public int getEdgesRadius() {
+		return edgeRadius;
+	}
+
+	public void setEdgeRadius(final int edgeRadius) {
+		this.edgeRadius = edgeRadius;
+		redraw();
+	}
+
+	public Font getFont(final int index) {
+		final Font font = getTextDescriptor(index).font;
+		return font == null ? getFont() : font;
+	}
+
+	public void setFont(final int index, final Font font) {
+		getTextDescriptor(index).font = font;
+		redraw();
+	}
+
+	public Color getForeground(final int index) {
+		final Color foreground = getTextDescriptor(index).foreground;
+		return foreground == null ? getForeground() : foreground;
+	}
+
+	public void setForeground(final int index, final Color foreground) {
+		getTextDescriptor(index).foreground = foreground;
+		redraw();
+	}
+
+	public int[] getMargins() {
+		return new int[] { marginHeight, marginWidth, textSpacing, decoratorSpacing };
+	}
+
+	public void setMargins(final int marginHeight, final int marginWidth, final int textSpacing, final int decoratorSpacing) {
+		this.marginHeight = marginHeight;
+		this.marginWidth = marginWidth;
+		this.decoratorSpacing = decoratorSpacing;
+		this.textSpacing = textSpacing;
+
+		redraw();
+	}
+
+	public boolean isShowSelection() {
+		return showSelection;
+	}
+
+	public void setShowSelection(final boolean showSelection) {
+		this.showSelection = showSelection;
+		redraw();
+	}
+
+	public String getText(final int index) {
+		return getTextDescriptor(index).text;
+	}
+
+	public void setText(final int index, final String text) {
+		if (text == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+
+		getTextDescriptor(index).text = text;
+		redraw();
+	}
+
+	public boolean isWrap(final int index) {
+		return getTextDescriptor(index).wrap;
+	}
+
+	public void setWrap(final int index, final boolean wrap) {
+		getTextDescriptor(index).wrap = wrap;
+		redraw();
+	}
+
+	public void addSelectionListener(final SelectionListener listener) {
+		if (listener == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		addListener(SWT.Selection, new TypedListener(listener));
+	}
+
+	public void removeSelectionListener(final SelectionListener listener) {
+		if (listener == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		removeListener(SWT.Selection, listener);
+	}
+
+	private TextDescriptor getTextDescriptor(final int index) {
+		if (index < 0 || index >= textDescriptors.size()) SWT.error(SWT.ERROR_INVALID_RANGE);
+		return textDescriptors.get(index);
+	}
+
+	private int computeMaxTextWidth(final int maxWidth) {
+		int width = maxWidth - 2 * marginWidth;
+
+		if ((decoratorAlignment & SWT.LEFT) > 0 || (decoratorAlignment & SWT.RIGHT) > 0) {
+			width -= getDecoratorSize().x + getDecoratorSpacing();
+		}
+
+		return Math.max(10, width - 2 * borderWidth);
 	}
 
 	private Point computeTextLocation() {
@@ -332,13 +486,13 @@ public class Tile extends Composite {
 		final Point pos = new Point(0, 0);
 
 		if ((decoratorAlignment & SWT.LEFT) > 0) {
-			pos.x = marginWidth + decoratorSize.x + getImageSpacing() + borderWidth;
+			pos.x = marginWidth + decoratorSize.x + getDecoratorSpacing() + borderWidth;
 		} else {
 			pos.x = marginWidth + borderWidth;
 		}
 
 		if (decoratorAlignment == SWT.TOP) {
-			pos.y = marginHeight + decoratorSize.y + getImageSpacing() + borderWidth;
+			pos.y = marginHeight + decoratorSize.y + getDecoratorSpacing() + borderWidth;
 		} else {
 			pos.y = marginHeight + borderWidth;
 		}
@@ -347,7 +501,7 @@ public class Tile extends Composite {
 	}
 
 	private TextArea createTextArea(final int index, final int wHint) {
-		final TextLayout layout = createTextLayout(index, computeMaxTextWidth(wHint), Integer.MAX_VALUE);
+		final TextLayout layout = createTextLayout(index, computeMaxTextWidth(wHint), SWT.DEFAULT);
 		final Point pos = computeTextLocation();
 
 		return new TextArea(layout, pos);
@@ -355,21 +509,36 @@ public class Tile extends Composite {
 
 	private TextArea[] createTextAreas(final int wHint) {
 		final TextArea[] textAreas = new TextArea[textDescriptors.size()];
+		final Point decoratorSize = getDecoratorSize();
 
 		for (int i = 0; i < textAreas.length; i++) {
 			textAreas[i] = createTextArea(i, wHint);
+			textAreas[i].pos.y = 0;
 		}
 
 		int y = marginHeight + borderWidth;
+
 		if (decoratorAlignment == SWT.TOP) {
-			y += getDecoratorSize().y + imageSpacing;
+			y += decoratorSize.y + decoratorSpacing;
+
+		} else if (decoratorAlignment == SWT.CENTER && textAreas.length > 0) {
+			int offset = Math.min(getNonEmptyTextCount(), 2) * decoratorSpacing;
+			offset -= getNonEmptyTextCount() >= 2 ? textSpacing : 0;
+			offset += decoratorSize.y;
+
+			for (int i = 1; i < textAreas.length; i++) {
+				textAreas[i].pos.y += offset;
+			}
+
 		} else if (decoratorAlignment != SWT.BOTTOM) {
-			y += Math.max(0, (getDecoratorSize().y - getTotalTextHeight(textAreas)) / 2);
+			y += Math.max(0, (decoratorSize.y - getTotalTextHeight(textAreas)) / 2);
 		}
 
 		for (int i = 0; i < textAreas.length; i++) {
-			textAreas[i].pos.y = y;
-			y += textAreas[i].getBounds().height + titleSpacing;
+			final int height = textAreas[i].getBounds().height;
+
+			textAreas[i].pos.y += y;
+			y += height + (height == 0 ? 0 : textSpacing);
 		}
 
 		return textAreas;
@@ -381,38 +550,10 @@ public class Tile extends Composite {
 		markupText.setFont(getFont(index));
 		markupText.setForeground(getForeground(index));
 		markupText.setAlignment(getAlignment(index));
-		markupText.layout(getText(index), maxWidth, isWrap(index) ? -1 : maxHeight);
+		markupText.setWrap(isWrap(index));
+		markupText.layout(getText(index), maxWidth, isWrap(index) ? SWT.DEFAULT : maxHeight);
 
 		return markupText.getTextLayout();
-	}
-
-	private void disposeBackgroundColors() {
-		for (final Color color : dimmedBackground) {
-			if (color != null) {
-				color.dispose();
-			}
-		}
-	}
-
-	public Alignment getAlignment(final int index) {
-		return textDescriptors.get(index).alignment;
-	}
-
-	public Color getBorderColor() {
-		return borderColor != null ? borderColor : getDisplay().getSystemColor(SWT.COLOR_WIDGET_BORDER);
-	}
-
-	@Override
-	public int getBorderWidth() {
-		return borderWidth;
-	}
-
-	public IDecorator getDecorator() {
-		return decorator;
-	}
-
-	public int getDecoratorAlignment() {
-		return decoratorAlignment;
 	}
 
 	private Rectangle getDecoratorBounds() {
@@ -427,6 +568,13 @@ public class Tile extends Composite {
 		} else if (decoratorAlignment == SWT.TOP) {
 			x = (size.width - 2 * marginWidth - decoratorSize.x) / 2 + marginWidth;
 			y = marginHeight + borderWidth;
+		} else if (decoratorAlignment == SWT.CENTER) {
+			x = (size.width - 2 * marginWidth - decoratorSize.x) / 2 + marginWidth;
+			y = marginHeight + borderWidth;
+			if (!textDescriptors.isEmpty()) {
+				final int height = createTextArea(0, size.width).getBounds().height;
+				y += height + (height == 0 ? 0 : decoratorSpacing);
+			}
 		} else {
 			if ((decoratorAlignment & SWT.LEFT) > 0) {
 				x = marginWidth + borderWidth;
@@ -449,26 +597,8 @@ public class Tile extends Composite {
 		return hasDecorator() ? decorator.getSize() : new Point(0, 0);
 	}
 
-	public int getEdgesRadius() {
-		return edgeRadius;
-	}
-
-	public Font getFont(final int index) {
-		final Font font = textDescriptors.get(index).font;
-		return font == null ? getFont() : font;
-	}
-
-	public Color getForeground(final int index) {
-		final Color foreground = textDescriptors.get(index).foreground;
-		return foreground == null ? getForeground() : foreground;
-	}
-
-	private int getImageSpacing() {
-		return hasDecorator() && !isEmpty() ? imageSpacing : 0;
-	}
-
-	public int[] getMargins() {
-		return new int[] { marginHeight, marginWidth, titleSpacing, imageSpacing };
+	private int getDecoratorSpacing() {
+		return hasDecorator() && hasAnyText() ? decoratorSpacing : 0;
 	}
 
 	private static int getMaxTextWidth(final TextArea[] textAreas) {
@@ -481,130 +611,45 @@ public class Tile extends Composite {
 		return maxWidth;
 	}
 
-	public String getText(final int index) {
-		return textDescriptors.get(index).text;
-	}
-
 	private int getTotalTextHeight(final TextArea[] textAreas) {
 		int totalHeight = 0;
 
-		for (int i = 0; i < textAreas.length; i++) {
-			if (!getText(i).isEmpty()) {
-				totalHeight += textAreas[i].getBounds().height;
-				if (i > 0) {
-					totalHeight += titleSpacing;
-				}
-			}
+		for (final TextArea textArea : textAreas) {
+			totalHeight += textArea.getBounds().height;
 		}
 
-		return totalHeight;
+		return Math.max(totalHeight + (getNonEmptyTextCount() - 1) * textSpacing, 0);
 	}
 
 	private boolean hasDecorator() {
 		return decorator != null;
 	}
 
-	private boolean isEmpty() {
+	private boolean hasAnyText() {
 		for (final TextDescriptor descriptor : textDescriptors) {
-			if (descriptor.text != null && !descriptor.text.isEmpty()) {
-				return false;
+			if (!descriptor.text.isEmpty()) {
+				return true;
 			}
 		}
-		return true;
+		return !textDescriptors.isEmpty();
 	}
 
-	public boolean isShowSelection() {
-		return showSelection;
+	private int getNonEmptyTextCount() {
+		int count = textDescriptors.size();
+
+		for (final TextDescriptor descriptor : textDescriptors) {
+			if (descriptor.text == null || descriptor.text.isEmpty()) {
+				count--;
+			}
+		}
+		return count;
 	}
 
-	public boolean isWrap(final int index) {
-		return textDescriptors.get(index).wrap;
-	}
-
-	public void removeSelectionListener(final SelectionListener selectionListener) {
-		selectionListeners.remove(selectionListener);
-	}
-
-	public void setAlignment(final int index, final Alignment alignment) {
-		textDescriptors.get(index).alignment = alignment;
-		redraw();
-	}
-
-	@Override
-	public void setBackground(final Color color) {
-		super.setBackground(color);
-		disposeBackgroundColors();
-
-		final Display display = getDisplay();
-		final RGB backgroundRGB = color.getRGB();
-
-		dimmedBackground[0] = new Color(display, Util.getDimmedRGB(backgroundRGB, 0.07f));
-		dimmedBackground[1] = new Color(display, Util.getDimmedRGB(backgroundRGB, -0.02f));
-		dimmedBackground[2] = new Color(display, Util.getDimmedRGB(backgroundRGB, -0.07f));
-		dimmedBackground[3] = new Color(display, Util.getDimmedRGB(backgroundRGB, 0.25f));
-	}
-
-	public void setBorderColor(final Color borderColor) {
-		this.borderColor = borderColor;
-		redraw();
-	}
-
-	public void setBorderWidth(final int borderWith) {
-		this.borderWidth = borderWith;
-		redraw();
-	}
-
-	@Override
-	public void setBounds(final int x, final int y, final int width, final int height) {
-		super.setBounds(x, y, width, height);
-		// maxTextWidth = computeMaxTextWidth(width);
-	}
-
-	public void setDecorator(final IDecorator decorator) {
-		this.decorator = decorator;
-	}
-
-	public void setDecoratorAlignment(final int alignment) {
-		this.decoratorAlignment = alignment;
-		redraw();
-	}
-
-	public void setEdgeRadius(final int edgeRadius) {
-		this.edgeRadius = edgeRadius;
-		redraw();
-	}
-
-	public void setFont(final int index, final Font font) {
-		textDescriptors.get(index).font = font;
-		redraw();
-	}
-
-	public void setForeground(final int index, final Color foreground) {
-		textDescriptors.get(index).foreground = foreground;
-		redraw();
-	}
-
-	public void setMargins(final int marginHeight, final int marginWidth, final int titleSpacing, final int imageSpacing) {
-		this.marginHeight = marginHeight;
-		this.marginWidth = marginWidth;
-		this.imageSpacing = imageSpacing;
-		this.titleSpacing = titleSpacing;
-
-		redraw();
-	}
-
-	public void setShowSelection(final boolean showSelection) {
-		this.showSelection = showSelection;
-		redraw();
-	}
-
-	public void setText(final int index, final String text) {
-		textDescriptors.get(index).text = text;
-		redraw();
-	}
-
-	public void setWrap(final int index, final boolean wrap) {
-		textDescriptors.get(index).wrap = wrap;
-		redraw();
+	private void disposeBackgroundColors() {
+		for (final Color color : dimmedBackground) {
+			if (color != null) {
+				color.dispose();
+			}
+		}
 	}
 }
