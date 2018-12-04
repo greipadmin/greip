@@ -9,19 +9,35 @@
  **/
 package org.greip.decorator;
 
-import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 
+/**
+ * Instances of this class represents a graphical painted on a graphic context.
+ * The base implementation is {@link AbstractDecorator}.
+ *
+ * @see AbstractDecorator
+ *
+ * @author Thomas Lorbeer
+ */
 public interface IDecorator {
 
+	/**
+	 * Paint the decorator to the specified GC.
+	 *
+	 * @param gc
+	 *        the GC
+	 * @param x
+	 *        the x coordinate to draw
+	 * @param y
+	 *        the y coordinate to draw
+	 */
 	void doPaint(GC gc, int x, int y);
 
-	void doPaint(GC gc, Point pos);
-
-	Cursor getCursor();
-
+	/**
+	 * Returns the size of the decorator.
+	 *
+	 * @return the size
+	 */
 	Point getSize();
-
-	void setCursor(Cursor cursor);
 }

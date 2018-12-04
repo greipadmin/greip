@@ -77,7 +77,7 @@ public class Picture extends Composite {
 			if (scaleTo == null && e.height > 0 && e.width > 0) {
 				decorator.scaleTo(new Point(e.width, e.height));
 			}
-			decorator.doPaint(e.gc, new Point(0, 0));
+			decorator.doPaint(e.gc, 0, 0);
 		});
 
 		scaleTo(new Point(SWT.DEFAULT, SWT.DEFAULT));

@@ -31,7 +31,6 @@ import org.greip.common.Util;
 import org.greip.markup.Anchor;
 import org.greip.markup.HtmlMarkupParser;
 import org.greip.markup.MarkupText;
-import org.greip.tile.Alignment;
 
 /**
  * Instances of this class represent a non-selectable user interface object that
@@ -103,7 +102,7 @@ public class StyledLabel extends Label {
 	public StyledLabel(final Composite parent, final int style) {
 		super(parent, style & ~SWT.RIGHT & ~SWT.CENTER & ~Greip.JUSTIFY);
 
-		markupText.setAlignment(Alignment.valueOf(style));
+		markupText.setAlignment(style & (SWT.LEFT | SWT.RIGHT | SWT.CENTER | Greip.JUSTIFY));
 		markupText.setFont(super.getFont());
 		markupText.setForeground(super.getForeground());
 		markupText.setOrientation(getOrientation());
@@ -203,7 +202,7 @@ public class StyledLabel extends Label {
 	@Override
 	public int getAlignment() {
 		checkWidget();
-		return markupText.getAlignment().style;
+		return markupText.getAlignment();
 	}
 
 	/**
@@ -214,6 +213,11 @@ public class StyledLabel extends Label {
 	 * @param alignment
 	 *        the new alignment
 	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_IVALID_ARGUMENT - if the alignment value is
+	 *            invalid</li>
+	 *            </ul>
 	 * @exception SWTException
 	 *            <ul>
 	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
@@ -224,7 +228,8 @@ public class StyledLabel extends Label {
 	 */
 	@Override
 	public void setAlignment(final int alignment) {
-		markupText.setAlignment(Alignment.valueOf(alignment));
+		if (!Util.in(alignment, SWT.LEFT, SWT.RIGHT, SWT.CENTER, Greip.JUSTIFY)) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		markupText.setAlignment(alignment);
 		redraw();
 	}
 
@@ -346,8 +351,8 @@ public class StyledLabel extends Label {
 	/**
 	 * Returns the current line wrap behaviour.
 	 *
-	 * @return returns <code>true</code> if line wrap behaviou enabled, otherwise
-	 *         <code>false</code>.
+	 * @return returns <code>true</code> if line wrap behaviour enabled,
+	 *         otherwise <code>false</code>.
 	 */
 	public boolean isWrap() {
 		return markupText.isWrap();
@@ -371,7 +376,7 @@ public class StyledLabel extends Label {
 	 * <p>
 	 * <code>widgetSelected</code> is called when a link is selected by the user.
 	 * The data member of the event contains the link object.
-	 * <code>widgetDefaultSelected</code> is not called.
+	 * <code>widgetDefaultSelected</code> is never called.
 	 * </p>
 	 *
 	 * @param listener
@@ -395,10 +400,7 @@ public class StyledLabel extends Label {
 	 */
 	public void addSelectionListener(final SelectionListener listener) {
 		if (listener == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-
-		final TypedListener typedListener = new TypedListener(listener);
-		addListener(SWT.Selection, typedListener);
-		addListener(SWT.DefaultSelection, typedListener);
+		addListener(SWT.Selection, new TypedListener(listener));
 	}
 
 	/**
@@ -425,8 +427,6 @@ public class StyledLabel extends Label {
 	 */
 	public void removeSelectionListener(final SelectionListener listener) {
 		if (listener == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-
 		removeListener(SWT.Selection, listener);
-		removeListener(SWT.DefaultSelection, listener);
 	}
 }

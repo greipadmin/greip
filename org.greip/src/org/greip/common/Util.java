@@ -9,6 +9,7 @@
  **/
 package org.greip.common;
 
+import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -139,5 +140,17 @@ public final class Util {
 		if (condition) {
 			r.run();
 		}
+	}
+
+	public static boolean in(final int value, final int... values) {
+		for (final int v : values) {
+			if (v == value) return true;
+		}
+		return false;
+	}
+
+	@SafeVarargs
+	public static <T> boolean in(final T value, final T... values) {
+		return Arrays.asList(values).contains(value);
 	}
 }

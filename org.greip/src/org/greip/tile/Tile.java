@@ -13,12 +13,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseTrackAdapter;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
@@ -37,6 +40,18 @@ import org.greip.decorator.IDecorator;
 import org.greip.markup.HtmlMarkupParser;
 import org.greip.markup.MarkupText;
 
+/**
+ * Instances of this class represent a non-selectable user interface object that
+ * displays a decorator and/or many of text sections.
+ * <dl>
+ * <dt><b>Styles:</b></dt>
+ * <dd>NONE</dd>
+ * <dt><b>Events:</b></dt>
+ * <dd>Selection</dd>
+ * </dl>
+ *
+ * @author Thomas Lorbeer
+ */
 public class Tile extends Composite {
 
 	private class SelectionHandler implements Listener {
@@ -101,14 +116,17 @@ public class Tile extends Composite {
 
 		private void handleMouseMove(final Event event) {
 			final String linkId = getLinkAt(event.x, event.y);
+			final Cursor cursor;
 
 			if (linkId != null) {
-				setCursor(getDisplay().getSystemCursor(SWT.CURSOR_HAND));
+				cursor = getDisplay().getSystemCursor(SWT.CURSOR_HAND);
 			} else if (getDecoratorBounds().contains(event.x, event.y)) {
-				setCursor(decorator.getCursor());
+				cursor = getDecoratorCursor();
 			} else {
-				setCursor(null);
+				cursor = getCursor();
 			}
+
+			showCursor(cursor);
 		}
 	}
 
@@ -129,38 +147,63 @@ public class Tile extends Composite {
 
 	private static class TextDescriptor {
 		public String text;
-		public Alignment alignment;
+		public int alignment;
 		public Font font;
 		public Color foreground;
 		public boolean wrap;
 	}
 
-	private int decoratorAlignment = SWT.LEFT;
-	private int marginHeight = 0;
-	private int marginWidth = 0;
 	private IDecorator decorator;
-	private int decoratorSpacing;
-	private int textSpacing;
+	private int decoratorAlignment = SWT.LEFT;
+
+	private int marginHeight = 10;
+	private int marginWidth = 10;
+	private int decoratorSpacing = 10;
+	private int textSpacing = 5;
+
 	private int borderWidth;
 	private Color borderColor;
 	private int edgeRadius;
+
 	private boolean selected;
-	private boolean showSelection;
+	private boolean highlight;
 	private final SelectionHandler linkHandler = new SelectionHandler();
-	private final List<TextDescriptor> textDescriptors = new ArrayList<>();
+	private final List<TextDescriptor> sections = new ArrayList<>();
 	private final Color[] dimmedBackground = new Color[4];
 
-	public Tile(final Composite parent) {
-		super(parent, SWT.DOUBLE_BUFFERED);
+	private Cursor decoratorCursor;
+	private Cursor cursor;
 
-		if ((getStyle() & SWT.V_SCROLL) > 0) {
-			getVerticalBar().setVisible(false);
-		}
+	/**
+	 * Constructs a new instance of this class given its parent and a style value
+	 * describing its behavior and appearance.
+	 *
+	 * @param parent
+	 *        a composite control which will be the parent of the new instance
+	 *        (cannot be null)
+	 * @param style
+	 *        the style of control to construct (reserved for future use, only
+	 *        SWT.NONE allowed)
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
+	 *            <li>ERROR_INVALID_ARGUMENT - if style is not SWT.NONE</li>
+	 *            </ul>
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the parent</li>
+	 *            </ul>
+	 */
+	public Tile(final Composite parent, final int style) {
+		super(parent, SWT.DOUBLE_BUFFERED | SWT.NO_FOCUS);
+		if (style != SWT.NONE) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 
 		addMouseTrackListener(new MouseTrackAdapter() {
 			@Override
 			public void mouseEnter(final MouseEvent e) {
-				selected = showSelection;
+				selected = highlight;
 				redraw();
 			}
 
@@ -239,7 +282,7 @@ public class Tile extends Composite {
 					final Rectangle decoratorBounds = getDecoratorBounds();
 
 					e.gc.setClipping(decoratorBounds);
-					decorator.doPaint(e.gc, new Point(decoratorBounds.x, decoratorBounds.y));
+					decorator.doPaint(e.gc, decoratorBounds.x, decoratorBounds.y);
 				}
 			}
 		});
@@ -249,17 +292,56 @@ public class Tile extends Composite {
 		addListener(SWT.Dispose, e -> disposeBackgroundColors());
 
 		setBackground(getBackground());
-		setMargins(10, 10, 5, 10);
+		setMargins(10, 10);
 		setDecoratorAlignment(SWT.RIGHT);
 	}
 
-	public int addText(final String text, final Alignment alignment) {
-		return addText(text, alignment, null, null, true);
+	/**
+	 * Adds a new text section to the list of sections. Sections are not
+	 * removeable.
+	 *
+	 * @param text
+	 *        the text content of the section (cannot be null)
+	 * @param alignment
+	 *        the text alignment (SWT.LEFT, SWT.CENTER, SWT.RIGHT and
+	 *        SWT.JUSTIFY)
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the text is null</li>
+	 *            </ul>
+	 */
+	public void addSection(final String text, final int alignment) {
+		addSection(text, alignment, null, null, true);
 	}
 
-	public int addText(final String text, final Alignment alignment, final Font font, final Color foreground, final boolean wrap) {
+	/**
+	 * Adds a new text section to the list of sections. You can remove sections
+	 * by {@link #removeSection(int)}
+	 *
+	 * @param text
+	 *        the text content of the section (cannot be null)
+	 * @param alignment
+	 *        the text alignment (SWT.LEFT, SWT.CENTER, SWT.RIGHT and
+	 *        SWT.JUSTIFY)
+	 * @param font
+	 *        the font to use
+	 * @param foreground
+	 *        the text foreground color
+	 * @param wrap
+	 *        the line wrapping behaviour
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the text is null</li>
+	 *            <li>ERROR_IVALID_ARGUMENT - if the alignment value is
+	 *            invalid</li>
+	 *            </ul>
+	 */
+	public void addSection(final String text, final int alignment, final Font font, final Color foreground, final boolean wrap) {
 		checkWidget();
 		if (text == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (!Util.in(alignment, SWT.LEFT, SWT.RIGHT, SWT.CENTER, Greip.JUSTIFY)) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 
 		final TextDescriptor descriptor = new TextDescriptor();
 		descriptor.text = text;
@@ -268,57 +350,81 @@ public class Tile extends Composite {
 		descriptor.foreground = foreground;
 		descriptor.wrap = wrap;
 
-		textDescriptors.add(descriptor);
-		redraw();
-
-		return textDescriptors.size() - 1;
-	}
-
-	public void clear() {
-		textDescriptors.clear();
-	}
-
-	@Override
-	public Point computeSize(final int wHint, final int hHint, final boolean changed) {
-		final Point size = new Point(0, 0);
-
-		final TextArea[] textAreas = createTextAreas(wHint);
-		final int height = getTotalTextHeight(textAreas);
-		final int width = getMaxTextWidth(textAreas);
-
-		size.x = 2 * (marginWidth + borderWidth);
-		size.y = 2 * (marginHeight + borderWidth);
-
-		final Point decoratorSize = getDecoratorSize();
-
-		if ((decoratorAlignment & SWT.LEFT) > 0 || (decoratorAlignment & SWT.RIGHT) > 0) {
-			size.x += decoratorSize.x + getDecoratorSpacing() + width;
-			size.y += Math.max(decoratorSize.y, height);
-
-		} else if (decoratorAlignment == SWT.CENTER) {
-			final int nonEmptyTextCount = getNonEmptyTextCount();
-
-			size.x += Math.max(decoratorSize.x, width);
-			size.y += decoratorSize.y + height + Math.min(nonEmptyTextCount, 2) * getDecoratorSpacing()
-					- (nonEmptyTextCount >= 2 ? textSpacing : 0);
-
-		} else {
-			size.x += Math.max(decoratorSize.x, width);
-			size.y += decoratorSize.y + getDecoratorSpacing() + height;
-		}
-
-		return size;
-	}
-
-	public Alignment getAlignment(final int index) {
-		return getTextDescriptor(index).alignment;
-	}
-
-	public void setAlignment(final int index, final Alignment alignment) {
-		getTextDescriptor(index).alignment = alignment;
+		sections.add(descriptor);
 		redraw();
 	}
 
+	/**
+	 * Removes the spcified section from the list of sections.
+	 *
+	 * @param index
+	 *        the sections index
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_RANGE - if the index out of range</li>
+	 *            </ul>
+	 */
+	public void removeSection(final int index) {
+		sections.remove(getSection(index));
+		redraw();
+	}
+
+	/**
+	 * Removes all sections from the list of sections.
+	 */
+	public void removeAllSections() {
+		sections.clear();
+	}
+
+	/**
+	 * Returns a value which describes the position of the text in the section.
+	 * The value will be one of <code>SWT.LEFT</code>, <code>SWT.RIGHT</code>,
+	 * <code>SWT.CENTER</code> or <code>Greip.JUSTIFY</code>.
+	 *
+	 * @param index
+	 *        the sections index
+	 *
+	 * @return the alignment
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
+	 *            </ul>
+	 */
+	public int getAlignment(final int index) {
+		return getSection(index).alignment;
+	}
+
+	/**
+	 * Controls how text content in the sction will be displayed. The argument
+	 * should be one of <code>SWT.LEFT</code>, <code>SWT.RIGHT</code>,
+	 * <code>SWT.CENTER</code> or <code>Greip.JUSTIFY</code>.
+	 *
+	 * @param index
+	 *        the sections index
+	 * @param alignment
+	 *        the new alignment
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_IVALID_ARGUMENT - if the alignment value is
+	 *            invalid</li>
+	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
+	 *            </ul>
+	 */
+	public void setAlignment(final int index, final int alignment) {
+		if (!Util.in(alignment, SWT.LEFT, SWT.RIGHT, SWT.CENTER, Greip.JUSTIFY)) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		getSection(index).alignment = alignment;
+		redraw();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see
+	 * org.eclipse.swt.widgets.Control#setBackground(org.eclipse.swt.graphics.
+	 * Color)
+	 */
 	@Override
 	public void setBackground(final Color color) {
 		super.setBackground(color);
@@ -333,38 +439,138 @@ public class Tile extends Composite {
 		dimmedBackground[3] = new Color(display, Util.getDimmedRGB(backgroundRGB, 0.25f));
 	}
 
+	/**
+	 * Returns the color of the border.
+	 *
+	 * @return the color
+	 */
 	public Color getBorderColor() {
 		return borderColor != null ? borderColor : getDisplay().getSystemColor(SWT.COLOR_WIDGET_BORDER);
 	}
 
+	/**
+	 * Defines the color of the border. The border is drawn, if the width is set
+	 * to any value greater than zero. The default value is
+	 * <code>SWT.COLOR_WIDGET_BORDER</code>
+	 *
+	 * @param borderColor
+	 *        the border color
+	 *
+	 * @see #setBorderWidth(int)
+	 * @see #setEdgeRadius(int)
+	 */
 	public void setBorderColor(final Color borderColor) {
 		this.borderColor = borderColor;
 		redraw();
 	}
 
+	/**
+	 * Returns the width of the border.
+	 *
+	 * @return the border width
+	 */
 	@Override
 	public int getBorderWidth() {
 		return borderWidth;
 	}
 
+	/**
+	 * Defines the width of the border.
+	 *
+	 * @param borderWidth
+	 *        the border width (cannot be less then zero)
+	 *
+	 * @exception InvalidArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the border width less then
+	 *            zero</li>
+	 *            </ul>
+	 *
+	 * @see #setBorderColor(Color)
+	 * @see #setEdgeRadius(int)
+	 */
 	public void setBorderWidth(final int borderWith) {
+		if (borderWidth < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		this.borderWidth = borderWith;
 		redraw();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.swt.widgets.Control#getCursor()
+	 */
+	@Override
+	public Cursor getCursor() {
+		return cursor;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see
+	 * org.eclipse.swt.widgets.Control#setCursor(org.eclipse.swt.graphics.Cursor)
+	 */
+	@Override
+	public void setCursor(final Cursor cursor) {
+		this.cursor = cursor;
+	}
+
+	/**
+	 * Returns the current decorator.
+	 *
+	 * @return the decorator
+	 */
 	public IDecorator getDecorator() {
 		return decorator;
 	}
 
+	/**
+	 * Sets the tiles decorator. A decorator is a graphical component (e.g.
+	 * picture or visual counter).
+	 *
+	 * @param decorator
+	 *        the decorator instance or <code>null</code> if no decorator should
+	 *        be use
+	 */
 	public void setDecorator(final IDecorator decorator) {
 		this.decorator = decorator;
 		redraw();
 	}
 
+	/**
+	 * Returns a value which describes the position of the decorator.
+	 *
+	 * @return the alignment
+	 */
 	public int getDecoratorAlignment() {
 		return decoratorAlignment;
 	}
 
+	/**
+	 * Controls how decorator amd text sections will be displayed in the control.
+	 * The argument should be on of these styles or style combinations:
+	 * <ul>
+	 * <li>SWT.LEFT</li>
+	 * <li>SWT.RIGHT</li>
+	 * <li>SWT.TOP</li>
+	 * <li>SWT.BOTTOM</li>
+	 * <li>SWT.CENTER</li>
+	 * <li>SWT.LEFT, SWT.TOP</li>
+	 * <li>SWT.LEFT, SWT.BOTTOM</li>
+	 * <li>SWT.RIGHT, SWT.TOP</li>
+	 * <li>SWT.RIGHT, SWT.BOTTOM</li>
+	 * </ul>
+	 * <p>
+	 * The default is SWT.LEFT.
+	 *
+	 * @param alignment
+	 *        the alignment
+	 *
+	 * @exception InvalidArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the alignemnt style is
+	 *            wrong</li>
+	 *            </ul>
+	 */
 	public void setDecoratorAlignment(final int alignment) {
 		switch (alignment) {
 			case SWT.LEFT:
@@ -385,97 +591,431 @@ public class Tile extends Composite {
 		}
 	}
 
+	/**
+	 * Returns the decorators cursor or <code>null</code> if not specified.
+	 *
+	 * @return the cursor
+	 */
+	public Cursor getDecoratorCursor() {
+		return decoratorCursor == null ? getCursor() : decoratorCursor;
+	}
+
+	/**
+	 * Sets the decorators cursor to the cursor specified by the argument, or to
+	 * the default cursor if the argument is null.
+	 * <p>
+	 * When the mouse pointer passes over the decorator its appearance is changed
+	 * to the specified cursor.
+	 *
+	 * @param cursor
+	 *        the new cursor (or null)
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the argument has been
+	 *            disposed</li>
+	 *            </ul>
+	 */
+	public void setDecoratorCursor(final Cursor cursor) {
+		if (cursor != null && cursor.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		this.decoratorCursor = cursor;
+	}
+
+	/**
+	 * Returns the spacing between decorator and text sections.
+	 *
+	 * @return the spacing in pixels
+	 */
+	public int getDecoratorSpacing() {
+		return decoratorSpacing;
+	}
+
+	/**
+	 * Defines the spacing between decorator and text sections.
+	 *
+	 * @param decoratorSpacing
+	 *        the spacing in pixels
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the spacing value less than
+	 *            zero</li>
+	 *            </ul>
+	 */
+	public void setDecoratorSpacing(final int decoratorSpacing) {
+		if (decoratorSpacing < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		this.decoratorSpacing = decoratorSpacing;
+		redraw();
+	}
+
+	/**
+	 * Gets the radius of the rounded edges.
+	 *
+	 * @return the radius
+	 */
 	public int getEdgesRadius() {
 		return edgeRadius;
 	}
 
+	/**
+	 * Defines the radius of the rounded edges if the control shows a border
+	 * line.
+	 *
+	 * @param edgeRadius
+	 *        the radius of the rounded edges
+	 *
+	 * @exception InvalidArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the edge radius less then
+	 *            zero</li>
+	 *            </ul>
+	 *
+	 * @see #setBorderColor(Color)
+	 * @see #setBorderWidth(int)
+	 */
 	public void setEdgeRadius(final int edgeRadius) {
+		if (edgeRadius < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		this.edgeRadius = edgeRadius;
 		redraw();
 	}
 
+	/**
+	 * Return the font used to be paint the sections textual content.
+	 *
+	 * @param index
+	 * @return
+	 */
 	public Font getFont(final int index) {
-		final Font font = getTextDescriptor(index).font;
+		final Font font = getSection(index).font;
 		return font == null ? getFont() : font;
 	}
 
+	/**
+	 * Sets the font for the text content of the section. The default font is
+	 * {@link #getFont()}.
+	 *
+	 * @param index
+	 *        the sections index
+	 * @param font
+	 *        the font
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the font has been disposed</li>
+	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
+	 *            </ul>
+	 */
 	public void setFont(final int index, final Font font) {
-		getTextDescriptor(index).font = font;
+		if (font != null && font.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		getSection(index).font = font;
 		redraw();
 	}
 
+	/**
+	 * Returns the foreground color wich is used to paint textual content.
+	 *
+	 * @param index
+	 *        the sections index
+	 *
+	 * @return the foreground color
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
+	 *            </ul>
+	 */
 	public Color getForeground(final int index) {
-		final Color foreground = getTextDescriptor(index).foreground;
+		final Color foreground = getSection(index).foreground;
 		return foreground == null ? getForeground() : foreground;
 	}
 
+	/**
+	 * Defines the foreground color wich is used to paint textual content.
+	 *
+	 * @param index
+	 *        the sections index
+	 * @param foreground
+	 *        the foreground color
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the color has been
+	 *            disposed</li>
+	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
+	 *            </ul>
+	 */
 	public void setForeground(final int index, final Color foreground) {
-		getTextDescriptor(index).foreground = foreground;
+		if (foreground != null && foreground.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		getSection(index).foreground = foreground;
 		redraw();
 	}
 
-	public int[] getMargins() {
-		return new int[] { marginHeight, marginWidth, textSpacing, decoratorSpacing };
+	/**
+	 * Returns <code>true</code> if highlighting on mouse hover is enabled,
+	 * otherwise <code>false</code>.
+	 *
+	 * @return the highlighting state
+	 */
+	public boolean isHighlight() {
+		return highlight;
 	}
 
-	public void setMargins(final int marginHeight, final int marginWidth, final int textSpacing, final int decoratorSpacing) {
+	/**
+	 * Enables or disables the mouse hover effect.
+	 *
+	 * @param highlight
+	 *        <code>true</code> if highlighting on mouse hover is enabled,
+	 *        otherwise <code>false</code>.
+	 */
+	public void setHighlight(final boolean highlight) {
+		this.highlight = highlight;
+		redraw();
+	}
+
+	/**
+	 * Returns the controls margin width and height. The x coordinate of the
+	 * result is the width and the y coordinate is the height.
+	 *
+	 * @return the margins
+	 */
+	public Point getMargins() {
+		return new Point(marginWidth, marginHeight);
+	}
+
+	/**
+	 * Sets the controls margin height and width. The margin is the distance
+	 * between border and the controls content.
+	 *
+	 * @param marginWidth
+	 *        the margin width
+	 * @param marginHeight
+	 *        the margin height
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the margin width or height less
+	 *            than zero</li>
+	 *            </ul>
+	 */
+	public void setMargins(final int marginWidth, final int marginHeight) {
+		if (marginHeight < 0 || marginWidth < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		this.marginHeight = marginHeight;
 		this.marginWidth = marginWidth;
-		this.decoratorSpacing = decoratorSpacing;
-		this.textSpacing = textSpacing;
-
 		redraw();
 	}
 
-	public boolean isShowSelection() {
-		return showSelection;
-	}
-
-	public void setShowSelection(final boolean showSelection) {
-		this.showSelection = showSelection;
-		redraw();
-	}
-
+	/**
+	 * Returns the sections textual content.
+	 *
+	 * @param index
+	 *        the sections index
+	 *
+	 * @return the text content
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
+	 *            </ul>
+	 */
 	public String getText(final int index) {
-		return getTextDescriptor(index).text;
+		return getSection(index).text;
 	}
 
+	/**
+	 * Sets the textual content for the specified text section.
+	 *
+	 * @param index
+	 *        the sections index
+	 * @param text
+	 *        the new text content (null not allowed)
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
+	 *            </ul>
+	 */
 	public void setText(final int index, final String text) {
 		if (text == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 
-		getTextDescriptor(index).text = text;
+		getSection(index).text = text;
 		redraw();
 	}
 
+	/**
+	 * Returns then spacing between two text sections.
+	 *
+	 * @return the spacing in pixels
+	 */
+	public int getTextSpacing() {
+		return textSpacing;
+	}
+
+	/**
+	 * Defines the spacing between two text sections.
+	 *
+	 * @param textSpacing
+	 *        the spacing in pixels
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the spacing value less than
+	 *            zero</li>
+	 *            </ul>
+	 */
+	public void setTextSpacing(final int textSpacing) {
+		if (decoratorSpacing < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		this.textSpacing = textSpacing;
+		redraw();
+	}
+
+	/**
+	 * Returns the current line wrap behaviour at the spcified text section.
+	 *
+	 * @param index
+	 *        the sections index
+	 *
+	 * @return returns <code>true</code> if line wrap behaviour enabled,
+	 *         otherwise <code>false</code>.
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
+	 *            </ul>
+	 */
 	public boolean isWrap(final int index) {
-		return getTextDescriptor(index).wrap;
+		return getSection(index).wrap;
 	}
 
+	/**
+	 * Defines the line wrap behaviour at the specified text section.
+	 *
+	 * @param index
+	 *        the sections index
+	 * @param wrap
+	 *        <code>true</code> if line wrap enabled, <code>false</code>
+	 *        otherwise.
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
+	 *            </ul>
+	 */
 	public void setWrap(final int index, final boolean wrap) {
-		getTextDescriptor(index).wrap = wrap;
+		getSection(index).wrap = wrap;
 		redraw();
 	}
 
+	/**
+	 * Adds the listener to the collection of listeners who will be notified when
+	 * a link is selected by the user, by sending it one of the messages defined
+	 * in the <code>SelectionListener</code> interface.
+	 * <p>
+	 * <code>widgetSelected</code> is called when a link is selected by the user.
+	 * The data member of the event contains the link object.
+	 * <code>widgetDefaultSelected</code> is never called.
+	 * </p>
+	 *
+	 * @param listener
+	 *        the listener which should be notified
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+	 *            </ul>
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
+	 *
+	 * @see SelectionListener
+	 * @see #removeSelectionListener
+	 * @see SelectionEvent
+	 */
 	public void addSelectionListener(final SelectionListener listener) {
 		if (listener == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		addListener(SWT.Selection, new TypedListener(listener));
 	}
 
+	/**
+	 * Removes the listener from the collection of listeners who will be notified
+	 * when a link is selected by the user.
+	 *
+	 * @param listener
+	 *        the listener which should no longer be notified
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+	 *            </ul>
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
+	 *
+	 * @see SelectionListener
+	 * @see #addSelectionListener
+	 */
 	public void removeSelectionListener(final SelectionListener listener) {
 		if (listener == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		removeListener(SWT.Selection, listener);
 	}
 
-	private TextDescriptor getTextDescriptor(final int index) {
-		if (index < 0 || index >= textDescriptors.size()) SWT.error(SWT.ERROR_INVALID_RANGE);
-		return textDescriptors.get(index);
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.swt.widgets.Control#computeSize(int, int, boolean)
+	 */
+	@Override
+	public Point computeSize(final int wHint, final int hHint, final boolean changed) {
+		final Point size = new Point(0, 0);
+
+		final TextArea[] textAreas = createTextAreas(wHint);
+		final int height = getTotalTextHeight(textAreas);
+		final int width = getMaxTextWidth(textAreas);
+
+		size.x = 2 * (marginWidth + borderWidth);
+		size.y = 2 * (marginHeight + borderWidth);
+
+		final Point decoratorSize = getDecoratorSize();
+
+		if ((decoratorAlignment & SWT.LEFT) > 0 || (decoratorAlignment & SWT.RIGHT) > 0) {
+			size.x += decoratorSize.x + getEffectiveDecoratorSpacing() + width;
+			size.y += Math.max(decoratorSize.y, height);
+
+		} else if (decoratorAlignment == SWT.CENTER) {
+			final int nonEmptyTextCount = getNonEmptyTextCount();
+
+			size.x += Math.max(decoratorSize.x, width);
+			size.y += decoratorSize.y + height + Math.min(nonEmptyTextCount, 2) * getEffectiveDecoratorSpacing()
+					- (nonEmptyTextCount >= 2 ? textSpacing : 0);
+
+		} else {
+			size.x += Math.max(decoratorSize.x, width);
+			size.y += decoratorSize.y + getEffectiveDecoratorSpacing() + height;
+		}
+
+		return size;
+	}
+
+	private void showCursor(final Cursor cursor) {
+		super.setCursor(cursor);
+	}
+
+	private TextDescriptor getSection(final int index) {
+		if (index < 0 || index >= sections.size()) SWT.error(SWT.ERROR_INVALID_RANGE);
+		return sections.get(index);
 	}
 
 	private int computeMaxTextWidth(final int maxWidth) {
 		int width = maxWidth - 2 * marginWidth;
 
 		if ((decoratorAlignment & SWT.LEFT) > 0 || (decoratorAlignment & SWT.RIGHT) > 0) {
-			width -= getDecoratorSize().x + getDecoratorSpacing();
+			width -= getDecoratorSize().x + getEffectiveDecoratorSpacing();
 		}
 
 		return Math.max(10, width - 2 * borderWidth);
@@ -486,13 +1026,13 @@ public class Tile extends Composite {
 		final Point pos = new Point(0, 0);
 
 		if ((decoratorAlignment & SWT.LEFT) > 0) {
-			pos.x = marginWidth + decoratorSize.x + getDecoratorSpacing() + borderWidth;
+			pos.x = marginWidth + decoratorSize.x + getEffectiveDecoratorSpacing() + borderWidth;
 		} else {
 			pos.x = marginWidth + borderWidth;
 		}
 
 		if (decoratorAlignment == SWT.TOP) {
-			pos.y = marginHeight + decoratorSize.y + getDecoratorSpacing() + borderWidth;
+			pos.y = marginHeight + decoratorSize.y + getEffectiveDecoratorSpacing() + borderWidth;
 		} else {
 			pos.y = marginHeight + borderWidth;
 		}
@@ -508,7 +1048,7 @@ public class Tile extends Composite {
 	}
 
 	private TextArea[] createTextAreas(final int wHint) {
-		final TextArea[] textAreas = new TextArea[textDescriptors.size()];
+		final TextArea[] textAreas = new TextArea[sections.size()];
 		final Point decoratorSize = getDecoratorSize();
 
 		for (int i = 0; i < textAreas.length; i++) {
@@ -571,7 +1111,7 @@ public class Tile extends Composite {
 		} else if (decoratorAlignment == SWT.CENTER) {
 			x = (size.width - 2 * marginWidth - decoratorSize.x) / 2 + marginWidth;
 			y = marginHeight + borderWidth;
-			if (!textDescriptors.isEmpty()) {
+			if (!sections.isEmpty()) {
 				final int height = createTextArea(0, size.width).getBounds().height;
 				y += height + (height == 0 ? 0 : decoratorSpacing);
 			}
@@ -597,7 +1137,7 @@ public class Tile extends Composite {
 		return hasDecorator() ? decorator.getSize() : new Point(0, 0);
 	}
 
-	private int getDecoratorSpacing() {
+	private int getEffectiveDecoratorSpacing() {
 		return hasDecorator() && hasAnyText() ? decoratorSpacing : 0;
 	}
 
@@ -626,18 +1166,18 @@ public class Tile extends Composite {
 	}
 
 	private boolean hasAnyText() {
-		for (final TextDescriptor descriptor : textDescriptors) {
+		for (final TextDescriptor descriptor : sections) {
 			if (!descriptor.text.isEmpty()) {
 				return true;
 			}
 		}
-		return !textDescriptors.isEmpty();
+		return !sections.isEmpty();
 	}
 
 	private int getNonEmptyTextCount() {
-		int count = textDescriptors.size();
+		int count = sections.size();
 
-		for (final TextDescriptor descriptor : textDescriptors) {
+		for (final TextDescriptor descriptor : sections) {
 			if (descriptor.text == null || descriptor.text.isEmpty()) {
 				count--;
 			}

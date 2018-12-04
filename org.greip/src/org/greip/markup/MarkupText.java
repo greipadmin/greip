@@ -17,13 +17,13 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.TextLayout;
 import org.eclipse.swt.graphics.TextStyle;
+import org.greip.common.Greip;
 import org.greip.common.Util;
-import org.greip.tile.Alignment;
 
 public class MarkupText {
 
 	private final Device device;
-	private Alignment alignment = Alignment.Left;
+	private int alignment = SWT.LEFT;
 	private final Map<Point, String> links = new HashMap<>();
 	private Font font;
 	private Color foreground;
@@ -40,8 +40,8 @@ public class MarkupText {
 
 	public void layout(final String markupText, final int maxWidth, final int maxHeight) {
 		textLayout.setWidth(maxWidth == SWT.DEFAULT ? SWT.DEFAULT : Math.max(maxWidth, 1));
-		textLayout.setAlignment(getAlignment().style);
-		textLayout.setJustify(getAlignment() == Alignment.Justify);
+		textLayout.setAlignment(getAlignment());
+		textLayout.setJustify(getAlignment() == Greip.JUSTIFY);
 		links.clear();
 
 		String plainText;
@@ -90,11 +90,11 @@ public class MarkupText {
 		}
 	}
 
-	public Alignment getAlignment() {
+	public int getAlignment() {
 		return alignment;
 	}
 
-	public void setAlignment(final Alignment alignment) {
+	public void setAlignment(final int alignment) {
 		this.alignment = alignment;
 	}
 
