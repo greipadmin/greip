@@ -26,6 +26,12 @@ The StyledLabel widget represents a label with text formatting. (_[read more...]
 
 ![](https://github.com/greipadmin/greip/raw/master/wiki/StyledLabel.png)
 
+
+## Tile
+The Tile widget represents a graphical element (eg. picture, chart etc.) and many formatted text sections. (_[read more...](https://github.com/greipadmin/greip/wiki/Tile)_)
+
+![](https://github.com/greipadmin/greip/raw/master/wiki/Tile.png)
+
 # Localization
 All widgets are fully localized in a separate fragment. You can add more localizations by creating your own localization fragment.
 
