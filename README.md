@@ -28,7 +28,7 @@ The StyledLabel widget represents a label with text formatting. (_[read more...]
 
 
 ## Tile
-The Tile widget represents a graphical element (e.g. picture, chart etc.) repreented by a decorator and many formatted text sections. (_[read more...](https://github.com/greipadmin/greip/wiki/Tile)_)
+The Tile widget represents a graphical element (e.g. picture, chart etc.) represented by a decorator and many formatted text sections. (_[read more...](https://github.com/greipadmin/greip/wiki/Tile)_)
 
 ![](https://github.com/greipadmin/greip/raw/master/wiki/Tile.png)
 
