@@ -103,6 +103,13 @@ class Formula {
 		return BigDecimal.valueOf(getDefaultDecimalFormat().parse(token.replace(NEGATE, '-')).doubleValue());
 	}
 
+	public String processAction(final String actions) throws ParseException, TooManyDigitsException {
+		for (final char c : actions.toCharArray()) {
+			processAction(c);
+		}
+		return result;
+	}
+
 	public String processAction(final char action) throws ParseException, TooManyDigitsException {
 		return process(String.valueOf(action).replace('/', DIVIDE).replace('*', MULTIPLY).charAt(0));
 	}
@@ -131,8 +138,9 @@ class Formula {
 			case '=':
 				if (!calculated) {
 					formula.append(result);
+					calculate();
+					formula.setLength(0);
 				}
-				calculate();
 				break;
 
 			case SWT.BS:
@@ -141,8 +149,13 @@ class Formula {
 						removeLastFormulaToken();
 						calculated = false;
 					}
-				} else if (!calculated && !result.isEmpty()) {
-					result = result.substring(0, result.length() - 1);
+				} else if (!calculated) {
+					if (!result.isEmpty()) {
+						result = result.substring(0, result.length() - 1);
+					}
+					if (formula.length() == 0 && result.isEmpty()) {
+						calculate();
+					}
 				}
 				break;
 
@@ -164,10 +177,14 @@ class Formula {
 				if (!calculated) {
 					formula.append(result);
 				}
-				if (lastCharIsOperator() && formula.length() > 0) {
-					formula.deleteCharAt(formula.length() - 1);
+				if (formula.length() == 0 && calculated) {
+					formula.append(getDecimalFormat().parse(result));
 				} else {
-					calculate();
+					if (lastCharIsOperator() && formula.length() > 0) {
+						formula.deleteCharAt(formula.length() - 1);
+					} else {
+						calculate();
+					}
 				}
 				formula.append(action);
 				break;
@@ -176,6 +193,14 @@ class Formula {
 			case 'C':
 				formula.setLength(0);
 				calculate();
+				break;
+
+			case 'e':
+			case 'E':
+				result = "";
+				if (formula.length() == 0) {
+					calculate();
+				}
 				break;
 
 			default:
@@ -221,7 +246,7 @@ class Formula {
 	}
 
 	public boolean isLegalAction(final char action) {
-		return ("+-/*%0123456789=cC" + SIGN + MULTIPLY + DIVIDE + SWT.CR + SWT.BS).indexOf(action) != -1 || action == decimalSeparator;
+		return ("+-/*%0123456789=cCeE" + SIGN + MULTIPLY + DIVIDE + SWT.CR + SWT.BS).indexOf(action) != -1 || action == decimalSeparator;
 	}
 
 	public void setDecimalFormat(final DecimalFormat format) {

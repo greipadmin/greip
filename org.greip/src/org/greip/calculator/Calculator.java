@@ -25,6 +25,7 @@ import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -37,7 +38,7 @@ import org.greip.nls.Messages;
 /**
  * Instances of this class represent a calculator. Typically a calculator is
  * used in combination with an text widget. In this case use
- * <code>Calculator</code> and {@link CalculatorTextAdapter}.
+ * <code>Calculator</code> in combination with {@link CalculatorTextAdapter}.
  *
  * @see CalculatorTextAdapter
  *
@@ -95,6 +96,8 @@ public final class Calculator extends Composite {
 	private BigDecimal value = BigDecimal.ZERO;
 	private Color resultBackground;
 	private Color resultForeground;
+
+//	private BigDecimal memory = BigDecimal.ZERO;
 
 	/**
 	 * Constructs a new instance of this class given its parent.
@@ -155,15 +158,31 @@ public final class Calculator extends Composite {
 	}
 
 	private void createButtons() {
-		new Label(this, SWT.LEFT).setLayoutData(GridDataFactory.fillDefaults().span(3, 1).create());
-		createSmallButton('\u2715', 'C', 3);
-		createSmallButton('\u2190', SWT.BS, 0);
+//		createSmallButton("MC", 'c', 0, SWT.COLOR_DARK_RED);
+//		createSmallButton("MR", 'r', 0, SWT.COLOR_DARK_RED);
+//		createSmallButton("MS", 's', 0, SWT.COLOR_DARK_RED);
+//		createSmallButton("M+", '+', 3, SWT.COLOR_DARK_RED);
+//		createSmallButton("M-", '-', 0, SWT.COLOR_DARK_RED);
+
+		createSmallButton("\u2190", SWT.BS, 0, SWT.COLOR_BLACK);
+		createSmallButton("CE", 'E', 0, SWT.COLOR_BLACK);
+		createSmallButton("C", 'C', 0, SWT.COLOR_BLACK);
+		createSmallButton("(", '(', 3, SWT.COLOR_BLACK).setVisible(false);
+		createSmallButton(")", ')', 0, SWT.COLOR_BLACK).setVisible(false);
+
+		createSpacer();
+
 		createButtonsFor('7', '8', '9', SPACER, Formula.DIVIDE, '%');
 		createButtonsFor('4', '5', '6', SPACER, Formula.MULTIPLY, Formula.SIGN);
 		createButtonsFor('1', '2', '3', SPACER, '-');
 		createButton('=', 1, 2, 0);
 		createButton('0', 2, 1, 0);
 		createButtonsFor(',', SPACER, '+');
+	}
+
+	private void createSpacer() {
+		final Label lbl = new Label(this, SWT.LEFT);
+		lbl.setLayoutData(GridDataFactory.fillDefaults().span(5, 1).hint(3, 3).create());
 	}
 
 	private void createButtonsFor(final char... actions) {
@@ -195,10 +214,66 @@ public final class Calculator extends Composite {
 		return btn;
 	}
 
-	private void createSmallButton(final char text, final char action, final int indent) {
-		final Button btn = createButton(String.valueOf(text), action);
+//	private void processMemoryAction(final char action) {
+//		final Formula f = new Formula();
+//		f.setDecimalFormat(formula.getDecimalFormat());
+//
+//		switch (action) {
+//			case 'c':
+//				memory = BigDecimal.ZERO;
+//				break;
+//			case 'r':
+//				String text;
+//				String currentText = lblResult.getText();
+//				do {
+//					text = currentText;
+//					processAction(SWT.BS);
+//					currentText = lblResult.getText();
+//				} while (!currentText.equals(text) && !currentText.isEmpty());
+//
+//				f.init(memory);
+//				for (final char c : f.format().toCharArray()) {
+//					processAction(c);
+//				}
+//				break;
+//			case 's':
+//				f.init(BigDecimal.ZERO);
+//				try {
+//					memory = (BigDecimal) formula.getDecimalFormat().parse(lblResult.getText());
+//				} catch (final ParseException e1) {
+//					try {
+//						final String result = f.processAction(lblResult.getText() + "=");
+//						memory = (BigDecimal) formula.getDecimalFormat().parse(result, new ParsePosition(0));
+//					} catch (ParseException | TooManyDigitsException e) {
+//					}
+//				}
+//				break;
+//			case '+':
+//				memory.add(calculateFormula());
+//				break;
+//			case '-':
+//				memory.subtract(calculateFormula());
+//				break;
+//			default:
+//		}
+//	}
+
+	private Button createSmallButton(final String text, final char action, final int hIndent, final int color) {
+		final Button btn = createButton("", action);
+
+		btn.setForeground(getDisplay().getSystemColor(color));
 		btn.setLayoutData(
-				GridDataFactory.fillDefaults().grab(true, true).minSize(30, SWT.DEFAULT).hint(SWT.DEFAULT, 19).indent(indent, 0).create());
+				GridDataFactory.fillDefaults().grab(true, true).minSize(30, SWT.DEFAULT).hint(SWT.DEFAULT, 19).indent(hIndent, 0).create());
+
+		Util.applyDerivedFont(btn, -3, SWT.NONE);
+
+		btn.addListener(SWT.Paint, e -> {
+			final Point size = btn.getSize();
+			final Point textSize = e.gc.textExtent(text, SWT.TRANSPARENT);
+			e.gc.drawText(text, (size.x - textSize.x) / 2, (size.y - textSize.y) / 2, true);
+		});
+
+		return btn;
 	}
 
 	private void processAction(final char action) {
@@ -232,8 +307,12 @@ public final class Calculator extends Composite {
 	}
 
 	private void propagateValue() {
-		value = (BigDecimal) formula.getDecimalFormat().parse(lblResult.getText(), new ParsePosition(0));
+		value = calculateFormula();
 		notifyListeners(SWT.Selection, new Event());
+	}
+
+	private BigDecimal calculateFormula() {
+		return (BigDecimal) formula.getDecimalFormat().parse(lblResult.getText(), new ParsePosition(0));
 	}
 
 	/**
