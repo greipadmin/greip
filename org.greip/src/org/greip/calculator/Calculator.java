@@ -97,7 +97,7 @@ public final class Calculator extends Composite {
 	private Color resultBackground;
 	private Color resultForeground;
 
-//	private BigDecimal memory = BigDecimal.ZERO;
+	private Label lblMemory;
 
 	/**
 	 * Constructs a new instance of this class given its parent.
@@ -134,35 +134,43 @@ public final class Calculator extends Composite {
 	private void createResultPanel() {
 		resultPanel = new Composite(this, SWT.BORDER);
 		resultPanel.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 5, 1));
-		resultPanel.setLayout(GridLayoutFactory.swtDefaults().margins(3, 1).spacing(0, 0).create());
+		resultPanel.setLayout(GridLayoutFactory.swtDefaults().margins(3, 1).spacing(0, 0).numColumns(2).create());
 		resultPanel.setBackground(getResultBackground());
 
-		new Label(this, SWT.NONE).setLayoutData(GridDataFactory.fillDefaults().hint(4, 2).span(5, 1).create());
-
-		lblFormula = createInfoLabel(resultPanel);
+		lblFormula = createInfoLabel(resultPanel, 2);
 		Util.applyDerivedFont(lblFormula, -2, SWT.NONE);
 
-		lblResult = createInfoLabel(resultPanel);
+		createMemoryIndicator();
+
+		lblResult = createInfoLabel(resultPanel, 1);
 		lblResult.setText("0"); //$NON-NLS-1$
 		Util.applyDerivedFont(lblResult, 2, SWT.BOLD);
 	}
 
-	private Label createInfoLabel(final Composite parent) {
+	private void createMemoryIndicator() {
+		lblMemory = new Label(resultPanel, SWT.RIGHT);
+		lblMemory.setLayoutData(new GridData(SWT.LEFT, SWT.BOTTOM, false, false, 1, 1));
+		lblMemory.setText("M");
+		Util.applyDerivedFont(lblMemory, -3, SWT.NONE);
+	}
+
+	private Label createInfoLabel(final Composite parent, final int hSpan) {
 		final Label lbl = new Label(parent, SWT.RIGHT);
 
-		lbl.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		lbl.setBackground(getResultBackground());
+		lbl.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, hSpan, 1));
 		lbl.setForeground(getResultForeground());
 
 		return lbl;
 	}
 
 	private void createButtons() {
-//		createSmallButton("MC", 'c', 0, SWT.COLOR_DARK_RED);
-//		createSmallButton("MR", 'r', 0, SWT.COLOR_DARK_RED);
-//		createSmallButton("MS", 's', 0, SWT.COLOR_DARK_RED);
-//		createSmallButton("M+", '+', 3, SWT.COLOR_DARK_RED);
-//		createSmallButton("M-", '-', 0, SWT.COLOR_DARK_RED);
+		createSpacer();
+
+		createSmallButton("MC", Formula.MC, 0, SWT.COLOR_DARK_RED);
+		createSmallButton("MR", Formula.MR, 0, SWT.COLOR_DARK_RED);
+		createSmallButton("MS", Formula.MS, 0, SWT.COLOR_DARK_RED);
+		createSmallButton("M+", Formula.M_PLUS, 3, SWT.COLOR_DARK_RED);
+		createSmallButton("M-", Formula.M_MINUS, 0, SWT.COLOR_DARK_RED);
 
 		createSmallButton("\u2190", SWT.BS, 0, SWT.COLOR_BLACK);
 		createSmallButton("CE", 'E', 0, SWT.COLOR_BLACK);
@@ -214,50 +222,6 @@ public final class Calculator extends Composite {
 		return btn;
 	}
 
-//	private void processMemoryAction(final char action) {
-//		final Formula f = new Formula();
-//		f.setDecimalFormat(formula.getDecimalFormat());
-//
-//		switch (action) {
-//			case 'c':
-//				memory = BigDecimal.ZERO;
-//				break;
-//			case 'r':
-//				String text;
-//				String currentText = lblResult.getText();
-//				do {
-//					text = currentText;
-//					processAction(SWT.BS);
-//					currentText = lblResult.getText();
-//				} while (!currentText.equals(text) && !currentText.isEmpty());
-//
-//				f.init(memory);
-//				for (final char c : f.format().toCharArray()) {
-//					processAction(c);
-//				}
-//				break;
-//			case 's':
-//				f.init(BigDecimal.ZERO);
-//				try {
-//					memory = (BigDecimal) formula.getDecimalFormat().parse(lblResult.getText());
-//				} catch (final ParseException e1) {
-//					try {
-//						final String result = f.processAction(lblResult.getText() + "=");
-//						memory = (BigDecimal) formula.getDecimalFormat().parse(result, new ParsePosition(0));
-//					} catch (ParseException | TooManyDigitsException e) {
-//					}
-//				}
-//				break;
-//			case '+':
-//				memory.add(calculateFormula());
-//				break;
-//			case '-':
-//				memory.subtract(calculateFormula());
-//				break;
-//			default:
-//		}
-//	}
-
 	private Button createSmallButton(final String text, final char action, final int hIndent, final int color) {
 		final Button btn = createButton("", action);
 
@@ -292,6 +256,7 @@ public final class Calculator extends Composite {
 		}
 
 		showFormula();
+		lblMemory.setVisible(formula.getMemory() != null);
 		txtFocus.setFocus();
 	}
 

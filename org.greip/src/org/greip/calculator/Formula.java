@@ -27,18 +27,26 @@ class Formula {
 	static final char DIVIDE = '\u00F7';
 	static final char MULTIPLY = '\u00D7';
 
+	static final char MS = '\u0001';
+	static final char MR = '\u0002';
+	static final char MC = '\u0003';
+	static final char M_PLUS = '\u0004';
+	static final char M_MINUS = '\u0005';
+
 	private final Map<String, BinaryOperator<BigDecimal>> operations = new HashMap<>();
 	private final String operators = "+-%" + DIVIDE + MULTIPLY;
 	private final StringBuilder formula = new StringBuilder();
+	private BigDecimal memory;
 
 	public static DecimalFormat getDefaultDecimalFormat() {
 		return new DecimalFormat("#0.##########");
 	}
 
-	private String result;
+	private String result = "";
 	private boolean calculated = true;
 	private DecimalFormat format;
 	private char decimalSeparator;
+	private char lastOperator;
 
 	public Formula() {
 		operations.put("+", BigDecimal::add);
@@ -111,10 +119,21 @@ class Formula {
 	}
 
 	public String processAction(final char action) throws ParseException, TooManyDigitsException {
-		return process(String.valueOf(action).replace('/', DIVIDE).replace('*', MULTIPLY).charAt(0));
+		try {
+			return process(String.valueOf(action).replace('/', DIVIDE).replace('*', MULTIPLY).charAt(0));
+		} catch (final ParseException | TooManyDigitsException e) {
+			throw e;
+		} catch (final Exception e) {
+			formula.setLength(0);
+			throw new TooManyDigitsException();
+		}
 	}
 
 	private String process(final char action) throws ParseException, TooManyDigitsException {
+
+		if (isMemoryAction(action)) {
+			return processMemoryAction(action);
+		}
 
 		if (!isLegalAction(action)) {
 			throw new IllegalArgumentException("unknown action " + action);
@@ -140,6 +159,15 @@ class Formula {
 					formula.append(result);
 					calculate();
 					formula.setLength(0);
+				} else if (lastOperator != 0) {
+					if (!lastCharIsOperator()) {
+						if (formula.length() == 0) {
+							formula.append(getCurrentValueAsString());
+						}
+						formula.append(lastOperator);
+					}
+					formula.append(getCurrentValueAsString());
+					calculate();
 				}
 				break;
 
@@ -175,10 +203,10 @@ class Formula {
 			case MULTIPLY:
 			case DIVIDE:
 				if (!calculated) {
-					formula.append(result);
+					formula.append(getCurrentValueAsString());
 				}
 				if (formula.length() == 0 && calculated) {
-					formula.append(getDecimalFormat().parse(result));
+					formula.append(getCurrentValueAsString());
 				} else {
 					if (lastCharIsOperator() && formula.length() > 0) {
 						formula.deleteCharAt(formula.length() - 1);
@@ -187,6 +215,7 @@ class Formula {
 					}
 				}
 				formula.append(action);
+				lastOperator = action;
 				break;
 
 			case 'c':
@@ -217,6 +246,41 @@ class Formula {
 		return result;
 	}
 
+	private String getCurrentValueAsString() throws ParseException {
+		return getDefaultDecimalFormat().format(getCurrentValue());
+	}
+
+	private String processMemoryAction(final char action) throws ParseException {
+		switch (action) {
+			case MC:
+				memory = null;
+				break;
+			case MR:
+				if (memory != null) {
+					result = getDefaultDecimalFormat().format(memory);
+					calculated = false;
+				}
+				break;
+			case MS:
+				memory = getCurrentValue();
+				break;
+			case M_PLUS:
+				memory = Util.nvl(memory, BigDecimal.ZERO).add(getCurrentValue());
+				break;
+			case M_MINUS:
+				memory = Util.nvl(memory, BigDecimal.ZERO).subtract(getCurrentValue());
+				break;
+			default:
+		}
+
+		return result;
+	}
+
+	private BigDecimal getCurrentValue() throws ParseException {
+		if (!calculated) return toBigDecimal(result);
+		return BigDecimal.valueOf(getDecimalFormat().parse(result).doubleValue());
+	}
+
 	private void removeLastFormulaToken() {
 		final String[] tokens = formula.toString().split(toRegex(operators));
 
@@ -239,21 +303,40 @@ class Formula {
 
 		if (length > 0) {
 			final char c = formula.charAt(length - 1);
-			return (c < '0' || c > '9') && c != ',';
+			return (c < '0' || c > '9') && c != ',' && c != '=';
 		}
 
-		return true;
+		return false;
 	}
 
 	public boolean isLegalAction(final char action) {
 		return ("+-/*%0123456789=cCeE" + SIGN + MULTIPLY + DIVIDE + SWT.CR + SWT.BS).indexOf(action) != -1 || action == decimalSeparator;
 	}
 
-	public void setDecimalFormat(final DecimalFormat format) {
-		this.format = (DecimalFormat) format.clone();
+	private static boolean isMemoryAction(final char action) {
+		return action > '\u0000' && action < '\u0006';
+	}
 
+	public BigDecimal getMemory() {
+		return memory;
+	}
+
+	public void setDecimalFormat(final DecimalFormat format) {
+		BigDecimal value = BigDecimal.ZERO;
+
+		try {
+			if (this.format != null) {
+				value = getCurrentValue();
+			}
+		} catch (final ParseException e) {
+			// ignore
+		}
+
+		this.format = (DecimalFormat) format.clone();
 		this.format.setParseBigDecimal(true);
 		this.decimalSeparator = this.format.getDecimalFormatSymbols().getDecimalSeparator();
+
+		result = this.format.format(value.doubleValue());
 	}
 
 	public DecimalFormat getDecimalFormat() {
@@ -262,12 +345,6 @@ class Formula {
 
 	public void init(final BigDecimal initialValue) {
 		final BigDecimal value = Util.nvl(initialValue, BigDecimal.ZERO);
-
 		result = format.format(value);
-		formula.setLength(0);
-
-		if (!value.equals(BigDecimal.ZERO)) {
-			formula.append(getDefaultDecimalFormat().format(initialValue));
-		}
 	}
 }
