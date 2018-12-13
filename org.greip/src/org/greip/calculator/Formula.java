@@ -38,15 +38,12 @@ class Formula {
 	private final StringBuilder formula = new StringBuilder();
 	private BigDecimal memory;
 
-	public static DecimalFormat getDefaultDecimalFormat() {
-		return new DecimalFormat("#0.##########");
-	}
-
 	private String result = "";
 	private boolean calculated = true;
 	private DecimalFormat format;
 	private char decimalSeparator;
 	private char lastOperator;
+	private DecimalFormat defaultFormat;
 
 	public Formula() {
 		operations.put("+", BigDecimal::add);
@@ -55,8 +52,12 @@ class Formula {
 		operations.put(String.valueOf(DIVIDE), (v1, v2) -> v1.divide(v2, 20, BigDecimal.ROUND_HALF_EVEN));
 		operations.put(String.valueOf(MULTIPLY), BigDecimal::multiply);
 
-		setDecimalFormat(getDefaultDecimalFormat());
+		setDecimalFormat(new DecimalFormat("#0.##########"));
 		init(BigDecimal.ZERO);
+	}
+
+	public DecimalFormat getDefaultDecimalFormat() {
+		return defaultFormat;
 	}
 
 	public String format() {
@@ -66,7 +67,7 @@ class Formula {
 		while (tk.hasMoreTokens()) {
 			final String token = tk.nextToken();
 
-			if (token.startsWith(",")) {
+			if (token.indexOf(decimalSeparator) == 0) {
 				out.append('0');
 			}
 
@@ -80,7 +81,7 @@ class Formula {
 		return out.toString();
 	}
 
-	private void calculate() throws ParseException, TooManyDigitsException {
+	private void calculate() throws ParseException, OverflowException {
 		final StringTokenizer tk = new FormulaTokenizer(formula, operators);
 
 		BigDecimal value = BigDecimal.valueOf(0);
@@ -101,35 +102,37 @@ class Formula {
 		final int maxIntegerDigits = format.getMaximumIntegerDigits();
 
 		if (integerDigits > maxIntegerDigits) {
-			throw new TooManyDigitsException();
+			throw new OverflowException();
 		}
 
 		result = format.format(value);
 	}
 
-	private static BigDecimal toBigDecimal(final String token) throws ParseException {
+	private BigDecimal toBigDecimal(final String token) throws ParseException {
 		return BigDecimal.valueOf(getDefaultDecimalFormat().parse(token.replace(NEGATE, '-')).doubleValue());
 	}
 
-	public String processAction(final String actions) throws ParseException, TooManyDigitsException {
+	public String processAction(final String actions) throws ParseException, OverflowException {
 		for (final char c : actions.toCharArray()) {
 			processAction(c);
 		}
 		return result;
 	}
 
-	public String processAction(final char action) throws ParseException, TooManyDigitsException {
+	public String processAction(final char action) throws ParseException, OverflowException {
 		try {
 			return process(String.valueOf(action).replace('/', DIVIDE).replace('*', MULTIPLY).charAt(0));
-		} catch (final ParseException | TooManyDigitsException e) {
+
+		} catch (final ParseException | OverflowException e) {
 			throw e;
+
 		} catch (final Exception e) {
 			formula.setLength(0);
-			throw new TooManyDigitsException();
+			throw new OverflowException();
 		}
 	}
 
-	private String process(final char action) throws ParseException, TooManyDigitsException {
+	private String process(final char action) throws ParseException, OverflowException {
 
 		if (isMemoryAction(action)) {
 			return processMemoryAction(action);
@@ -247,7 +250,7 @@ class Formula {
 	}
 
 	private String getCurrentValueAsString() throws ParseException {
-		return getDefaultDecimalFormat().format(getCurrentValue());
+		return getDefaultDecimalFormat().format(getCurrentValue()).replace('-', NEGATE);
 	}
 
 	private String processMemoryAction(final char action) throws ParseException {
@@ -335,6 +338,16 @@ class Formula {
 		this.format = (DecimalFormat) format.clone();
 		this.format.setParseBigDecimal(true);
 		this.decimalSeparator = this.format.getDecimalFormatSymbols().getDecimalSeparator();
+
+		defaultFormat = (DecimalFormat) this.format.clone();
+		defaultFormat.setNegativePrefix("-");
+		defaultFormat.setNegativeSuffix("");
+		defaultFormat.setPositivePrefix("");
+		defaultFormat.setPositiveSuffix("");
+		defaultFormat.setMaximumFractionDigits(Integer.MAX_VALUE);
+		defaultFormat.setMaximumIntegerDigits(Integer.MAX_VALUE);
+		defaultFormat.setMinimumFractionDigits(0);
+		defaultFormat.setGroupingUsed(false);
 
 		result = this.format.format(value.doubleValue());
 	}

@@ -250,7 +250,7 @@ public final class Calculator extends Composite {
 			lblResult.setText(Messages.Error);
 			lblResult.setForeground(getDisplay().getSystemColor(SWT.COLOR_RED));
 
-		} catch (final TooManyDigitsException e) {
+		} catch (final OverflowException e) {
 			lblResult.setText(Messages.Overflow);
 			lblResult.setForeground(getDisplay().getSystemColor(SWT.COLOR_RED));
 		}

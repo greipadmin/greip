@@ -9,6 +9,6 @@
  **/
 package org.greip.calculator;
 
-class TooManyDigitsException extends Exception {
-	private static final long serialVersionUID = 1L;
+class OverflowException extends Exception {
+	private static final long serialVersionUID = 5413208333888092846L;
 }
