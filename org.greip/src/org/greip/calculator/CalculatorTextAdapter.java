@@ -12,6 +12,7 @@ package org.greip.calculator;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.text.ParsePosition;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -34,7 +35,7 @@ public class CalculatorTextAdapter {
 
 	public CalculatorTextAdapter(final Text txt) {
 
-		setDecimalFormat(Formula.getDefaultDecimalFormat());
+		setDecimalFormat((DecimalFormat) NumberFormat.getInstance());
 
 		setResultConsumer(value -> {
 			txt.setText(format.format(value));

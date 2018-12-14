@@ -56,11 +56,11 @@ public final class Calculator extends Composite {
 			}),
 		CTRL_MINUS(
 			(e, c) -> e.keyCode == '-' && e.stateMask == SWT.CTRL,
-			(e, c) -> c.processAction('�')),
+			(e, c) -> c.processAction(Formula.SIGN)),
 		CTRL_CR(
 			(e, c) -> e.keyCode == SWT.CR && e.stateMask == SWT.CTRL,
 			(e, c) -> {
-				c.processAction('=');
+				c.processAction(SWT.CR);
 				c.propagateValue();
 			}),
 		DEFAULT_ACTION(

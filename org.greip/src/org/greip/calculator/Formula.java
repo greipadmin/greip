@@ -157,6 +157,12 @@ class Formula {
 
 		switch (action) {
 			case SWT.CR:
+				if (!calculated) {
+					formula.append(result);
+					calculate();
+				}
+				break;
+
 			case '=':
 				if (!calculated) {
 					formula.append(result);
