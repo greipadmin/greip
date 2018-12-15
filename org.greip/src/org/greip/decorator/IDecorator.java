@@ -23,7 +23,7 @@ import org.eclipse.swt.graphics.Point;
 public interface IDecorator {
 
 	/**
-	 * Paint the decorator to the specified GC.
+	 * Paints the decorator to the specified GC.
 	 *
 	 * @param gc
 	 *        the GC

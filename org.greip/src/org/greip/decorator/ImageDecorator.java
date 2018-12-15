@@ -12,6 +12,7 @@ package org.greip.decorator;
 import java.io.InputStream;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -31,11 +32,146 @@ public final class ImageDecorator extends AbstractDecorator {
 	private int idx;
 	private boolean animated;
 	private Point scaleTo = new Point(SWT.DEFAULT, SWT.DEFAULT);
-	private Color background;
 	private Point imageSize = new Point(0, 0);
 
+	/**
+	 * Creates a new instance of the decorator.
+	 *
+	 * @param parent
+	 *        the parent control, <code>null</code> not allowed.
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
+	 *            </ul>
+	 */
 	public ImageDecorator(final Control parent) {
 		super(parent);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.greip.decorator.IDecorator#doPaint(org.eclipse.swt.graphics.GC,
+	 * int, int)
+	 */
+	@Override
+	public synchronized void doPaint(final GC gc, final int x, final int y) {
+		if (images != null) {
+			Util.withResource(new Image(getDisplay(), getScaledImage(idx)), (final Image img) -> gc.drawImage(img, x, y));
+		}
+	}
+
+	/**
+	 * Returns the size of the decorator. The size is calculated by native image
+	 * size or the size defined by {@link #scaleTo(Point)}. If no image is set
+	 * then width and height 0 returned.
+	 *
+	 * @return the size
+	 */
+	@Override
+	public Point getSize() {
+		if (images == null) {
+			return new Point(0, 0);
+		} else if (scaleTo.x == SWT.DEFAULT && scaleTo.y == SWT.DEFAULT) {
+			return imageSize;
+		} else if (scaleTo.x == SWT.DEFAULT) {
+			return new Point(imageSize.x * scaleTo.y / imageSize.y, scaleTo.y);
+		} else if (scaleTo.y == SWT.DEFAULT) {
+			return new Point(scaleTo.x, scaleTo.x * imageSize.y / imageSize.x);
+		}
+		return scaleTo;
+	}
+
+	/**
+	 * Loads an Image from the specified input stream. Throws an error if either
+	 * an error occurs while loading the image, or if the image are not of a
+	 * supported type.
+	 *
+	 * @param stream
+	 *        the input stream to load the images from
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the stream is null</li>
+	 *            </ul>
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_IO - if an IO error occurs while reading from the
+	 *            stream</li>
+	 *            <li>ERROR_INVALID_IMAGE - if the image stream contains invalid
+	 *            data</li>
+	 *            <li>ERROR_UNSUPPORTED_FORMAT - if the image stream contains an
+	 *            unrecognized format</li>
+	 *            </ul>
+	 */
+	public void loadImage(final InputStream stream) {
+		setImages(imageLoader.load(stream));
+	}
+
+	/**
+	 * Loads an Image from the file with the specified name. Throws an error if
+	 * either an error occurs while loading the images, or if the images are not
+	 * of a supported type.
+	 *
+	 * @param filename
+	 *        the name of the file to load the images from
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the file name is null</li>
+	 *            </ul>
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_IO - if an IO error occurs while reading from the
+	 *            file</li>
+	 *            <li>ERROR_INVALID_IMAGE - if the image file contains invalid
+	 *            data</li>
+	 *            <li>ERROR_UNSUPPORTED_FORMAT - if the image file contains an
+	 *            unrecognized format</li>
+	 *            </ul>
+	 */
+	public void loadImage(final String filename) {
+		setImages(imageLoader.load(filename));
+	}
+
+	/**
+	 * Sets the decorators image or removes the current image from decorator if
+	 * image set to <code>null</code>.
+	 *
+	 * @param image
+	 *        the new image
+	 */
+	public synchronized void setImage(final Image image) {
+		if (image == null) {
+			images = null;
+		} else {
+			setImages(image.getImageData());
+		}
+	}
+
+	/**
+	 * Defines the image size.
+	 *
+	 * @param scaleTo
+	 *        the new image size. Use SWT.DEFAULT for native image size. The
+	 *        minimum height and width are 1 pixel.
+	 */
+	public void scaleTo(final Point scaleTo) {
+		if (scaleTo == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (scaleTo.x != -1 && scaleTo.x <= 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		if (scaleTo.y != -1 && scaleTo.y <= 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+
+		this.scaleTo = scaleTo;
+	}
+
+	private synchronized void setImages(final ImageData... imageDatas) {
+		createImages(imageDatas);
+		idx = 0;
+
+		if (!animated) {
+			doAnimate();
+		}
+		getParent().redraw();
 	}
 
 	private void createImages(final ImageData... imageData) {
@@ -61,8 +197,6 @@ public final class ImageDecorator extends AbstractDecorator {
 				if (imageLoader.backgroundPixel != -1) {
 					bgColor = new Color(display, imageData[0].palette.getRGB(imageLoader.backgroundPixel));
 					gc.setBackground(bgColor);
-				} else if (background != null) {
-					gc.setBackground(background);
 				}
 
 				for (int i = 0; i < imageData.length; i++) {
@@ -87,30 +221,6 @@ public final class ImageDecorator extends AbstractDecorator {
 
 			return frameData;
 		});
-	}
-
-	private synchronized void doAnimate() {
-		animated = true;
-
-		getDisplay().timerExec(Math.max(5, images[idx].delayTime) * 10, () -> {
-			if (getParent().isDisposed() || images == null) {
-				animated = false;
-			} else if (images.length == 1) {
-				animated = false;
-				getParent().redraw();
-			} else {
-				idx = ++idx % images.length;
-				doAnimate();
-				getParent().redraw();
-			}
-		});
-	}
-
-	@Override
-	public synchronized void doPaint(final GC gc, final int x, final int y) {
-		if (images != null) {
-			Util.withResource(new Image(getDisplay(), getScaledImage(idx)), (final Image img) -> gc.drawImage(img, x, y));
-		}
 	}
 
 	private ImageData getScaledImage(final int idx) {
@@ -139,51 +249,20 @@ public final class ImageDecorator extends AbstractDecorator {
 		return scaledImages[idx];
 	}
 
-	@Override
-	public Point getSize() {
-		if (images == null) {
-			return new Point(0, 0);
-		} else if (scaleTo.x == SWT.DEFAULT && scaleTo.y == SWT.DEFAULT) {
-			return imageSize;
-		} else if (scaleTo.x == SWT.DEFAULT) {
-			return new Point(imageSize.x * scaleTo.y / imageSize.y, scaleTo.y);
-		} else if (scaleTo.y == SWT.DEFAULT) {
-			return new Point(scaleTo.x, scaleTo.x * imageSize.y / imageSize.x);
-		}
-		return scaleTo;
-	}
+	private synchronized void doAnimate() {
+		animated = true;
 
-	public void loadImage(final InputStream stream) {
-		setImages(imageLoader.load(stream));
-	}
-
-	public void loadImage(final String filename) {
-		setImages(imageLoader.load(filename));
-	}
-
-	public synchronized void setImage(final Image image) {
-		if (image == null) {
-			images = null;
-		} else {
-			setImages(image.getImageData());
-		}
-	}
-
-	private synchronized void setImages(final ImageData... imageDatas) {
-		createImages(imageDatas);
-		idx = 0;
-
-		if (!animated) {
-			doAnimate();
-		}
-		getParent().redraw();
-	}
-
-	public void scaleTo(final Point scaleTo) {
-		this.scaleTo = scaleTo;
-	}
-
-	public void setBackground(final Color background) {
-		this.background = background;
+		getDisplay().timerExec(Math.max(5, images[idx].delayTime) * 10, () -> {
+			if (getParent().isDisposed() || images == null) {
+				animated = false;
+			} else if (images.length == 1) {
+				animated = false;
+				getParent().redraw();
+			} else {
+				idx = ++idx % images.length;
+				doAnimate();
+				getParent().redraw();
+			}
+		});
 	}
 }
