@@ -32,21 +32,19 @@ public final class Util {
 	private static final String ELLIPSES = "..."; //$NON-NLS-1$
 
 	public static Cursor createCursor(final Device device, final Point size, final Point hotspot, final Consumer<GC> painter) {
-
 		final PaletteData palette = new PaletteData(new RGB[] { new RGB(0, 0, 0), new RGB(255, 255, 255) });
-		final Image img = new Image(device, new ImageData(size.x, size.y, 1, palette));
-		final GC gc = new GC(img);
 
-		gc.fillRectangle(0, 0, size.x, size.y);
-		painter.accept(gc);
+		return withResource(new Image(device, new ImageData(size.x, size.y, 1, palette)), img -> {
+			return withResource(new GC(img), gc -> {
+				gc.fillRectangle(0, 0, size.x, size.y);
+				painter.accept(gc);
 
-		final ImageData source = img.getImageData();
-		final ImageData mask = new ImageData(size.x, size.y, 1, palette);
+				final ImageData source = img.getImageData();
+				final ImageData mask = new ImageData(size.x, size.y, 1, palette);
 
-		gc.dispose();
-		img.dispose();
-
-		return new Cursor(device, source, mask, hotspot.x, hotspot.y);
+				return new Cursor(device, source, mask, hotspot.x, hotspot.y);
+			});
+		});
 	}
 
 	public static RGB getDimmedRGB(final RGB rgb, final float brightnessOffset) {
@@ -54,8 +52,11 @@ public final class Util {
 		return new RGB(hsb[0], hsb[1], Math.max(0, Math.min(1.0f, hsb[2] + brightnessOffset)));
 	}
 
-	public static <T> T nvl(final T o1, final T o2) {
-		return o1 == null ? o2 : o1;
+	public static <T> T nvl(final T... o) {
+		for (final T t : o) {
+			if (t != null) return t;
+		}
+		return null;
 	}
 
 	public static String shortenText(final GC gc, final String text, final int maxWidth, final int flags) {
@@ -125,15 +126,11 @@ public final class Util {
 	}
 
 	public static <O> void whenNotNull(final O object, final Consumer<O> c) {
-		if (object != null) {
-			c.accept(object);
-		}
+		whenNotNull(object, () -> c.accept(object));
 	}
 
 	public static <O> void whenNotNull(final O object, final Runnable r) {
-		if (object != null) {
-			r.run();
-		}
+		when(object != null, r);
 	}
 
 	public static void when(final boolean condition, final Runnable r) {
@@ -152,5 +149,11 @@ public final class Util {
 	@SafeVarargs
 	public static <T> boolean in(final T value, final T... values) {
 		return Arrays.asList(values).contains(value);
+	}
+
+	public static <R extends Resource> R checkResource(final R resource, final boolean nullable) {
+		if (!nullable && resource == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (resource != null && resource.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		return resource;
 	}
 }

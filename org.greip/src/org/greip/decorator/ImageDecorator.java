@@ -23,6 +23,13 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.greip.common.Util;
 
+/**
+ * Instances of this class represents a decorator that paints an image. Its
+ * supports all image formats supported by {@link ImageLoader} plus animated
+ * GIFs.
+ *
+ * @author Thomas Lorbeer
+ */
 public final class ImageDecorator extends AbstractDecorator {
 
 	private final ImageLoader imageLoader = new ImageLoader();
@@ -142,6 +149,7 @@ public final class ImageDecorator extends AbstractDecorator {
 	 *        the new image
 	 */
 	public synchronized void setImage(final Image image) {
+		Util.checkResource(image, true);
 		if (image == null) {
 			images = null;
 		} else {

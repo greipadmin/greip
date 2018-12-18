@@ -37,7 +37,7 @@ import org.greip.decorator.ImageDecorator;
  * <p>
  * Note: Only one of HORIZONTAL and VERTICAL may be specified.
  * </p>
- * 
+ *
  * @author Thomas Lorbeer
  */
 public class Separator extends Composite {
@@ -203,7 +203,7 @@ public class Separator extends Composite {
 	@Override
 	public void setBackground(final Color background) {
 		checkWidget();
-		this.background = background;
+		this.background = Util.checkResource(background, true);
 		redraw();
 	}
 
@@ -263,7 +263,7 @@ public class Separator extends Composite {
 	 */
 	public void setLineColor(final Color lineColor) {
 		checkWidget();
-		this.lineColor = lineColor;
+		this.lineColor = Util.checkResource(lineColor, true);
 		redraw();
 	}
 
