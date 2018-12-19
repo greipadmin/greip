@@ -74,14 +74,16 @@ public final class Util {
 	}
 
 	public static int getSimilarColor(final RGB[] rgbs, final RGB rgb) {
-		int minDiff = Integer.MAX_VALUE;
+		final float[] hsb = rgb.getHSB();
+		float minDiff = Float.MAX_VALUE;
 		int idx = 0;
 
-		for (int i = 0; i < rgbs.length; i++) {
-			final int deltaRed = rgbs[i].red - rgb.red;
-			final int deltaGreen = rgbs[i].green - rgb.green;
-			final int deltaBlue = rgbs[i].blue - rgb.blue;
-			final int diff = deltaRed * deltaRed + deltaGreen * deltaGreen + deltaBlue * deltaBlue;
+		for (int i = 0; i < rgbs.length && minDiff > 0.0f; i++) {
+			final float[] hsb2 = rgbs[i].getHSB();
+			final float deltaHue = (hsb2[0] - hsb[0]) / 360;
+			final float deltaSaturation = hsb2[1] - hsb[1];
+			final float deltaBrightness = hsb2[2] - hsb[2];
+			final float diff = deltaHue * deltaHue + deltaSaturation * deltaSaturation + deltaBrightness * deltaBrightness;
 
 			if (diff < minDiff) {
 				minDiff = diff;

@@ -75,11 +75,11 @@ class ColorWheel extends Composite {
 
 		addListener(SWT.MouseMove, e -> {
 			if (circleContains(e.x, e.y)) {
+				setCursor(cursor);
 				if (e.stateMask == SWT.BUTTON1) {
 					setRGB(getColorFromImage(e.x, e.y));
 					notifyListeners(SWT.Selection, e);
 				}
-				setCursor(cursor);
 			} else {
 				setCursor(null);
 			}
@@ -127,7 +127,7 @@ class ColorWheel extends Composite {
 	}
 
 	private static boolean circleContains(final int x, final int y) {
-		return distanceToCenter(x, y) < RADIUS;
+		return distanceToCenter(x, y) < RADIUS - 1;
 	}
 
 	private static double distanceToCenter(final int x, final int y) {
@@ -169,10 +169,6 @@ class ColorWheel extends Composite {
 			gc.setAntialias(SWT.ON);
 			gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
 			gc.fillOval(RADIUS - 2, RADIUS - 2, 5, 5);
-
-			gc.setForeground(getBackground());
-			gc.setLineWidth(3);
-			gc.drawOval(0, 0, DIAMETER - 1, DIAMETER - 1);
 		});
 	}
 
@@ -258,6 +254,14 @@ class ColorWheel extends Composite {
 		}
 
 		image = new Image(getDisplay(), imageData);
+
+		Util.withResource(new GC(image), gc -> {
+			gc.setAntialias(SWT.ON);
+			gc.setForeground(getBackground());
+			gc.setLineWidth(1);
+			gc.drawOval(0, 0, DIAMETER - 1, DIAMETER - 1);
+		});
+
 		colorData = new ColorData(rgbList, pointList);
 	}
 
