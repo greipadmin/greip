@@ -78,7 +78,7 @@ class ColorWheel extends Composite {
 				setCursor(cursor);
 				if (e.stateMask == SWT.BUTTON1) {
 					setRGB(getColorFromImage(e.x, e.y));
-					notifyListeners(SWT.Selection, e);
+					notifyListeners(SWT.Modify, e);
 				}
 			} else {
 				setCursor(null);
