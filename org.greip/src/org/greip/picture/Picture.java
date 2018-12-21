@@ -12,9 +12,11 @@ import java.io.InputStream;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
+import org.greip.common.Util;
 import org.greip.decorator.ImageDecorator;
 
 /**
@@ -34,6 +36,8 @@ public class Picture extends Composite {
 
 	private final ImageDecorator decorator;
 	private Point scaleTo;
+	private int borderWidth = 0;
+	private Color borderColor;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -75,9 +79,18 @@ public class Picture extends Composite {
 		decorator = new ImageDecorator(this);
 		addListener(SWT.Paint, e -> {
 			if (scaleTo == null && e.height > 0 && e.width > 0) {
-				decorator.scaleTo(new Point(e.width, e.height));
+				decorator.scaleTo(new Point(e.width - 2 * borderWidth, e.height - 2 * borderWidth));
 			}
-			decorator.doPaint(e.gc, 0, 0);
+
+			if (borderWidth > 0) {
+				final Point size = getSize();
+
+				e.gc.setForeground(getBorderColor());
+				e.gc.setLineWidth(borderWidth * 2);
+				e.gc.drawRectangle(0, 0, size.x, size.y);
+			}
+
+			decorator.doPaint(e.gc, borderWidth, borderWidth);
 		});
 
 		scaleTo(new Point(SWT.DEFAULT, SWT.DEFAULT));
@@ -86,7 +99,8 @@ public class Picture extends Composite {
 	@Override
 	public Point computeSize(final int wHint, final int hHint, final boolean changed) {
 		checkWidget();
-		return decorator.getSize();
+		final Point size = decorator.getSize();
+		return new Point(size.x + 2 * borderWidth, size.y + 2 * borderWidth);
 	}
 
 	/**
@@ -112,7 +126,6 @@ public class Picture extends Composite {
 	 *            </ul>
 	 */
 	public void loadImage(final InputStream stream) {
-		checkWidget();
 		decorator.loadImage(stream);
 		setSize(decorator.getSize());
 	}
@@ -140,7 +153,6 @@ public class Picture extends Composite {
 	 *            </ul>
 	 */
 	public void loadImage(final String filename) {
-		checkWidget();
 		decorator.loadImage(filename);
 		setSize(decorator.getSize());
 	}
@@ -166,7 +178,6 @@ public class Picture extends Composite {
 	 *            </ul>
 	 */
 	public void setImage(final Image image) {
-		checkWidget();
 		decorator.setImage(image);
 		setSize(decorator.getSize());
 	}
@@ -190,9 +201,71 @@ public class Picture extends Composite {
 	 *            </ul>
 	 */
 	public void scaleTo(final Point scaleTo) {
-		checkWidget();
 		this.scaleTo = scaleTo;
 		decorator.scaleTo(scaleTo == null ? new Point(SWT.DEFAULT, SWT.DEFAULT) : scaleTo);
 		setSize(decorator.getSize());
+	}
+
+	/**
+	 * Gets the border width around the image.
+	 *
+	 * @return the border width in pixels.
+	 */
+	@Override
+	public int getBorderWidth() {
+		return borderWidth == 0 ? super.getBorderWidth() : borderWidth;
+	}
+
+	/**
+	 * Sets the border width araund the image.
+	 *
+	 * @param borderWidth
+	 *        the new border width
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the with less than zero</li>
+	 *            </ul>
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
+	 */
+	public void setBorderWidth(final int borderWidth) {
+		if (borderWidth < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		this.borderWidth = borderWidth;
+		redraw();
+	}
+
+	/**
+	 * Get the current border color.
+	 *
+	 * @return the color
+	 */
+	public Color getBorderColor() {
+		return Util.nvl(borderColor, getDisplay().getSystemColor(SWT.COLOR_WIDGET_BORDER));
+	}
+
+	/**
+	 * Sets the new border color.
+	 *
+	 * @param borderColor
+	 *        the border color or <code>null</code> to sets the default color
+	 *
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            <li>ERROR_NULL_ARGUMENT - if the new size is null</li>
+	 *            </ul>
+	 */
+	public void setBorderColor(final Color borderColor) {
+		this.borderColor = Util.checkResource(borderColor, true);
+		redraw();
 	}
 }
