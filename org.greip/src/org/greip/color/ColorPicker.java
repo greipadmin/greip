@@ -66,15 +66,15 @@ public final class ColorPicker extends AbstractColorChooser {
 
 		table.addListener(SWT.PaintItem, e -> {
 			final RGB rgb = (RGB) e.item.getData();
-			final Color color = new Color(e.display, rgb);
-			final Rectangle rect = new Rectangle(10, e.y + 5, ITEM_WIDTH - 21, e.height - 11);
 
-			e.gc.setBackground(color);
-			e.gc.fillRectangle(rect);
-			e.gc.setForeground(e.display.getSystemColor(SWT.COLOR_DARK_GRAY));
-			e.gc.drawRectangle(rect);
+			Util.withResource(new Color(e.display, rgb), color -> {
+				final Rectangle rect = new Rectangle(10, e.y + 5, ITEM_WIDTH - 21, e.height - 11);
 
-			color.dispose();
+				e.gc.setBackground(color);
+				e.gc.fillRectangle(rect);
+				e.gc.setForeground(e.display.getSystemColor(SWT.COLOR_DARK_GRAY));
+				e.gc.drawRectangle(rect);
+			});
 		});
 
 		table.addListener(SWT.DefaultSelection, e -> {
