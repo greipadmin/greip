@@ -14,6 +14,7 @@ import java.util.function.Consumer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
@@ -33,7 +34,6 @@ import org.greip.common.Util;
 public class ColorButton extends Button {
 
 	private RGB rgb;
-	private Image image;
 	private IColorChooserFactory factory;
 	private Consumer<RGB> consumer;
 
@@ -141,42 +141,38 @@ public class ColorButton extends Button {
 
 	private void changeImage() {
 		final Point size = getSize();
-
-		if (size.x == 0 || size.y == 0) {
-			return;
-		}
-
 		final int height = size.y - 16;
 		final int width = getText().isEmpty() ? size.x - 21 : height;
 
-		if (height <= 0 || width <= 0) {
-			return;
-		}
+		disposeImage();
+		setImage(height > 0 && width > 0 ? createImage(width, height) : null);
+	}
 
+	private Image createImage(final int width, final int height) {
 		final PaletteData palette = new PaletteData(0xFF, 0xFF00, 0xFF0000);
 		final ImageData source = new ImageData(width, height, 24, palette);
-		source.transparentPixel = 0;
 
-		disposeImage();
-		image = new Image(getDisplay(), source);
-		final GC gc = new GC(image);
+		final Image image = new Image(getDisplay(), source);
 
-		if (rgb != null && isEnabled()) {
-			final Color color = new Color(gc.getDevice(), rgb);
-			gc.setBackground(color);
-			gc.fillRectangle(0, 0, width, height);
-			color.dispose();
-		}
+		Util.withResource(new GC(image), gc -> {
+			final Device device = gc.getDevice();
 
-		gc.setForeground(getDisplay().getSystemColor(isEnabled() ? SWT.COLOR_DARK_GRAY : SWT.COLOR_GRAY));
-		gc.drawRectangle(0, 0, width - 1, height - 1);
-		gc.dispose();
+			if (rgb != null && isEnabled()) {
+				Util.withResource(new Color(device, rgb), color -> {
+					gc.setBackground(color);
+					gc.fillRectangle(0, 0, width, height);
+				});
+			}
 
-		setImage(image);
+			gc.setForeground(device.getSystemColor(isEnabled() ? SWT.COLOR_DARK_GRAY : SWT.COLOR_GRAY));
+			gc.drawRectangle(0, 0, width - 1, height - 1);
+		});
+
+		return image;
 	}
 
 	private void disposeImage() {
-		Util.whenNotNull(image, image::dispose);
+		Util.whenNotNull(getImage(), Image::dispose);
 	}
 
 	/**
