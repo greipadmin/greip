@@ -15,6 +15,28 @@ import org.greip.nls.Messages;
 
 public final class ColorChooserRGB extends AbstractColorChooser {
 
+	public static class Factory implements IColorChooserFactory {
+
+		private final ColorResolution colorResolution;
+		private final boolean showInfo;
+		private final boolean showHistory;
+
+		public Factory(final ColorResolution colorResolution) {
+			this(colorResolution, false, false);
+		}
+
+		public Factory(final ColorResolution colorResolution, final boolean showInfo, final boolean showHistory) {
+			this.colorResolution = colorResolution;
+			this.showInfo = showInfo;
+			this.showHistory = showHistory;
+		}
+
+		@Override
+		public AbstractColorChooser create(final Composite parent) {
+			return new ColorChooserRGB(parent, colorResolution, showInfo, showHistory);
+		}
+	}
+
 	private IColorSliderConnector connector;
 
 	public ColorChooserRGB(final Composite parent, final ColorResolution colorResolution, final boolean showInfo,

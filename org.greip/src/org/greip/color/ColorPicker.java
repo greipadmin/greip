@@ -11,6 +11,7 @@ package org.greip.color;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
@@ -29,6 +30,20 @@ public final class ColorPicker extends AbstractColorChooser {
 	private static final int ITEM_WIDTH = 80;
 	private static final int MAX_ITEMS = 10;
 
+	public static class Factory implements IColorChooserFactory {
+
+		private final RGB[] colors;
+
+		public Factory(final RGB... colors) {
+			this.colors = colors;
+		}
+
+		@Override
+		public AbstractColorChooser create(final Composite parent) {
+			return new ColorPicker(parent, colors);
+		}
+	}
+
 	private RGB[] rgbs;
 	private Table table;
 
@@ -38,24 +53,29 @@ public final class ColorPicker extends AbstractColorChooser {
 		if (colors != null && colors.length > 0) {
 			this.rgbs = colors;
 		} else {
-			this.rgbs = new ColorList(getDisplay()).toArray(new RGB[0]);
+			this.rgbs = new DefaultColorList().toArray(new RGB[0]);
 		}
 
 		createTableItems(table);
 		table.getParent().setLayoutData(new GridData(ITEM_WIDTH + getScrollBarWidth(), Math.min(MAX_ITEMS, rgbs.length) * ITEM_HEIGHT));
 
-		setRGB(getBackground().getRGB());
+		setRGB(rgbs[0]);
+	}
+
+	@Override
+	public Point getMargins() {
+		return new Point(0, 0);
 	}
 
 	@Override
 	protected Composite createColorChooserPanel() {
-		final Composite panel = new Composite(this, SWT.NONE);
+		final Composite panel = new Composite(this, getShell() instanceof ColorChooserPopup ? SWT.NONE : SWT.BORDER);
 		panel.setLayout(new FillLayout());
 
 		table = new Table(panel, SWT.FULL_SELECTION | SWT.H_SCROLL);
 		new TableColumn(table, SWT.NONE).setWidth(ITEM_WIDTH);
 
-		table.addListener(SWT.FocusIn, e -> table.showSelection());
+		table.addListener(SWT.Activate, e -> table.showSelection());
 
 		table.addListener(SWT.MeasureItem, e -> {
 			e.width = ITEM_WIDTH;
@@ -89,8 +109,8 @@ public final class ColorPicker extends AbstractColorChooser {
 	}
 
 	private void createTableItems(final Table table) {
-		for (final RGB rgb2 : rgbs) {
-			new TableItem(table, SWT.NONE).setData(rgb2);
+		for (final RGB rgb : rgbs) {
+			new TableItem(table, SWT.NONE).setData(rgb);
 		}
 	}
 

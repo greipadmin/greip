@@ -22,6 +22,12 @@ public class Messages extends NLS {
 	public static String Saturation;
 	public static String Brightness;
 
+	// Font chooser
+	public static String Font;
+	public static String Size;
+	public static String Bold;
+	public static String Italic;
+
 	// Calculator
 	public static String Error;
 	public static String Overflow;

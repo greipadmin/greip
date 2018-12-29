@@ -23,18 +23,19 @@ class ColorChooserPopup extends Popup {
 
 	public ColorChooserPopup(final Control control) {
 		super(control);
-		setLayout(new FillLayout());
 		setBackground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
-
-		addListener(SWT.Traverse, e -> {
-			Util.when(e.detail == SWT.TRAVERSE_RETURN, this::propagateNewRGB);
-			Util.when(e.detail == SWT.TRAVERSE_ESCAPE, this::close);
-		});
 	}
 
 	public final void createContent(final IColorChooserFactory factory) {
 		colorChooser = factory.create(this);
 		colorChooser.addListener(SWT.Selection, e -> propagateNewRGB());
+		colorChooser.addListener(SWT.Traverse, e -> Util.when(e.detail == SWT.TRAVERSE_RETURN, this::propagateNewRGB));
+
+		final FillLayout layout = new FillLayout();
+		layout.marginHeight = colorChooser.getMargins().y;
+		layout.marginWidth = colorChooser.getMargins().x;
+
+		setLayout(layout);
 	}
 
 	public RGB getRGB() {

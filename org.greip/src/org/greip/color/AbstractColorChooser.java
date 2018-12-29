@@ -13,6 +13,7 @@ import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
@@ -46,9 +47,12 @@ public abstract class AbstractColorChooser extends Composite {
 		this.showInfo = showInfo;
 		this.newRGB = new RGB(0, 0, 0);
 
-		setLayout(GridLayoutFactory.fillDefaults().numColumns(3).spacing(0, 0).create());
+		final int columns = 1 + (showHistory ? 1 : 0) + (showInfo ? 1 : 0);
+		setLayout(GridLayoutFactory.fillDefaults().numColumns(columns).spacing(10, 0).create());
 		setBackgroundMode(SWT.INHERIT_FORCE);
+
 		addListener(SWT.Selection, e -> ColorHistoryList.INSTANCE.add(getRGB()));
+		addListener(SWT.Traverse, e -> Util.when(e.detail == SWT.TRAVERSE_RETURN, () -> ColorHistoryList.INSTANCE.add(getRGB())));
 
 		if (showHistory) createHistoryPanel();
 		createColorChooserPanel();
@@ -57,9 +61,13 @@ public abstract class AbstractColorChooser extends Composite {
 
 	protected abstract Composite createColorChooserPanel();
 
+	public Point getMargins() {
+		return new Point(10, 10);
+	}
+
 	private void createInfoPanel() {
 		final Composite infoPanel = new Composite(this, SWT.NONE);
-		infoPanel.setLayout(GridLayoutFactory.fillDefaults().numColumns(3).extendedMargins(0, 10, 10, 10).spacing(3, 5).create());
+		infoPanel.setLayout(GridLayoutFactory.fillDefaults().numColumns(3).margins(0, 0).spacing(3, 5).create());
 		infoPanel.setLayoutData(GridDataFactory.fillDefaults().grab(true, true).create());
 
 		final Separator line = new Separator(infoPanel, SWT.VERTICAL);
@@ -140,10 +148,17 @@ public abstract class AbstractColorChooser extends Composite {
 	 *
 	 * @param rgb
 	 *        The colors RGB value.
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the RGB value is null</li>
+	 *            </ul>
 	 */
 	public void setRGB(final RGB rgb) {
+		if (rgb == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		this.rgb = rgb;
 		setNewRGB(rgb);
+		redraw();
 	}
 
 	/**

@@ -19,6 +19,28 @@ import org.eclipse.swt.widgets.Event;
 
 public final class ColorWheelChooser extends AbstractColorChooser {
 
+	public static class Factory implements IColorChooserFactory {
+
+		private final ColorResolution colorResolution;
+		private final boolean showInfo;
+		private final boolean showHistory;
+
+		public Factory(final ColorResolution colorResolution) {
+			this(colorResolution, false, false);
+		}
+
+		public Factory(final ColorResolution colorResolution, final boolean showInfo, final boolean showHistory) {
+			this.colorResolution = colorResolution;
+			this.showInfo = showInfo;
+			this.showHistory = showHistory;
+		}
+
+		@Override
+		public AbstractColorChooser create(final Composite parent) {
+			return new ColorWheelChooser(parent, colorResolution, showInfo, showHistory);
+		}
+	}
+
 	private ColorWheel colorWheel;
 	private ColorSlider brightnessSlider;
 
@@ -57,7 +79,7 @@ public final class ColorWheelChooser extends AbstractColorChooser {
 	@Override
 	protected Composite createColorChooserPanel() {
 		final Composite panel = new Composite(this, SWT.NO_FOCUS);
-		GridLayoutFactory.swtDefaults().numColumns(2).margins(10, 10).spacing(10, 0).applyTo(panel);
+		GridLayoutFactory.swtDefaults().numColumns(2).margins(0, 0).spacing(10, 0).applyTo(panel);
 
 		createColorWheel(panel);
 		createBrightnessSlider(panel);

@@ -10,9 +10,9 @@
 package org.greip.color;
 
 import org.eclipse.jface.layout.GridDataFactory;
-import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
@@ -27,7 +27,7 @@ class SliderPanel extends Composite {
 
 		sliders = new ColorSlider[titles.length];
 
-		setLayout(GridLayoutFactory.swtDefaults().margins(10, 10).create());
+		setLayout(new GridLayout());
 		setBackgroundMode(SWT.INHERIT_FORCE);
 
 		for (int i = 0; i < titles.length; i++) {

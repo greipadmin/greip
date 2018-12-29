@@ -25,12 +25,12 @@ class ColorHistory extends Composite {
 	public ColorHistory(final AbstractColorChooser colorChooser) {
 		super(colorChooser, SWT.NONE);
 
-		setLayout(GridLayoutFactory.fillDefaults().margins(0, 10).spacing(0, 4).create());
+		setLayout(GridLayoutFactory.fillDefaults().spacing(0, 4).create());
 
 		for (int i = 0; i < history.size(); i++) {
 			final Label label = new Label(this, SWT.BORDER);
 
-			label.setLayoutData(GridDataFactory.fillDefaults().align(SWT.LEFT, SWT.CENTER).hint(9, 9).indent(10, 0).create());
+			label.setLayoutData(GridDataFactory.fillDefaults().align(SWT.LEFT, SWT.CENTER).hint(9, 9).create());
 			label.setBackground(getBackground());
 
 			Util.whenNotNull(history.get(i), rgb -> {

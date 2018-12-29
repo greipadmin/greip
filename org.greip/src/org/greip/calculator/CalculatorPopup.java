@@ -15,7 +15,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Control;
 import org.greip.common.Popup;
-import org.greip.common.Util;
 
 class CalculatorPopup extends Popup {
 
@@ -28,7 +27,6 @@ class CalculatorPopup extends Popup {
 		setLayout(new FillLayout());
 
 		calculator = new Calculator(this);
-		calculator.addListener(SWT.Traverse, e -> Util.when(e.detail == SWT.TRAVERSE_ESCAPE, this::close));
 		calculator.addListener(SWT.Selection, e -> {
 			value = calculator.getValue();
 			close();

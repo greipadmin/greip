@@ -25,11 +25,12 @@ public abstract class Popup extends Shell {
 	private final Control control;
 
 	public Popup(final Control control) {
-		super(control.getShell(), SWT.TOOL | SWT.NO_FOCUS);
+		super(control.getShell(), SWT.TOOL);
 		this.control = control;
 
 		setBackgroundMode(SWT.INHERIT_FORCE);
 		addListener(SWT.Deactivate, e -> dispose());
+		addListener(SWT.Traverse, e -> Util.when(e.detail == SWT.TRAVERSE_ESCAPE, this::close));
 	}
 
 	protected void block() {
