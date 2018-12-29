@@ -2,7 +2,7 @@
 Main repository for the Greip Project. The goal of this project is to propose new widgets for the SWT API. Currently Greip contains a small set of powerful widgets.
 
 ## ColorButton
-The ColorButton widget represents a color and displays a color selection dialog. (_[read more...](https://github.com/greipadmin/greip/wiki/ColorButton)_)
+The ColorButton widget allow the user to select a color. (_[read more...](https://github.com/greipadmin/greip/wiki/ColorButton)_)
 
 ![](https://github.com/greipadmin/greip/raw/master/wiki/ColorButton.png)
 
@@ -10,6 +10,11 @@ The ColorButton widget represents a color and displays a color selection dialog.
 A simple calculator, displayed as a whole widget or inside a tool window. (_[read more...](https://github.com/greipadmin/greip/wiki/Calculator)_)
 
 ![](https://github.com/greipadmin/greip/raw/master/wiki/Calculator.png)
+
+## FontButton
+The FontButton widget allow the user to select a font from all available fonts in the system. (_[read more...](https://github.com/greipadmin/greip/wiki/FontButton)_)
+
+![](https://github.com/greipadmin/greip/raw/master/wiki/FontButton.png)
 
 ## Picture
 This widget simply shows a Picture. Supported picture formats: PNG, BMP, JPEG, GIF (including animated GIFs), ICO and TIFF. (_[read more...](https://github.com/greipadmin/greip/wiki/Picture)_)
