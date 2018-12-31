@@ -14,6 +14,7 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.greip.common.Util;
 
 public final class PercentageDecorator extends AbstractDecorator {
 
@@ -70,7 +71,7 @@ public final class PercentageDecorator extends AbstractDecorator {
 		}
 
 		if (curValue.equals(value)) {
-			final Font textFont = getTextFont(gc);
+			final Font textFont = Util.nvl(font, gc.getFont());
 			final Point size = getSize();
 
 			gc.setFont(textFont);
@@ -162,7 +163,7 @@ public final class PercentageDecorator extends AbstractDecorator {
 
 	@Override
 	public Point getSize() {
-		final GC gc = new GC(Display.getCurrent());
+		final GC gc = new GC(getDisplay());
 
 		try {
 			gc.setAntialias(SWT.ON);
@@ -188,10 +189,6 @@ public final class PercentageDecorator extends AbstractDecorator {
 		} finally {
 			gc.dispose();
 		}
-	}
-
-	private Font getTextFont(final GC gc) {
-		return font == null ? gc.getFont() : font;
 	}
 
 	public String getUnit() {
