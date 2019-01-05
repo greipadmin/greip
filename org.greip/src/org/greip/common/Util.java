@@ -127,6 +127,25 @@ public final class Util {
 		}
 	}
 
+	public static void withFont(final GC gc, final Font font, final Consumer<Font> consumer) {
+		withFont(gc, font, f -> {
+			consumer.accept(f);
+			return null;
+		});
+	}
+
+	public static <O> O withFont(final GC gc, final Font font, final Function<Font, O> consumer) {
+		final Font currentFont = gc.getFont();
+
+		try {
+			gc.setFont(font);
+			return consumer.apply(font);
+		} finally {
+			font.dispose();
+			gc.setFont(currentFont);
+		}
+	}
+
 	public static <O> void whenNotNull(final O object, final Consumer<O> c) {
 		whenNotNull(object, () -> c.accept(object));
 	}

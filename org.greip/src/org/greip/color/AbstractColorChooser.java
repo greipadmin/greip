@@ -37,7 +37,6 @@ public abstract class AbstractColorChooser extends Composite {
 	private Spinner spiBlue;
 	private Composite previewPanel;
 	private final boolean showInfo;
-	private ColorHistory historyPanel;
 
 	protected AbstractColorChooser(final Composite parent, final ColorResolution colorResolution, final boolean showInfo,
 			final boolean showHistory) {
@@ -67,7 +66,7 @@ public abstract class AbstractColorChooser extends Composite {
 
 	private void createInfoPanel() {
 		final Composite infoPanel = new Composite(this, SWT.NONE);
-		infoPanel.setLayout(GridLayoutFactory.fillDefaults().numColumns(3).margins(0, 0).spacing(3, 5).create());
+		infoPanel.setLayout(GridLayoutFactory.fillDefaults().numColumns(3).spacing(3, 5).create());
 		infoPanel.setLayoutData(GridDataFactory.fillDefaults().grab(true, true).create());
 
 		final Separator line = new Separator(infoPanel, SWT.VERTICAL);
@@ -81,7 +80,7 @@ public abstract class AbstractColorChooser extends Composite {
 		spiBlue = createRGBSpinner(infoPanel, Messages.Blue);
 
 		previewPanel = new Composite(infoPanel, SWT.NO_FOCUS);
-		previewPanel.setLayoutData(GridDataFactory.swtDefaults().hint(60, 30).span(2, 1).indent(7, 7).align(SWT.CENTER, SWT.BOTTOM).create());
+		previewPanel.setLayoutData(GridDataFactory.fillDefaults().hint(60, 20).span(2, 1).align(SWT.RIGHT, SWT.BOTTOM).create());
 
 		previewPanel.addListener(SWT.Paint, e -> {
 			final Rectangle bounds = previewPanel.getClientArea();
@@ -89,11 +88,11 @@ public abstract class AbstractColorChooser extends Composite {
 			final Color newColor = new Color(e.display, getRGB());
 
 			e.gc.setForeground(e.display.getSystemColor(SWT.COLOR_GRAY));
-			e.gc.drawRectangle(0, 0, bounds.width - 1, bounds.height - 3);
+			e.gc.drawRectangle(0, 0, bounds.width - 1, bounds.height - 1);
 			e.gc.setBackground(newColor);
-			e.gc.fillRectangle(1, 1, bounds.width / 2, bounds.height - 4);
+			e.gc.fillRectangle(1, 1, bounds.width / 2, bounds.height - 2);
 			e.gc.setBackground(oldColor);
-			e.gc.fillRectangle(bounds.width / 2, 1, (bounds.width - 2) / 2, bounds.height - 4);
+			e.gc.fillRectangle(bounds.width / 2, 1, (bounds.width - 2) / 2, bounds.height - 2);
 
 			oldColor.dispose();
 			newColor.dispose();
@@ -111,8 +110,7 @@ public abstract class AbstractColorChooser extends Composite {
 	}
 
 	private void createHistoryPanel() {
-		historyPanel = new ColorHistory(this);
-		historyPanel.setLayoutData(GridDataFactory.fillDefaults().grab(true, true).create());
+		GridDataFactory.fillDefaults().align(SWT.LEFT, SWT.CENTER).applyTo(new ColorHistory(this));
 	}
 
 	private static Spinner createRGBSpinner(final Composite parent, final String label) {

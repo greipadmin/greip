@@ -38,15 +38,18 @@ public final class PercentageDecorator extends AbstractDecorator {
 	private int unitAlignment;
 	private Font unitFont;
 
-	private void applyUnitFont(final GC gc) {
+	private Font createUnitFont() {
+		final FontData[] fontData;
+
 		if (unitFont != null) {
-			gc.setFont(unitFont);
+			fontData = unitFont.getFontData();
 		} else {
-			final FontData[] fontData = getFont().getFontData();
+			fontData = getFont().getFontData();
 			fontData[0].setHeight(Math.min(10, Math.max(2, (int) (fontData[0].getHeight() * 0.5))));
 			fontData[0].setStyle(SWT.NONE);
-			gc.setFont(new Font(gc.getDevice(), fontData[0]));
 		}
+
+		return new Font(getDisplay(), fontData[0]);
 	}
 
 	private void doAnimate(final GC gc) {
@@ -91,30 +94,24 @@ public final class PercentageDecorator extends AbstractDecorator {
 			}
 
 			if (unit != null) {
-				applyUnitFont(gc);
+				Util.withFont(gc, createUnitFont(), font -> {
+					final int unitOffsetY = getUnitOffsetY(textFont, font);
+					final Point unitSize = gc.textExtent(unit);
 
-				final int unitOffsetY = getUnitOffsetY(textFont, gc.getFont());
-				final Point unitSize = gc.textExtent(unit);
-
-				if ((unitAlignment & SWT.RIGHT) > 0) {
-					gc.drawText(unit, textPos.x + textSize.x - unitSize.x / 2, textPos.y + textSize.y - unitSize.y - unitOffsetY, true);
-					textPos.x -= unitSize.x / 2;
-				} else if ((unitAlignment & SWT.LEFT) > 0) {
-					gc.drawText(unit, textPos.x - unitSize.x / 2 - 2, textPos.y + textSize.y - unitSize.y - unitOffsetY, true);
-					textPos.x += unitSize.x / 2;
-				} else if (unitAlignment == SWT.BOTTOM) {
-					textPos.y -= unitSize.y / (circleType == CircleType.Circle ? 2 : 1) - 3;
-					gc.drawText(unit, center.x - unitSize.x / 2, textPos.y + textSize.y - 3, true);
-				} else {
-					textPos.y += circleType == CircleType.Circle ? unitSize.y / 2 : 0;
-					gc.drawText(unit, center.x - unitSize.x / 2, textPos.y - unitSize.y + 4, true);
-				}
-
-				if (unitFont == null) {
-					gc.getFont().dispose();
-				}
-
-				gc.setFont(textFont);
+					if ((unitAlignment & SWT.RIGHT) > 0) {
+						gc.drawText(unit, textPos.x + textSize.x - unitSize.x / 2, textPos.y + textSize.y - unitSize.y - unitOffsetY, true);
+						textPos.x -= unitSize.x / 2;
+					} else if ((unitAlignment & SWT.LEFT) > 0) {
+						gc.drawText(unit, textPos.x - unitSize.x / 2 - 2, textPos.y + textSize.y - unitSize.y - unitOffsetY, true);
+						textPos.x += unitSize.x / 2;
+					} else if (unitAlignment == SWT.BOTTOM) {
+						textPos.y -= unitSize.y / (circleType == CircleType.Circle ? 2 : 1) - 3;
+						gc.drawText(unit, center.x - unitSize.x / 2, textPos.y + textSize.y - 3, true);
+					} else {
+						textPos.y += circleType == CircleType.Circle ? unitSize.y / 2 : 0;
+						gc.drawText(unit, center.x - unitSize.x / 2, textPos.y - unitSize.y + 4, true);
+					}
+				});
 			}
 
 			gc.drawText(text, textPos.x, textPos.y, true);
@@ -163,32 +160,25 @@ public final class PercentageDecorator extends AbstractDecorator {
 
 	@Override
 	public Point getSize() {
-		final GC gc = new GC(getDisplay());
 
-		try {
-			gc.setAntialias(SWT.ON);
-			gc.setFont(getFont());
-			final int textHeight = gc.textExtent(value.toString()).y;
-			int height;
-
-			if (circleType == CircleType.Circle) {
-				height = outerDiameter;
-			} else {
-				height = (int) (outerDiameter / circleType.heightQuotient) + textHeight / 2;
-
-				if (unit != null && unitAlignment == SWT.BOTTOM) {
-					applyUnitFont(gc);
-					height += gc.textExtent(unit.toString()).y / 2;
-					if (unitFont == null) {
-						gc.getFont().dispose();
-					}
-				}
-			}
-			return new Point(outerDiameter, height);
-
-		} finally {
-			gc.dispose();
+		if (circleType == CircleType.Circle) {
+			return new Point(outerDiameter, outerDiameter);
 		}
+
+		return Util.withResource(new GC(getDisplay()), gc -> {
+			gc.setFont(getFont());
+
+			final int textHeight = gc.textExtent(value.toString()).y;
+			int height = (int) (outerDiameter / circleType.heightQuotient) + textHeight / 2;
+
+			if (unit != null && unitAlignment == SWT.BOTTOM) {
+				height += Util.withFont(gc, createUnitFont(), font -> {
+					return Integer.valueOf(gc.textExtent(unit.toString()).y / 2);
+				}).intValue();
+			}
+
+			return new Point(outerDiameter, height);
+		});
 	}
 
 	public String getUnit() {
@@ -228,7 +218,7 @@ public final class PercentageDecorator extends AbstractDecorator {
 	private Point paintCircle(final GC gc, final int x, final int y) {
 		final Color color = getColor();
 		final Color bgColor = gc.getBackground();
-		final int curAngle = Math.round(curValue.floatValue() * circleType.angle / maxValue.floatValue());
+		final int curAngle = (int) Math.round(curValue.doubleValue() * circleType.angle / maxValue.doubleValue());
 		final int diameterDiff = (outerDiameter - innerDiameter) / 2;
 
 		gc.setBackground(color == null ? gc.getDevice().getSystemColor(SWT.COLOR_DARK_GRAY) : color);

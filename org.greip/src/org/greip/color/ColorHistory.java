@@ -25,7 +25,7 @@ class ColorHistory extends Composite {
 	public ColorHistory(final AbstractColorChooser colorChooser) {
 		super(colorChooser, SWT.NONE);
 
-		setLayout(GridLayoutFactory.fillDefaults().spacing(0, 4).create());
+		setLayout(GridLayoutFactory.fillDefaults().spacing(0, 3).create());
 
 		for (int i = 0; i < history.size(); i++) {
 			final Label label = new Label(this, SWT.BORDER);

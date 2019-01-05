@@ -15,6 +15,7 @@ import java.util.List;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
@@ -23,14 +24,36 @@ import org.eclipse.swt.widgets.Shell;
 public abstract class Popup extends Shell {
 
 	private final Control control;
+	private boolean canceled;
 
 	public Popup(final Control control) {
 		super(control.getShell(), SWT.TOOL);
 		this.control = control;
 
 		setBackgroundMode(SWT.INHERIT_FORCE);
-		addListener(SWT.Deactivate, e -> dispose());
-		addListener(SWT.Traverse, e -> Util.when(e.detail == SWT.TRAVERSE_ESCAPE, this::close));
+		setLayout(new FillLayout());
+
+		addListener(SWT.Deactivate, e -> {
+			dispose();
+			canceled = true;
+		});
+
+		addListener(SWT.Traverse, e -> {
+			if (e.detail == SWT.TRAVERSE_ESCAPE) {
+				close();
+				canceled = true;
+			}
+		});
+	}
+
+	@Override
+	protected final void checkSubclass() {
+		// allow subclassing
+	}
+
+	@Override
+	public FillLayout getLayout() {
+		return (FillLayout) super.getLayout();
 	}
 
 	protected void block() {
@@ -40,11 +63,6 @@ public abstract class Popup extends Shell {
 				display.sleep();
 			}
 		}
-	}
-
-	@Override
-	protected final void checkSubclass() {
-		// nothing to do
 	}
 
 	private Point computeLocation(final Control control) {
@@ -86,13 +104,24 @@ public abstract class Popup extends Shell {
 		return new Point(0, 0);
 	}
 
+	public final boolean open(final Runnable closeHandler) {
+		open();
+		Util.when(!canceled, closeHandler);
+		return !canceled;
+	}
+
 	@Override
 	public final void open() {
+		canceled = false;
 		layout(true, true);
 		pack();
 		setLocation(computeLocation(control));
 		super.open();
 		setFocus();
 		block();
+	}
+
+	public boolean isCanceled() {
+		return canceled;
 	}
 }

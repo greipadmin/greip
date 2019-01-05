@@ -9,7 +9,7 @@
 package org.greip.font;
 
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -17,10 +17,9 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
 import org.greip.color.IColorChooserFactory;
+import org.greip.common.DropDownButton;
+import org.greip.common.Util;
 
 /**
  * Instances of this class allow the user to select a font from all available
@@ -28,45 +27,13 @@ import org.greip.color.IColorChooserFactory;
  *
  * @author Thomas Lorbeer
  */
-public class FontButton extends Button {
-
-	private static class FontButtonListener implements Listener {
-
-		private final Supplier<FontData> fontData;
-		private final Supplier<RGB> fontColor;
-		private final BiConsumer<FontData, RGB> fontConsumer;
-		private IColorChooserFactory colorChooserFactory;
-
-		public FontButtonListener(final BiConsumer<FontData, RGB> fontConsumer, final Supplier<FontData> fontData,
-				final Supplier<RGB> fontColor) {
-			this.fontConsumer = fontConsumer;
-			this.fontData = fontData;
-			this.fontColor = fontColor;
-		}
-
-		public void setColorChooserFactory(final IColorChooserFactory colorChooserFactory) {
-			this.colorChooserFactory = colorChooserFactory;
-		}
-
-		@Override
-		public void handleEvent(final Event e) {
-			final FontChooserPopup popup = new FontChooserPopup((Control) e.widget, colorChooserFactory);
-
-			popup.setFontData(fontData.get());
-			popup.setFontColor(fontColor.get());
-			popup.open();
-
-			if (popup.getFontData() == null) {
-				e.type = SWT.None;
-			} else {
-				fontConsumer.accept(popup.getFontData(), popup.getFontColor());
-			}
-		}
-	}
+public class FontButton extends DropDownButton {
 
 	private FontData fontData;
 	private RGB fontColor;
-	private final FontButtonListener fontChooser;
+	private IColorChooserFactory colorChooserFactory;
+	private Consumer<FontData> fontConsumer;
+	private BiConsumer<FontData, RGB> fontBiConsumer;
 
 	/**
 	 * Constructs a new instance of this class.
@@ -88,19 +55,17 @@ public class FontButton extends Button {
 	 *            </ul>
 	 */
 	public FontButton(final Composite parent, final int style) {
-		super(parent, style | SWT.PUSH);
+		super(parent, style | SWT.DROP_DOWN);
 
-		fontChooser = new FontButtonListener((fd, rgb) -> {
-			setFontData(fd);
-			setFontColor(rgb);
-		}, this::getFontData, this::getFontColor);
-
-		addListener(SWT.Selection, fontChooser);
-	}
-
-	@Override
-	protected void checkSubclass() {
-		// allow subclassing
+		addListener(SWT.Selection, e -> {
+			if (fontConsumer != null || fontBiConsumer != null) {
+				if (chooseFont()) {
+					Util.whenNotNull(fontConsumer, fc -> fc.accept(fontData));
+					Util.whenNotNull(fontBiConsumer, fc -> fc.accept(fontData, fontColor));
+				}
+				e.type = SWT.None;
+			}
+		});
 	}
 
 	/**
@@ -159,6 +124,48 @@ public class FontButton extends Button {
 	 * @see IColorChooserFactory
 	 */
 	public void setColorChooserFactory(final IColorChooserFactory factory) {
-		fontChooser.setColorChooserFactory(factory);
+		colorChooserFactory = factory;
+	}
+
+	/**
+	 * Opens a popup window and allows the user to select a font. If a color
+	 * chooser is defined you can also select a color.
+	 *
+	 * @return <code>true</code> if a font was selected or <code>false</code>
+	 *         otherwise.
+	 *
+	 * @see #setColorChooserFactory(IColorChooserFactory)
+	 */
+	public boolean chooseFont() {
+		final FontChooserPopup popup = new FontChooserPopup(this);
+
+		popup.createContent(colorChooserFactory);
+		popup.setFontData(fontData);
+		popup.setFontColor(fontColor);
+
+		return popup.open(() -> {
+			fontData = popup.getFontData();
+			fontColor = popup.getFontColor();
+		});
+	}
+
+	/**
+	 * Sets the consumer for the selected font.
+	 *
+	 * @param consumer
+	 *        The font consumer.
+	 */
+	public void setFontConsumer(final Consumer<FontData> fontConsumer) {
+		this.fontConsumer = fontConsumer;
+	}
+
+	/**
+	 * Sets the consumer for the selected font and color.
+	 *
+	 * @param consumer
+	 *        The font consumer.
+	 */
+	public void setFontConsumer(final BiConsumer<FontData, RGB> fontConsumer) {
+		this.fontBiConsumer = fontConsumer;
 	}
 }

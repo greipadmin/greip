@@ -23,6 +23,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.greip.common.DropDownButton;
 import org.greip.common.Util;
 
 /**
@@ -31,7 +32,7 @@ import org.greip.common.Util;
  *
  * @see Button
  */
-public class ColorButton extends Button {
+public class ColorButton extends DropDownButton {
 
 	private RGB rgb;
 	private IColorChooserFactory factory;
@@ -43,6 +44,9 @@ public class ColorButton extends Button {
 	 * @param parent
 	 *        a composite control which will be the parent of the new instance
 	 *        (cannot be null)
+	 * @param style
+	 *        The style bits of the button. You can use all styles decribed by
+	 *        {@link Button} except SWT.PUSH, SWT.CHECK and SWT.RADIO.
 	 *
 	 * @exception IllegalArgumentException
 	 *            <ul>
@@ -54,53 +58,35 @@ public class ColorButton extends Button {
 	 *            that created the parent</li>
 	 *            </ul>
 	 */
-	public ColorButton(final Composite parent) {
-		super(parent, SWT.PUSH);
+	public ColorButton(final Composite parent, final int style) {
+		super(parent, SWT.DROP_DOWN);
 
 		addListener(SWT.Resize, e -> changeImage());
 		addListener(SWT.Dispose, e -> disposeImage());
 
 		addListener(SWT.Selection, e -> {
 			if (factory != null && consumer != null) {
-				Util.whenNotNull(chooseRGB(factory), consumer);
+				Util.when(chooseRGB(), () -> consumer.accept(rgb));
+				e.type = SWT.None;
 			}
 		});
 
 		setRGB(new RGB(255, 255, 255));
 	}
 
-	@Override
-	protected void checkSubclass() {
-		// allow subclassing
-	}
-
 	/**
 	 * Opens the color chooser and allows the user to select a color.
 	 *
-	 * @param factory
-	 *        The color chooser factory.
-	 *
-	 * @return The selected color or null, when the user cancels the dialog.
-	 *
-	 * @see IColorChooserFactory
+	 * @return <code>true</code> if a color was selected or <code>false</code>
+	 *         otherwise.
 	 */
-	public RGB chooseRGB(final IColorChooserFactory factory) {
-		final ColorChooserPopup colorChooserPopup = new ColorChooserPopup(this);
+	public boolean chooseRGB() {
+		final ColorChooserPopup popup = new ColorChooserPopup(this);
 
-		colorChooserPopup.createContent(factory);
-		colorChooserPopup.setRGB(rgb);
-		colorChooserPopup.open();
+		popup.createContent(Util.nvl(factory, new ColorWheelChooser.Factory(ColorResolution.Maximal, true, true)));
+		popup.setRGB(rgb);
 
-		final RGB newRGB = colorChooserPopup.getRGB();
-		Util.whenNotNull(newRGB, this::setRGB);
-
-		return newRGB;
-	}
-
-	@Override
-	public Point computeSize(final int wHint, final int hHint, final boolean changed) {
-		final Point size = super.computeSize(wHint, hHint, changed);
-		return new Point(Math.max(wHint, getTextSize().x + 30), size.y);
+		return popup.open(() -> setRGB(popup.getRGB()));
 	}
 
 	/**
@@ -124,25 +110,27 @@ public class ColorButton extends Button {
 	}
 
 	@Override
-	public void setText(final String string) {
-		super.setText(string);
+	public void setText(final String text) {
+		setRedraw(false);
+		super.setText(text);
 		changeImage();
+		setRedraw(true);
 	}
 
-	private Point getTextSize() {
-		final Point size = Util.getTextSize(this, getText(), SWT.DRAW_MNEMONIC);
-
-		if (size.x > 0) {
-			size.x += 6;
-		}
-
-		return size;
+	/*
+	 * (non-Javadoc)
+	 * @see org.greip.common.DropDownButton#computeSize(int, int, boolean)
+	 */
+	@Override
+	public Point computeSize(final int wHint, final int hHint, final boolean changed) {
+		final Point size = super.computeSize(wHint, hHint, changed);
+		return new Point(Math.max(30, size.x + 20), size.y);
 	}
 
 	private void changeImage() {
 		final Point size = getSize();
 		final int height = size.y - 16;
-		final int width = getText().isEmpty() ? size.x - 21 : height;
+		final int width = getText().isEmpty() ? size.x - (isDropDownArrowVisible() ? 25 : 15) : height;
 
 		disposeImage();
 		setImage(height > 0 && width > 0 ? createImage(width, height) : null);

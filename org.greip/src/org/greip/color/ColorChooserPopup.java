@@ -31,11 +31,9 @@ class ColorChooserPopup extends Popup {
 		colorChooser.addListener(SWT.Selection, e -> propagateNewRGB());
 		colorChooser.addListener(SWT.Traverse, e -> Util.when(e.detail == SWT.TRAVERSE_RETURN, this::propagateNewRGB));
 
-		final FillLayout layout = new FillLayout();
+		final FillLayout layout = getLayout();
 		layout.marginHeight = colorChooser.getMargins().y;
 		layout.marginWidth = colorChooser.getMargins().x;
-
-		setLayout(layout);
 	}
 
 	public RGB getRGB() {

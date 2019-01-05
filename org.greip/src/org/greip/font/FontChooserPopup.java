@@ -12,7 +12,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.RGB;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 import org.greip.color.IColorChooserFactory;
@@ -20,19 +19,19 @@ import org.greip.common.Popup;
 
 class FontChooserPopup extends Popup {
 
-	private final FontChooser fontChooser;
+	private FontChooser fontChooser;
 
-	public FontChooserPopup(final Control control, final IColorChooserFactory colorChooserFactory) {
+	public FontChooserPopup(final Control control) {
 		super(control);
+		setBackground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
+	}
 
+	public final void createContent(final IColorChooserFactory factory) {
 		final Shell shell = (Shell) getParent();
 		final Cursor cursor = shell.getCursor();
 		shell.setCursor(getDisplay().getSystemCursor(SWT.CURSOR_WAIT));
 
-		setBackground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
-		setLayout(new FillLayout());
-
-		fontChooser = new FontChooser(this, colorChooserFactory);
+		fontChooser = new FontChooser(this, factory);
 		fontChooser.addListener(SWT.Selection, e -> close());
 
 		shell.setCursor(cursor);

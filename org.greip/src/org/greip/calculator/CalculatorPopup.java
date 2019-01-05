@@ -12,7 +12,6 @@ package org.greip.calculator;
 import java.math.BigDecimal;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Control;
 import org.greip.common.Popup;
 
@@ -23,8 +22,6 @@ class CalculatorPopup extends Popup {
 
 	public CalculatorPopup(final Control control) {
 		super(control);
-
-		setLayout(new FillLayout());
 
 		calculator = new Calculator(this);
 		calculator.addListener(SWT.Selection, e -> {
