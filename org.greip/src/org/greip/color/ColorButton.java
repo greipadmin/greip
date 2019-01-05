@@ -65,7 +65,7 @@ public class ColorButton extends DropDownButton {
 		addListener(SWT.Dispose, e -> disposeImage());
 
 		addListener(SWT.Selection, e -> {
-			if (factory != null && consumer != null) {
+			if (consumer != null) {
 				Util.when(chooseRGB(), () -> consumer.accept(rgb));
 				e.type = SWT.None;
 			}
