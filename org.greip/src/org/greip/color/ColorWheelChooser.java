@@ -53,15 +53,19 @@ public final class ColorWheelChooser extends AbstractColorChooser {
 	private void createColorWheel(final Composite parent) {
 		colorWheel = new ColorWheel(parent, getColorResolution());
 		colorWheel.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, false, false, 1, 5));
-		colorWheel.addListener(SWT.Modify, e -> setNewRGB(determineNewRGB()));
+		colorWheel.addListener(SWT.Modify, e -> setNewRGB(determineNewRGB(false)));
 		colorWheel.addListener(SWT.Selection, e -> notifyListeners(SWT.Selection, new Event()));
 	}
 
-	private RGB determineNewRGB() {
+	private RGB determineNewRGB(final boolean brightnessChanged) {
 		final float[] wheelHSB = colorWheel.getRGB().getHSB();
-		final float brightness = brightnessSlider.getValue();
+		float brightness = 1.0f - brightnessSlider.getValue();
 
-		final HSB hsb = new HSB(wheelHSB[0], wheelHSB[1], 1 - brightness);
+		if (!brightnessChanged && brightness == 0.0f) {
+			brightness = 1.0f;
+		}
+
+		final HSB hsb = new HSB(wheelHSB[0], wheelHSB[1], brightness);
 		brightnessSlider.setHSB(hsb);
 
 		return hsb.getRGB();
@@ -72,7 +76,7 @@ public final class ColorWheelChooser extends AbstractColorChooser {
 		brightnessSlider.setLayoutData(GridDataFactory.swtDefaults().hint(SWT.DEFAULT, 127).create());
 		brightnessSlider.setType(ColorSliderType.Lightness);
 		brightnessSlider.setOrientation(SWT.VERTICAL);
-		brightnessSlider.addListener(SWT.Selection, e -> setNewRGB(determineNewRGB()));
+		brightnessSlider.addListener(SWT.Selection, e -> setNewRGB(determineNewRGB(true)));
 		brightnessSlider.addListener(SWT.MouseDoubleClick, e -> notifyListeners(SWT.Selection, e));
 	}
 
