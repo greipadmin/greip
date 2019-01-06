@@ -8,8 +8,6 @@
  **/
 package org.greip.font;
 
-import java.awt.GraphicsEnvironment;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontMetrics;
@@ -25,14 +23,12 @@ class FontTable extends Table {
 
 	private static final int FONT_ITEM_HEIGHT = 20;
 	private static final int DEFAULT_COLUMN_WIDTH = 150;
-	private final String[] availableFonts;
 
 	public FontTable(final Composite parent) {
 		super(parent, SWT.FULL_SELECTION | SWT.BORDER | SWT.VIRTUAL);
 		new TableColumn(this, SWT.LEFT).setWidth(DEFAULT_COLUMN_WIDTH);
 
-		final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		availableFonts = ge.getAvailableFontFamilyNames();
+		final String[] availableFonts = FontList.getFontNames();
 
 		addListener(SWT.MeasureItem, e -> {
 			e.width = getColumn(0).getWidth();

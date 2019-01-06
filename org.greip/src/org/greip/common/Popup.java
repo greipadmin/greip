@@ -30,6 +30,8 @@ public abstract class Popup extends Shell {
 		super(control.getShell(), SWT.TOOL);
 		this.control = control;
 
+		setRedraw(false);
+		setLayoutDeferred(true);
 		setBackgroundMode(SWT.INHERIT_FORCE);
 		setLayout(new FillLayout());
 
@@ -113,10 +115,11 @@ public abstract class Popup extends Shell {
 	@Override
 	public final void open() {
 		canceled = false;
-		layout(true, true);
 		pack();
+		setLayoutDeferred(false);
 		setLocation(computeLocation(control));
 		super.open();
+		setRedraw(true);
 		setFocus();
 		block();
 	}

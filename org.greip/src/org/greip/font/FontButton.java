@@ -57,6 +57,8 @@ public class FontButton extends DropDownButton {
 	public FontButton(final Composite parent, final int style) {
 		super(parent, style | SWT.DROP_DOWN);
 
+		FontList.touch();
+
 		addListener(SWT.Selection, e -> {
 			if (fontConsumer != null || fontBiConsumer != null) {
 				if (chooseFont()) {
