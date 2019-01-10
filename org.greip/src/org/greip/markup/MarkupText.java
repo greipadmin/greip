@@ -1,9 +1,7 @@
 package org.greip.markup;
 
 import java.text.ParseException;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -55,21 +53,50 @@ public class MarkupText {
 			plainText = markupText;
 		}
 
-		final List<StyleRange> styleRanges = Arrays.asList(parser.getStyleRanges());
+		final StyleRange[] styleRanges = parser.getStyleRanges();
 		applyTextAndStyles(plainText, styleRanges, false);
 
-		if (!wrap && textLayout.getLineCount() > 1) {
-			final String text = plainText.substring(0, Math.min(plainText.length(), textLayout.getLineOffsets()[1] + 20));
-			final StringBuilder buf = new StringBuilder(text).append("...");
+		final int lineCount = textLayout.getLineCount();
 
-			do {
-				buf.deleteCharAt(buf.length() - Math.min(4, buf.length()));
-				applyTextAndStyles(buf.toString(), styleRanges, true);
-			} while (textLayout.getLineCount() > 1);
+		if (!wrap && lineCount > 1) {
+			shortenToVisibleLines(styleRanges, 1);
+
+		} else if (maxHeight != SWT.DEFAULT) {
+			final Rectangle bounds = textLayout.getLineBounds(lineCount - 1);
+
+			if (bounds.height + bounds.y > maxHeight) {
+				final int lines = getVisibleLines(maxHeight);
+				shortenToVisibleLines(styleRanges, lines);
+			}
 		}
 	}
 
-	private void applyTextAndStyles(final String text, final List<StyleRange> styleRanges, final boolean shorten) {
+	private void shortenToVisibleLines(final StyleRange[] styleRanges, final int lines) {
+		final String plainText = textLayout.getText();
+		final String text = plainText.substring(0, Math.min(plainText.length(), textLayout.getLineOffsets()[lines] + 20));
+		final StringBuilder buf = new StringBuilder(text).append("...");
+
+		do {
+			final int index = buf.length() - Math.min(4, buf.length());
+			buf.deleteCharAt(index);
+			applyTextAndStyles(buf.toString(), styleRanges, true);
+		} while (textLayout.getLineCount() > lines && buf.length() > 0);
+	}
+
+	private int getVisibleLines(final int maxHeight) {
+		final int[] lineOffsets = textLayout.getLineOffsets();
+
+		for (int i = lineOffsets.length - 2; i >= 1; i--) {
+			final Rectangle lineBounds = textLayout.getLineBounds(i - 1);
+			if (lineBounds.y + lineBounds.height <= maxHeight) {
+				return i;
+			}
+		}
+
+		return 0;
+	}
+
+	private void applyTextAndStyles(final String text, final StyleRange[] styleRanges, final boolean shorten) {
 		links.clear();
 
 		textLayout.setText(text);

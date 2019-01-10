@@ -13,7 +13,7 @@ import org.eclipse.swt.graphics.RGB;
 
 final class HSB {
 
-	final float[] hsb;
+	private final float[] hsb;
 
 	public HSB(final float hue, final float saturation, final float brightness) {
 		hsb = new float[] { hue, saturation, brightness };

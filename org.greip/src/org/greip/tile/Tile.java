@@ -11,6 +11,7 @@ package org.greip.tile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -72,24 +73,30 @@ public class Tile extends Composite {
 		}
 
 		private String getLinkAt(final int x, final int y) {
-			final TextArea[] textAreas = createTextAreas(getClientArea().width);
+			final Rectangle clientArea = getClientArea();
+			final TextArea[] textAreas = createTextAreas(clientArea.width, clientArea.height);
 
-			for (final TextArea textArea : textAreas) {
-				final Rectangle bounds = textArea.getBounds();
+			try {
+				for (final TextArea textArea : textAreas) {
+					final Rectangle bounds = textArea.getBounds();
 
-				if (bounds.contains(x, y)) {
-					final int offset = textArea.layout.getOffset(x - bounds.x, y - bounds.y, null);
-					final Rectangle lineBounds = getLineBounds(textArea.layout, offset);
+					if (bounds.contains(x, y)) {
+						final int offset = textArea.layout.getOffset(x - bounds.x, y - bounds.y, null);
+						final Rectangle lineBounds = getLineBounds(textArea.layout, offset);
 
-					if (lineBounds.contains(x - bounds.x, y - bounds.y)) {
-						final TextStyle style = textArea.layout.getStyle(offset);
+						if (lineBounds.contains(x - bounds.x, y - bounds.y)) {
+							final TextStyle style = textArea.layout.getStyle(offset);
 
-						if (style.data instanceof String) {
-							return (String) style.data;
+							if (style.data instanceof String) {
+								return (String) style.data;
+							}
 						}
 					}
 				}
+			} finally {
+				disposeTextAreas(textAreas);
 			}
+
 			return null;
 		}
 
@@ -132,16 +139,25 @@ public class Tile extends Composite {
 
 	private static class TextArea {
 		private final TextLayout layout;
-		private final Point pos;
+		private int x;
+		private int y;
 
-		public TextArea(final TextLayout layout, final Point pos) {
+		public TextArea(final TextLayout layout) {
 			this.layout = layout;
-			this.pos = pos;
+		}
+
+		public void setLocation(final int x, final int y) {
+			this.x = x;
+			this.y = y;
 		}
 
 		public Rectangle getBounds() {
 			final Rectangle bounds = layout.getBounds();
-			return new Rectangle(pos.x, pos.y, bounds.width, layout.getText().isEmpty() ? 0 : bounds.height);
+			return new Rectangle(x, y, bounds.width, layout.getText().isEmpty() ? 0 : bounds.height);
+		}
+
+		public void draw(final GC gc) {
+			layout.draw(gc, x, y);
 		}
 	}
 
@@ -248,11 +264,11 @@ public class Tile extends Composite {
 
 				if (selected) {
 					final int radius = Math.max(0, edgeRadius * 2 - 2);
+					final int borderOffset = 2 * borderWidth - 1;
 
 					gc.setForeground(dimmedBackground[3]);
 					gc.setLineWidth(1);
-					gc.drawRoundRectangle(borderWidth, borderWidth, size.width - 2 * borderWidth - 1, size.height - 2 * borderWidth - 1, radius,
-							radius);
+					gc.drawRoundRectangle(borderWidth, borderWidth, size.width - borderOffset, size.height - borderOffset, radius, radius);
 				}
 			}
 
@@ -260,23 +276,15 @@ public class Tile extends Composite {
 			public void paintControl(final PaintEvent e) {
 				e.gc.setAntialias(SWT.ON);
 
-				final Point preferredSize = computeSize(getSize().x, SWT.DEFAULT);
-				if ((getStyle() & SWT.V_SCROLL) > 0) {
-					if (preferredSize.y > getSize().y) {
-						getVerticalBar().setVisible(true);
-					} else {
-						getVerticalBar().setVisible(false);
-					}
-				}
-
 				paintBackground(e.gc);
 				e.gc.setForeground(getForeground());
-				final TextArea[] textAreas = createTextAreas(getClientArea().width);
 
+				final Rectangle clientArea = getClientArea();
+				final TextArea[] textAreas = createTextAreas(clientArea.width, clientArea.height);
 				for (final TextArea textArea : textAreas) {
-					final Rectangle bounds = textArea.getBounds();
-					textArea.layout.draw(e.gc, bounds.x, bounds.y);
+					textArea.draw(e.gc);
 				}
+				disposeTextAreas(textAreas);
 
 				if (hasDecorator()) {
 					final Rectangle decoratorBounds = getDecoratorBounds();
@@ -460,6 +468,7 @@ public class Tile extends Composite {
 	 * @see #setEdgeRadius(int)
 	 */
 	public void setBorderColor(final Color borderColor) {
+		if (borderColor != null && borderColor.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		this.borderColor = borderColor;
 		redraw();
 	}
@@ -974,7 +983,7 @@ public class Tile extends Composite {
 	public Point computeSize(final int wHint, final int hHint, final boolean changed) {
 		final Point size = new Point(0, 0);
 
-		final TextArea[] textAreas = createTextAreas(wHint);
+		final TextArea[] textAreas = createTextAreas(wHint, SWT.DEFAULT);
 		final int height = getTotalTextHeight(textAreas);
 		final int width = getMaxTextWidth(textAreas);
 
@@ -999,6 +1008,8 @@ public class Tile extends Composite {
 			size.y += decoratorSize.y + getEffectiveDecoratorSpacing() + height;
 		}
 
+		disposeTextAreas(textAreas);
+
 		return size;
 	}
 
@@ -1021,41 +1032,31 @@ public class Tile extends Composite {
 		return Math.max(10, width - 2 * borderWidth);
 	}
 
-	private Point computeTextLocation() {
+	private int computeTextIndent() {
 		final Point decoratorSize = getDecoratorSize();
-		final Point pos = new Point(0, 0);
+		int x = marginWidth + borderWidth;
 
 		if ((decoratorAlignment & SWT.LEFT) > 0) {
-			pos.x = marginWidth + decoratorSize.x + getEffectiveDecoratorSpacing() + borderWidth;
-		} else {
-			pos.x = marginWidth + borderWidth;
+			x += decoratorSize.x + getEffectiveDecoratorSpacing();
 		}
 
-		if (decoratorAlignment == SWT.TOP) {
-			pos.y = marginHeight + decoratorSize.y + getEffectiveDecoratorSpacing() + borderWidth;
-		} else {
-			pos.y = marginHeight + borderWidth;
-		}
-
-		return pos;
+		return x;
 	}
 
-	private TextArea createTextArea(final int index, final int wHint) {
-		final TextLayout layout = createTextLayout(index, computeMaxTextWidth(wHint), SWT.DEFAULT);
-		final Point pos = computeTextLocation();
+	private TextArea createTextArea(final int index, final int wHint, final int hHint) {
+		final TextLayout layout = createTextLayout(index, computeMaxTextWidth(wHint), hHint);
+		final TextArea textArea = new TextArea(layout);
 
-		return new TextArea(layout, pos);
+		textArea.setLocation(computeTextIndent(), 0);
+
+		return textArea;
 	}
 
-	private TextArea[] createTextAreas(final int wHint) {
-		final TextArea[] textAreas = new TextArea[sections.size()];
+	private TextArea[] createTextAreas(final int wHint, final int hHint) {
+		final TextArea[] textAreas = IntStream.range(0, sections.size()).mapToObj(i -> createTextArea(i, wHint, SWT.DEFAULT))
+				.toArray(TextArea[]::new);
+
 		final Point decoratorSize = getDecoratorSize();
-
-		for (int i = 0; i < textAreas.length; i++) {
-			textAreas[i] = createTextArea(i, wHint);
-			textAreas[i].pos.y = 0;
-		}
-
 		int y = marginHeight + borderWidth;
 
 		if (decoratorAlignment == SWT.TOP) {
@@ -1067,21 +1068,46 @@ public class Tile extends Composite {
 			offset += decoratorSize.y;
 
 			for (int i = 1; i < textAreas.length; i++) {
-				textAreas[i].pos.y += offset;
+				final Rectangle bounds = textAreas[i].getBounds();
+				textAreas[i].setLocation(bounds.x, bounds.y + offset);
 			}
 
 		} else if (decoratorAlignment != SWT.BOTTOM) {
 			y += Math.max(0, (decoratorSize.y - getTotalTextHeight(textAreas)) / 2);
 		}
 
-		for (int i = 0; i < textAreas.length; i++) {
-			final int height = textAreas[i].getBounds().height;
+		for (final TextArea textArea : textAreas) {
+			final Rectangle bounds = textArea.getBounds();
+			final int height = bounds.height;
 
-			textAreas[i].pos.y += y;
+			textArea.setLocation(bounds.x, bounds.y + y);
 			y += height + (height == 0 ? 0 : textSpacing);
 		}
 
+		if (hHint != SWT.DEFAULT) {
+			shortenPartiallyDisplayedTextArea(textAreas, wHint, hHint);
+		}
+
 		return textAreas;
+	}
+
+	private void shortenPartiallyDisplayedTextArea(final TextArea[] textAreas, final int wHint, final int hHint) {
+		for (int i = textAreas.length - 1; i >= 0; i--) {
+			final Rectangle bounds = textAreas[i].getBounds();
+			final int height = bounds.y + bounds.height;
+
+			if (height + marginHeight + borderWidth > hHint && bounds.y < hHint) {
+				textAreas[i].layout.dispose();
+				textAreas[i] = createTextArea(i, wHint, Math.max(0, hHint - bounds.y - marginHeight - borderWidth));
+				textAreas[i].setLocation(bounds.x, bounds.y);
+			}
+		}
+	}
+
+	private static void disposeTextAreas(final TextArea[] textAreas) {
+		for (final TextArea textArea : textAreas) {
+			textArea.layout.dispose();
+		}
 	}
 
 	private TextLayout createTextLayout(final int index, final int maxWidth, final int maxHeight) {
@@ -1091,7 +1117,7 @@ public class Tile extends Composite {
 		markupText.setForeground(getForeground(index));
 		markupText.setAlignment(getAlignment(index));
 		markupText.setWrap(isWrap(index));
-		markupText.layout(getText(index), maxWidth, isWrap(index) ? SWT.DEFAULT : maxHeight);
+		markupText.layout(getText(index), maxWidth, maxHeight);
 
 		return markupText.getTextLayout();
 	}
@@ -1112,7 +1138,7 @@ public class Tile extends Composite {
 			x = (size.width - 2 * marginWidth - decoratorSize.x) / 2 + marginWidth;
 			y = marginHeight + borderWidth;
 			if (!sections.isEmpty()) {
-				final int height = createTextArea(0, size.width).getBounds().height;
+				final int height = createTextArea(0, size.width, size.height).getBounds().height;
 				y += height + (height == 0 ? 0 : decoratorSpacing);
 			}
 		} else {
@@ -1130,7 +1156,14 @@ public class Tile extends Composite {
 			}
 		}
 
-		return new Rectangle(x, y, decoratorSize.x, decoratorSize.y);
+		x = Math.max(x, borderWidth + marginWidth);
+		y = Math.max(y, borderWidth + marginHeight);
+
+		// Clipping auf sichtbaren Bereich, Rand wird nicht übermalt
+		final int maxHeight = size.height - borderWidth - marginHeight - y;
+		final int maxWidth = size.width - borderWidth - marginWidth - x;
+
+		return new Rectangle(x, y, Math.min(decoratorSize.x, maxWidth), Math.min(decoratorSize.y, maxHeight));
 	}
 
 	private Point getDecoratorSize() {
