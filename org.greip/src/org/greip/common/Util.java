@@ -26,6 +26,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Resource;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Widget;
 
 public final class Util {
 
@@ -52,6 +53,7 @@ public final class Util {
 		return new RGB(hsb[0], hsb[1], Math.max(0, Math.min(1.0f, hsb[2] + brightnessOffset)));
 	}
 
+	@SafeVarargs
 	public static <T> T nvl(final T... o) {
 		for (final T t : o) {
 			if (t != null) return t;
@@ -176,5 +178,31 @@ public final class Util {
 		if (!nullable && resource == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		if (resource != null && resource.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		return resource;
+	}
+
+	public static <W extends Widget> W checkWidget(final W widget, final boolean nullable) {
+		if (!nullable && widget == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (widget != null && widget.isDisposed()) SWT.error(SWT.ERROR_WIDGET_DISPOSED);
+		return widget;
+	}
+
+	public static boolean whenAnySet(final int style, final int... bits) {
+		for (final int bit : bits) {
+			if ((style & bit) > 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static RGB hexToRGB(final String hex) {
+		if (!hex.matches("#[0-9A-F]{0,6}")) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		final int color = Integer.parseInt(hex.concat("000000").substring(1, 7), 16);
+
+		final int blue = color & 0xff;
+		final int green = color >> 8 & 0xff;
+		final int red = color >> 16 & 0xff;
+
+		return new RGB(red, green, blue);
 	}
 }

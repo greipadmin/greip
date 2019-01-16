@@ -24,6 +24,7 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
+import org.greip.common.Util;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -201,10 +202,11 @@ public class HtmlMarkupParser implements IMarkupParser {
 			tagStack.remove(tagStack.size() - 1);
 		}
 
-		private static RGB getRGB(final String color) {
-			return color == null ? null
-					: new RGB(Integer.parseInt(color.substring(1, 3), 16), Integer.parseInt(color.substring(3, 5), 16),
-							Integer.parseInt(color.substring(5, 7), 16));
+		private static RGB getRGB(final String color) throws SAXException {
+			if (color == null) return null;
+			if (!color.matches("#[0-9A-F]{0,6}")) throw new SAXException("invalid color value");
+
+			return Util.hexToRGB(color);
 		}
 
 		private static Color getColor(final RGB rgb) {
