@@ -77,19 +77,15 @@ public abstract class Popup extends Shell {
 		controlLocation.x -= borderWidth;
 		controlLocation.y -= borderWidth;
 
-		if (control instanceof Button) {
-			controlLocation.x += 2;
-		}
-
 		final List<Rectangle> positions = new ArrayList<>();
 		// bottom
 		positions.add(new Rectangle(controlLocation.x, controlLocation.y + controlSize.y, size.x, size.y));
 		positions.add(new Rectangle(controlLocation.x + controlSize.x, controlLocation.y, size.x, size.y));
-		positions.add(new Rectangle(controlLocation.x - size.x, controlLocation.y, size.x, size.y));
+		positions.add(new Rectangle(controlLocation.x - size.x + controlSize.x, controlLocation.y + controlSize.y, size.x, size.y));
 		// top
 		positions.add(new Rectangle(controlLocation.x, controlLocation.y - size.y, size.x, size.y));
 		positions.add(new Rectangle(controlLocation.x + controlSize.x, controlLocation.y + controlSize.y - size.y, size.x, size.y));
-		positions.add(new Rectangle(controlLocation.x - size.x, controlLocation.y + controlSize.y - size.y, size.x, size.y));
+		positions.add(new Rectangle(controlLocation.x - size.x + controlSize.x, controlLocation.y - size.y, size.x, size.y));
 		// center
 		positions.add(new Rectangle((screenSize.width - size.x) / 2, controlLocation.y + controlSize.y, size.x, size.y));
 		positions.add(new Rectangle(controlLocation.x + controlSize.x, (screenSize.height - size.y) / 2, size.x, size.y));
@@ -99,6 +95,11 @@ public abstract class Popup extends Shell {
 
 		for (final Rectangle r : positions) {
 			if (r.x > screenSize.x && r.y > screenSize.y && r.height + r.y < screenSize.height && r.width + r.x < screenSize.width) {
+
+				if (control instanceof Button && controlLocation.x == r.x) {
+					r.x += 2;
+				}
+
 				return new Point(r.x, r.y);
 			}
 		}
