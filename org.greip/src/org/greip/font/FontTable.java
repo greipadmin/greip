@@ -91,7 +91,7 @@ class FontTable extends Table {
 			font = new Font(gc.getDevice(), fontName, fontHeight++, SWT.NONE);
 			gc.setFont(font);
 			fm = gc.getFontMetrics();
-		} while (fm.getAscent() + fm.getDescent() < 12 && fontHeight < 20);
+		} while (fm.getHeight() - fm.getDescent() < 12 && fontHeight < 16);
 
 		return font;
 	}
