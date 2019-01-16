@@ -17,15 +17,15 @@ import org.greip.common.Util;
 
 /**
  * Instances of this class represents a decorator that paints an animated circle
- * and a value.
+ * and a number value.
  *
  * @author Thomas Lorbeer
  */
-public final class CountDecorator extends AbstractValueDecorator {
+public final class NumberDecorator extends AbstractNumberDecorator {
 
 	private Color circleColor;
 	private int outerDiameter = 50;
-	private int innerDiameter = 30;
+	private int innerDiameter = 40;
 	private int offset;
 
 	/**
@@ -41,7 +41,7 @@ public final class CountDecorator extends AbstractValueDecorator {
 	 *            disposed</li>
 	 *            </ul>
 	 */
-	public CountDecorator(final Control parent) {
+	public NumberDecorator(final Control parent) {
 		super(parent);
 	}
 

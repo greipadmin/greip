@@ -13,15 +13,15 @@ import org.greip.common.Util;
  *
  * @author Thomas Lorbeer
  */
-public final class PercentageDecorator extends AbstractValueDecorator {
+public final class PercentageDecorator extends AbstractNumberDecorator {
 
 	private double curValue;
-	private double maxValue = 100.0d;
+	private double maxValue;
 	private double increment;
 	private Color circleBackground;
 	private Color circleForeground;
-	private int outerDiameter = 55;
-	private int innerDiameter = 45;
+	private int outerDiameter = 50;
+	private int innerDiameter = 40;
 	private CircleType circleType = CircleType.Circle;
 
 	/**
@@ -39,6 +39,9 @@ public final class PercentageDecorator extends AbstractValueDecorator {
 	 */
 	public PercentageDecorator(final Control parent) {
 		super(parent);
+
+		setUnit("%");
+		setMaxValue(100.0d);
 	}
 
 	/**

@@ -25,7 +25,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Control;
 import org.greip.common.Util;
 
-public abstract class AbstractValueDecorator extends AbstractDecorator {
+public abstract class AbstractNumberDecorator extends AbstractDecorator {
 
 	private static final int TEXT_SPACING = 2;
 
@@ -39,7 +39,7 @@ public abstract class AbstractValueDecorator extends AbstractDecorator {
 	private int unitAlignment = SWT.RIGHT;
 	private Font unitFont;
 
-	protected AbstractValueDecorator(final Control parent) {
+	protected AbstractNumberDecorator(final Control parent) {
 		super(parent);
 	}
 
@@ -112,10 +112,10 @@ public abstract class AbstractValueDecorator extends AbstractDecorator {
 	/**
 	 * Gets the current font.
 	 *
-	 * @return the font or <code>null</code> if no font is set.
+	 * @return the font
 	 */
 	public Font getFont() {
-		return font;
+		return Util.nvl(font, getParent().getFont());
 	}
 
 	/**
