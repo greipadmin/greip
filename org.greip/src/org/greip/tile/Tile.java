@@ -528,8 +528,9 @@ public class Tile extends Composite {
 	 *
 	 * @return the decorator
 	 */
-	public IDecorator getDecorator() {
-		return decorator;
+	@SuppressWarnings("unchecked")
+	public <T extends IDecorator> T getDecorator() {
+		return (T) decorator;
 	}
 
 	/**

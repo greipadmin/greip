@@ -1,311 +1,290 @@
 package org.greip.decorator;
 
-import java.math.BigDecimal;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
 import org.greip.common.Util;
 
-public final class PercentageDecorator extends AbstractDecorator {
+/**
+ * Instances of this class represents a decorator that paints an animated circle
+ * and a percentual value.
+ *
+ * @author Thomas Lorbeer
+ */
+public final class PercentageDecorator extends AbstractValueDecorator {
 
+	private double curValue;
+	private double maxValue = 100.0d;
+	private double increment;
+	private Color circleBackground;
+	private Color circleForeground;
+	private int outerDiameter = 55;
+	private int innerDiameter = 45;
+	private CircleType circleType = CircleType.Circle;
+
+	/**
+	 * Creates a new instance of the decorator.
+	 *
+	 * @param parent
+	 *        the parent control, <code>null</code> not allowed.
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the parent has been
+	 *            disposed</li>
+	 *            </ul>
+	 */
 	public PercentageDecorator(final Control parent) {
 		super(parent);
 	}
 
-	private Map<BigDecimal, Color> treshholdMap;
-	private BigDecimal value;
-	private BigDecimal curValue;
-	private BigDecimal maxValue;
-	private BigDecimal increment;
-	private Font font;
-	private Color foreground;
-	private Color background;
-	private int outerDiameter = 55;
-	private int innerDiameter = 45;
-	private boolean animate;
-	private String unit;
-	private CircleType circleType = CircleType.Circle;
-	private int unitAlignment;
-	private Font unitFont;
-
-	private Font createUnitFont() {
-		final FontData[] fontData;
-
-		if (unitFont != null) {
-			fontData = unitFont.getFontData();
-		} else {
-			fontData = getFont().getFontData();
-			fontData[0].setHeight(Math.min(10, Math.max(2, (int) (fontData[0].getHeight() * 0.5))));
-			fontData[0].setStyle(SWT.NONE);
-		}
-
-		return new Font(getDisplay(), fontData[0]);
+	/**
+	 * Returns the current circle background color.
+	 *
+	 * @return the color or <code>null</code> if no color defined
+	 */
+	public Color getCircleBackground() {
+		return circleBackground;
 	}
 
-	private void doAnimate(final GC gc) {
-		Display.getCurrent().timerExec(10, () -> {
-			if (curValue.compareTo(value) < 0) {
-				if (curValue.add(increment).compareTo(value) > 0) {
-					curValue = value;
-				} else {
-					curValue = curValue.add(increment);
-				}
-				redraw();
-			}
-		});
+	/**
+	 * Sets the new circle background color.
+	 *
+	 * @param color
+	 *        The new color or <code>null</code> to use default color.
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the color has been
+	 *            disposed</li>
+	 *            </ul>
+	 */
+	public void setCircleBackground(final Color color) {
+		this.circleBackground = Util.checkResource(color, true);
+		redraw();
 	}
 
-	@Override
-	public void doPaint(final GC gc, final int x, final int y) {
-		final Point center = paintCircle(gc, x, y);
-
-		if (animate) {
-			doAnimate(gc);
-		}
-
-		if (curValue.equals(value)) {
-			final Font textFont = Util.nvl(font, gc.getFont());
-			final Point size = getSize();
-
-			gc.setFont(textFont);
-
-			final String text = value.toString();
-			final Point textSize = gc.textExtent(text);
-			final Point textPos;
-
-			if (circleType == CircleType.Circle) {
-				textPos = new Point(center.x - textSize.x / 2, y + (size.y - textSize.y) / 2);
-			} else {
-				textPos = new Point(center.x - textSize.x / 2, y + size.y - textSize.y);
-			}
-
-			if (foreground != null) {
-				gc.setForeground(foreground);
-			}
-
-			if (unit != null) {
-				Util.withFont(gc, createUnitFont(), font -> {
-					final int unitOffsetY = getUnitOffsetY(textFont, font);
-					final Point unitSize = gc.textExtent(unit);
-
-					if ((unitAlignment & SWT.RIGHT) > 0) {
-						gc.drawText(unit, textPos.x + textSize.x - unitSize.x / 2, textPos.y + textSize.y - unitSize.y - unitOffsetY, true);
-						textPos.x -= unitSize.x / 2;
-					} else if ((unitAlignment & SWT.LEFT) > 0) {
-						gc.drawText(unit, textPos.x - unitSize.x / 2 - 2, textPos.y + textSize.y - unitSize.y - unitOffsetY, true);
-						textPos.x += unitSize.x / 2;
-					} else if (unitAlignment == SWT.BOTTOM) {
-						textPos.y -= unitSize.y / (circleType == CircleType.Circle ? 2 : 1) - 3;
-						gc.drawText(unit, center.x - unitSize.x / 2, textPos.y + textSize.y - 3, true);
-					} else {
-						textPos.y += circleType == CircleType.Circle ? unitSize.y / 2 : 0;
-						gc.drawText(unit, center.x - unitSize.x / 2, textPos.y - unitSize.y + 4, true);
-					}
-				});
-			}
-
-			gc.drawText(text, textPos.x, textPos.y, true);
-		}
+	/**
+	 * Returns the current circle foreground color.
+	 *
+	 * @return the color or <code>null</code> if no color defined
+	 */
+	public Color getCircleForeground() {
+		return circleForeground;
 	}
 
-	public Color getBackground() {
-		return background != null ? background : Display.getCurrent().getSystemColor(SWT.COLOR_GRAY);
+	/**
+	 * Sets the new circle foreground color.
+	 *
+	 * @param color
+	 *        The new color or <code>null</code> to use default color.
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the color has been
+	 *            disposed</li>
+	 *            </ul>
+	 */
+	public void setCircleForeground(final Color color) {
+		this.circleForeground = Util.checkResource(color, true);
+		redraw();
 	}
 
+	/**
+	 * Gets the current circle type.
+	 *
+	 * @return the circle type
+	 */
 	public CircleType getCircleType() {
 		return circleType;
 	}
 
-	private Color getColor() {
-		if (treshholdMap != null) {
-			for (final Entry<BigDecimal, Color> entry : treshholdMap.entrySet()) {
-				if (value.compareTo(entry.getKey()) >= 0) {
-					return entry.getValue();
-				}
-			}
-		}
-
-		return getForeground();
+	/**
+	 * Sets the circle Type.
+	 *
+	 * @param circleType
+	 *        the new circle type
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the circle type is
+	 *            <code>null</code></li>
+	 *            </ul>
+	 */
+	public void setCircleType(final CircleType circleType) {
+		if (circleType == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		this.circleType = circleType;
+		redraw();
 	}
 
-	public Font getFont() {
-		return font;
-	}
-
-	public Color getForeground() {
-		return foreground;
-	}
-
+	/**
+	 * Returns the inner diameter of the ring.
+	 *
+	 * @return the inner diameter in pixels
+	 */
 	public int getInnerDiameter() {
 		return innerDiameter;
 	}
 
-	public double getMaxValue() {
-		return maxValue.doubleValue();
-	}
-
-	public int getOuterDiameter() {
-		return outerDiameter;
-	}
-
-	@Override
-	public Point getSize() {
-
-		if (circleType == CircleType.Circle) {
-			return new Point(outerDiameter, outerDiameter);
-		}
-
-		return Util.withResource(new GC(getDisplay()), gc -> {
-			gc.setFont(getFont());
-
-			final int textHeight = gc.textExtent(value.toString()).y;
-			int height = (int) (outerDiameter / circleType.heightQuotient) + textHeight / 2;
-
-			if (unit != null && unitAlignment == SWT.BOTTOM) {
-				height += Util.withFont(gc, createUnitFont(), font -> {
-					return Integer.valueOf(gc.textExtent(unit.toString()).y / 2);
-				}).intValue();
-			}
-
-			return new Point(outerDiameter, height);
-		});
-	}
-
-	public String getUnit() {
-		return unit;
-	}
-
-	public int getUnitAlignment() {
-		return unitAlignment;
-	}
-
-	public Font getUnitFont() {
-		return unitFont;
-	}
-
-	private int getUnitOffsetY(final Font textFont, final Font unitFont) {
-		final int textFontHeight = textFont.getFontData()[0].getHeight();
-		final int unitFontHeight = unitFont.getFontData()[0].getHeight();
-
-		if (unitAlignment == SWT.LEFT || unitAlignment == SWT.RIGHT) {
-			return (int) ((textFontHeight - unitFontHeight) / 4.0 + 0.5);
-		} else if ((unitAlignment & SWT.LEFT) > 0 || (unitAlignment & SWT.RIGHT) > 0) {
-			return textFontHeight - unitFontHeight + textFontHeight / 3;
-		} else if (unitAlignment == SWT.TOP) {
-			return unitFontHeight - textFontHeight / 10;
-		}
-		return -unitFontHeight - 2;
-	}
-
-	public double getValue() {
-		return value.doubleValue();
-	}
-
-	public boolean isShowAnimation() {
-		return animate;
-	}
-
-	private Point paintCircle(final GC gc, final int x, final int y) {
-		final Color color = getColor();
-		final Color bgColor = gc.getBackground();
-		final int curAngle = (int) Math.round(curValue.doubleValue() * circleType.angle / maxValue.doubleValue());
-		final int diameterDiff = (outerDiameter - innerDiameter) / 2;
-
-		gc.setBackground(color == null ? gc.getDevice().getSystemColor(SWT.COLOR_DARK_GRAY) : color);
-		gc.fillArc(x, y, outerDiameter, outerDiameter, circleType.angle - curAngle + circleType.offset, curAngle);
-		gc.setBackground(getBackground());
-		gc.fillArc(x, y, outerDiameter, outerDiameter, circleType.offset, circleType.angle - curAngle);
-		gc.setBackground(bgColor);
-		gc.fillOval(x + diameterDiff, y + diameterDiff, innerDiameter, innerDiameter);
-
-		return new Point(x + outerDiameter / 2, y + outerDiameter / 2);
-	}
-
-	public void setBackground(final Color background) {
-		this.background = background;
-		redraw();
-	}
-
-	public void setCircleType(final CircleType angleType) {
-		this.circleType = angleType;
-		redraw();
-	}
-
-	public void setFont(final Font font) {
-		this.font = font;
-		redraw();
-	}
-
-	public void setForeground(final Color color) {
-		this.foreground = color;
-		redraw();
-	}
-
+	/**
+	 * Sets the inner diameter of the ring. When the inner diameter is zero and
+	 * the outer diameter is greater than zero a circle is drawn.
+	 *
+	 * @param innerDiameter
+	 *        the inner diameter in pixels
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if inner diameter less then
+	 *            zero</li>
+	 *            </ul>
+	 */
 	public void setInnerDiameter(final int innerDiameter) {
+		if (innerDiameter < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		this.innerDiameter = innerDiameter;
 		redraw();
 	}
 
-	public void setMaxValue(final double maxValue) {
-		this.maxValue = new BigDecimal(maxValue);
-		this.increment = new BigDecimal(maxValue / 30);
-		redraw();
+	/**
+	 * Returns the outer diameter of the ring.
+	 *
+	 * @return the outer diameter in pixels
+	 */
+	public int getOuterDiameter() {
+		return outerDiameter;
 	}
 
+	/**
+	 * Sets the outer diameter of the ring.
+	 *
+	 * @param outerDiameter
+	 *        the outer diameter in pixels
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if outer diameter less then
+	 *            zero</li>
+	 *            </ul>
+	 */
 	public void setOuterDiameter(final int outerDiameter) {
+		if (outerDiameter < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		this.outerDiameter = outerDiameter;
 		redraw();
 	}
 
-	public void setTreshholdColors(final Map<BigDecimal, Color> treshholdMap) {
-		this.treshholdMap = new TreeMap<>(new Comparator<BigDecimal>() {
-			@Override
-			public int compare(final BigDecimal o1, final BigDecimal o2) {
-				return -o1.compareTo(o2);
-			}
-		});
-		this.treshholdMap.putAll(treshholdMap);
-		redraw();
+	/**
+	 * Returns the maximum value which the decorator will allow. The default
+	 * maximum is 100.
+	 *
+	 * @return the maximum
+	 */
+	public double getMaxValue() {
+		return maxValue;
 	}
 
-	public void setUnit(final String unit) {
-		this.unit = unit;
-		redraw();
+	/**
+	 * Sets the maximum value that the decorator will allow. If the new maximum
+	 * is applied then the current value will be adjusted if necessary to fall
+	 * within its new range. The default maximum is 100.
+	 *
+	 * @param maxValue
+	 *        the new maximum, which must be greater or equal than zero.
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if maximum value is less then
+	 *            zero</li>
+	 *            </ul>
+	 */
+	public void setMaxValue(final double maxValue) {
+		if (maxValue < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+
+		this.maxValue = maxValue;
+		this.increment = maxValue / 30;
+
+		if (getValue() > maxValue) {
+			setValue(maxValue);
+		} else {
+			redraw();
+		}
 	}
 
-	public void setUnitAlignment(final int unitAlignment) {
-		this.unitAlignment = unitAlignment;
-		redraw();
-	}
-
-	public void setUnitFont(final Font unitFont) {
-		this.unitFont = unitFont;
-		redraw();
-	}
-
+	/**
+	 * Sets the new value.
+	 *
+	 * @param value
+	 *        the value
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if outer diameter less than zero
+	 *            or greater than {@link #getMaxValue()}</li>
+	 *            </ul>
+	 */
+	@Override
 	public void setValue(final double value) {
+		if (value < 0 || value > getMaxValue()) SWT.error(SWT.ERROR_INVALID_RANGE);
+		super.setValue(value);
+	}
 
-		if (value > getMaxValue()) {
-			throw new IllegalArgumentException("legal value is greater maxValue");
+	@Override
+	protected double getValueToDisplay() {
+		return getValue() * 100 / getMaxValue();
+	}
+
+	@Override
+	protected void initAnimation() {
+		curValue = isShowAnimation() ? 0d : getValue();
+	}
+
+	@Override
+	public void doPaint(final GC gc, final int x, final int y) {
+		paintCircle(gc, x, y);
+
+		if (curValue == getValue()) {
+			final Point size = getSize();
+			final Point textSize = getTextSize();
+			final int offsetY;
+
+			if (circleType == CircleType.Circle) {
+				offsetY = (size.y - textSize.y) / 2;
+			} else {
+				offsetY = size.y - textSize.y;
+			}
+
+			paintValue(gc, x + (size.x - textSize.x) / 2, y + offsetY);
+
+		} else {
+			curValue = Math.min(curValue + increment, getValue());
+			redrawAsync();
+		}
+	}
+
+	@Override
+	public Point getSize() {
+		final Point textSize = getTextSize();
+
+		if (circleType == CircleType.Circle) {
+			return new Point(Math.max(outerDiameter, textSize.x), Math.max(outerDiameter, textSize.y));
 		}
 
-		this.value = new BigDecimal(value);
-		curValue = animate ? new BigDecimal(0) : this.value;
-
-		redraw();
+		final int height = (int) (outerDiameter / circleType.heightQuotient) + textSize.y / 2;
+		return new Point(Math.max(outerDiameter, textSize.x), Math.max(height, textSize.y));
 	}
 
-	public void showAnimation(final boolean animate) {
-		this.animate = animate;
+	private void paintCircle(final GC gc, final int x, final int y) {
+		final Color bgColor = gc.getBackground();
+		final int curAngle = (int) Math.round(curValue * circleType.angle / maxValue);
+		final int diameterDiff = (outerDiameter - innerDiameter) / 2;
+
+		gc.setBackground(Util.nvl(getTreshholdColor(getCircleForeground()), getParent().getForeground()));
+		gc.fillArc(x, y, outerDiameter, outerDiameter, circleType.angle - curAngle + circleType.offset, curAngle);
+		gc.setBackground(Util.nvl(getCircleBackground(), getDisplay().getSystemColor(SWT.COLOR_GRAY)));
+		gc.fillArc(x, y, outerDiameter, outerDiameter, circleType.offset, circleType.angle - curAngle);
+		gc.setBackground(bgColor);
+		gc.fillOval(x + diameterDiff, y + diameterDiff, innerDiameter, innerDiameter);
 	}
 }

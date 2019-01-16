@@ -12,6 +12,7 @@ package org.greip.decorator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.greip.common.Util;
 
 /**
  * AbstractDecorator is the base implementation of {@link IDecorator}.
@@ -33,12 +34,11 @@ public abstract class AbstractDecorator implements IDecorator {
 	 * @exception IllegalArgumentException
 	 *            <ul>
 	 *            <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the parent is disposed</li>
 	 *            </ul>
 	 */
 	protected AbstractDecorator(final Control parent) {
-		if (parent == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-
-		this.parent = parent;
+		this.parent = Util.checkWidget(parent, false);
 		this.parent.addListener(SWT.Dispose, e -> dispose());
 	}
 
