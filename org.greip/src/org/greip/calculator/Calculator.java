@@ -379,9 +379,7 @@ public final class Calculator extends Composite {
 	 */
 	public void setResultForeground(final Color resultForeground) {
 		checkWidget();
-		Util.whenNotNull(resultForeground, c -> Util.when(c.isDisposed(), () -> SWT.error(SWT.ERROR_INVALID_ARGUMENT)));
-
-		this.resultForeground = resultForeground;
+		this.resultForeground = Util.checkResource(resultForeground, true);
 
 		lblResult.setForeground(resultForeground);
 		lblFormula.setForeground(resultForeground);
@@ -428,9 +426,7 @@ public final class Calculator extends Composite {
 	 */
 	public void setResultBackground(final Color resultBackground) {
 		checkWidget();
-		Util.whenNotNull(resultBackground, c -> Util.when(c.isDisposed(), () -> SWT.error(SWT.ERROR_INVALID_ARGUMENT)));
-
-		this.resultBackground = resultBackground;
+		this.resultBackground = Util.checkResource(resultBackground, true);
 
 		lblResult.setBackground(resultBackground);
 		lblFormula.setBackground(resultBackground);
