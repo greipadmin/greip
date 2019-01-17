@@ -52,21 +52,19 @@ public final class NumberDecorator extends AbstractNumberDecorator {
 	 */
 	@Override
 	public void doPaint(final GC gc, final int x, final int y) {
-		final Color bgColor = gc.getBackground();
-
 		gc.setBackground(getTreshholdColor(getCircleColor()));
-		gc.fillOval(x + offset, y + offset, outerDiameter - offset * 2, outerDiameter - offset * 2);
 
 		if (offset == 0) {
 			final Point size = getSize();
 			final Point textSize = getTextSize();
+			final int lineWidth = (outerDiameter - innerDiameter) / 2;
 
-			gc.setBackground(bgColor);
-			gc.fillOval(x + (outerDiameter - innerDiameter) / 2, y + (outerDiameter - innerDiameter) / 2, innerDiameter, innerDiameter);
-
+			Util.drawArc(gc, x, y, outerDiameter, lineWidth, 0, 360);
 			paintValue(gc, x + (size.x - textSize.x) / 2, y + (size.y - textSize.y) / 2);
 
 		} else {
+			gc.fillOval(x + offset, y + offset, outerDiameter - offset * 2, outerDiameter - offset * 2);
+
 			offset = Math.max(0, offset - 4);
 			redrawAsync();
 		}

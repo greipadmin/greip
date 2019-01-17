@@ -283,18 +283,8 @@ public final class PercentageDecorator extends AbstractNumberDecorator {
 		final int lineWidth = (outerDiameter - innerDiameter) / 2;
 
 		gc.setForeground(Util.nvl(getTreshholdColor(getCircleForeground()), getParent().getForeground()));
-		drawArc(gc, x, y, outerDiameter, lineWidth, circleType.angle - curAngle + circleType.offset, curAngle);
+		Util.drawArc(gc, x, y, outerDiameter, lineWidth, circleType.angle - curAngle + circleType.offset, curAngle);
 		gc.setForeground(Util.nvl(getCircleBackground(), getDisplay().getSystemColor(SWT.COLOR_GRAY)));
-		drawArc(gc, x, y, outerDiameter, lineWidth, circleType.offset, circleType.angle - curAngle);
-	}
-
-	private static void drawArc(final GC gc, final int x, final int y, final int diameter, final int lineWidth, final int startAngle,
-			final int arcAngle) {
-
-		gc.setLineWidth(2);
-		for (int i = 1; i < lineWidth; i++) {
-			gc.drawArc(x + i, y + i, diameter - i - i, diameter - i - i, startAngle, arcAngle);
-		}
-		gc.setLineWidth(1);
+		Util.drawArc(gc, x, y, outerDiameter, lineWidth, circleType.offset, circleType.angle - curAngle);
 	}
 }
