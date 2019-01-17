@@ -279,15 +279,22 @@ public final class PercentageDecorator extends AbstractNumberDecorator {
 	}
 
 	private void paintCircle(final GC gc, final int x, final int y) {
-		final Color bgColor = gc.getBackground();
 		final int curAngle = (int) Math.round(curValue * circleType.angle / maxValue);
-		final int diameterDiff = (outerDiameter - innerDiameter) / 2;
+		final int lineWidth = (outerDiameter - innerDiameter) / 2;
 
-		gc.setBackground(Util.nvl(getTreshholdColor(getCircleForeground()), getParent().getForeground()));
-		gc.fillArc(x, y, outerDiameter, outerDiameter, circleType.angle - curAngle + circleType.offset, curAngle);
-		gc.setBackground(Util.nvl(getCircleBackground(), getDisplay().getSystemColor(SWT.COLOR_GRAY)));
-		gc.fillArc(x, y, outerDiameter, outerDiameter, circleType.offset, circleType.angle - curAngle);
-		gc.setBackground(bgColor);
-		gc.fillOval(x + diameterDiff, y + diameterDiff, innerDiameter, innerDiameter);
+		gc.setForeground(Util.nvl(getTreshholdColor(getCircleForeground()), getParent().getForeground()));
+		drawArc(gc, x, y, outerDiameter, lineWidth, circleType.angle - curAngle + circleType.offset, curAngle);
+		gc.setForeground(Util.nvl(getCircleBackground(), getDisplay().getSystemColor(SWT.COLOR_GRAY)));
+		drawArc(gc, x, y, outerDiameter, lineWidth, circleType.offset, circleType.angle - curAngle);
+	}
+
+	private static void drawArc(final GC gc, final int x, final int y, final int diameter, final int lineWidth, final int startAngle,
+			final int arcAngle) {
+
+		gc.setLineWidth(2);
+		for (int i = 1; i < lineWidth; i++) {
+			gc.drawArc(x + i, y + i, diameter - i - i, diameter - i - i, startAngle, arcAngle);
+		}
+		gc.setLineWidth(1);
 	}
 }
