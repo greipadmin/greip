@@ -15,9 +15,12 @@ import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Composite;
 import org.greip.common.Util;
 import org.greip.decorator.ImageDecorator;
+import org.greip.internal.BorderPainter;
+import org.greip.internal.IBorderable;
 
 /**
  * This class represents a non-selectable user interface object that displays an
@@ -25,19 +28,22 @@ import org.greip.decorator.ImageDecorator;
  * GIF), ICO and TIFF.
  * <dl>
  * <dt><b>Styles:</b></dt>
- * <dd>BORDER</dd>
+ * <dd>none</dd>
  * <dt><b>Events:</b></dt>
  * <dd>(none)</dd>
  * </dl>
  *
  * @author Thomas Lorbeer
  */
-public class Picture extends Composite {
+public class Picture extends Composite implements IBorderable {
 
 	private final ImageDecorator decorator;
 	private Point scaleTo;
+
+	private final BorderPainter border = new BorderPainter(this);
 	private int borderWidth = 0;
 	private Color borderColor;
+	private int edgeRadius;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -70,11 +76,9 @@ public class Picture extends Composite {
 	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
 	 *            that created the parent</li>
 	 *            </ul>
-	 *
-	 * @see SWT#BORDER
 	 */
 	public Picture(final Composite parent, final int style) {
-		super(parent, style | SWT.DOUBLE_BUFFERED);
+		super(parent, style | SWT.DOUBLE_BUFFERED & ~SWT.BORDER);
 
 		decorator = new ImageDecorator(this);
 		addListener(SWT.Paint, e -> {
@@ -82,15 +86,8 @@ public class Picture extends Composite {
 				decorator.scaleTo(new Point(e.width - 2 * borderWidth, e.height - 2 * borderWidth));
 			}
 
-			if (borderWidth > 0) {
-				final Point size = getSize();
-
-				e.gc.setForeground(getBorderColor());
-				e.gc.setLineWidth(borderWidth * 2);
-				e.gc.drawRectangle(0, 0, size.x, size.y);
-			}
-
 			decorator.doPaint(e.gc, borderWidth, borderWidth);
+			border.doPaint(e.gc, getParent().getBackground());
 		});
 
 		scaleTo(new Point(SWT.DEFAULT, SWT.DEFAULT));
@@ -245,6 +242,7 @@ public class Picture extends Composite {
 	 *
 	 * @return the color
 	 */
+	@Override
 	public Color getBorderColor() {
 		return Util.nvl(borderColor, getDisplay().getSystemColor(SWT.COLOR_WIDGET_BORDER));
 	}
@@ -267,5 +265,43 @@ public class Picture extends Composite {
 	public void setBorderColor(final Color borderColor) {
 		this.borderColor = Util.checkResource(borderColor, true);
 		redraw();
+	}
+
+	/**
+	 * Gets the radius of the rounded edges.
+	 *
+	 * @return the radius
+	 */
+	@Override
+	public int getEdgeRadius() {
+		return edgeRadius;
+	}
+
+	/**
+	 * Defines the radius of the rounded edges if the control shows a border
+	 * line.
+	 *
+	 * @param edgeRadius
+	 *        the radius of the rounded edges
+	 *
+	 * @exception InvalidArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if the edge radius less then
+	 *            zero</li>
+	 *            </ul>
+	 *
+	 * @see #setBorderColor(Color)
+	 * @see #setBorderWidth(int)
+	 */
+	public void setEdgeRadius(final int edgeRadius) {
+		if (edgeRadius < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		this.edgeRadius = edgeRadius;
+		redraw();
+	}
+
+	@Override
+	public Rectangle getClientArea() {
+		final Point size = getSize();
+		return new Rectangle(0, 0, size.x, size.y);
 	}
 }

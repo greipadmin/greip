@@ -38,6 +38,8 @@ import org.eclipse.swt.widgets.TypedListener;
 import org.greip.common.Greip;
 import org.greip.common.Util;
 import org.greip.decorator.IDecorator;
+import org.greip.internal.BorderPainter;
+import org.greip.internal.IBorderable;
 import org.greip.markup.HtmlMarkupParser;
 import org.greip.markup.MarkupText;
 
@@ -53,7 +55,7 @@ import org.greip.markup.MarkupText;
  *
  * @author Thomas Lorbeer
  */
-public class Tile extends Composite {
+public class Tile extends Composite implements IBorderable {
 
 	private class SelectionHandler implements Listener {
 
@@ -73,8 +75,8 @@ public class Tile extends Composite {
 		}
 
 		private String getLinkAt(final int x, final int y) {
-			final Rectangle clientArea = getClientArea();
-			final TextArea[] textAreas = createTextAreas(clientArea.width, clientArea.height);
+			final Point size = getSize();
+			final TextArea[] textAreas = createTextAreas(size.x, size.y);
 
 			try {
 				for (final TextArea textArea : textAreas) {
@@ -177,6 +179,7 @@ public class Tile extends Composite {
 	private int decoratorSpacing = 10;
 	private int textSpacing = 5;
 
+	private final BorderPainter border = new BorderPainter(this);
 	private int borderWidth;
 	private Color borderColor;
 	private int edgeRadius;
@@ -213,7 +216,7 @@ public class Tile extends Composite {
 	 *            </ul>
 	 */
 	public Tile(final Composite parent, final int style) {
-		super(parent, SWT.DOUBLE_BUFFERED | SWT.NO_FOCUS);
+		super(parent, SWT.DOUBLE_BUFFERED | SWT.NO_FOCUS & ~SWT.BORDER);
 		if (style != SWT.NONE) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 
 		addMouseTrackListener(new MouseTrackAdapter() {
@@ -233,34 +236,25 @@ public class Tile extends Composite {
 		addPaintListener(new PaintListener() {
 
 			private void paintBackground(final GC gc) {
-				final Rectangle size = getClientArea();
+				final Point size = getSize();
 
-				if (edgeRadius > 0) {
-					gc.setBackground(getParent().getBackground());
-					gc.fillRectangle(0, 0, size.width, size.height);
+				if (getBackgroundImage() == null) {
+					final int innerRadius = Math.max(0, 2 * edgeRadius - borderWidth);
+
+					gc.setBackground(selected ? dimmedBackground[0] : getBackground());
+					gc.fillRoundRectangle(borderWidth, borderWidth, size.x - 2 * borderWidth, 2 * edgeRadius, innerRadius, innerRadius);
+					gc.setForeground(selected ? dimmedBackground[0] : getBackground());
+					gc.setBackground(selected ? dimmedBackground[1] : getBackground());
+					gc.fillGradientRectangle(borderWidth, edgeRadius, size.x - 2 * borderWidth, size.y / 2 - edgeRadius, true);
+
+					gc.setForeground(selected ? dimmedBackground[2] : getBackground());
+					gc.setBackground(getBackground());
+					gc.fillRoundRectangle(borderWidth, size.y - borderWidth - 2 * edgeRadius, size.x - 2 * borderWidth, 2 * edgeRadius,
+							innerRadius, innerRadius);
+					gc.fillGradientRectangle(borderWidth, size.y / 2, size.x - 2 * borderWidth, size.y / 2 - edgeRadius, true);
 				}
 
-				final int innerRadius = Math.max(0, 2 * edgeRadius - borderWidth);
-
-				gc.setBackground(selected ? dimmedBackground[0] : getBackground());
-				gc.fillRoundRectangle(borderWidth, borderWidth, size.width - 2 * borderWidth, 2 * edgeRadius, innerRadius, innerRadius);
-				gc.setForeground(selected ? dimmedBackground[0] : getBackground());
-				gc.setBackground(selected ? dimmedBackground[1] : getBackground());
-				gc.fillGradientRectangle(borderWidth, edgeRadius, size.width - 2 * borderWidth, size.height / 2 - edgeRadius, true);
-
-				gc.setForeground(selected ? dimmedBackground[2] : getBackground());
-				gc.setBackground(getBackground());
-				gc.fillRoundRectangle(borderWidth, size.height - borderWidth - 2 * edgeRadius, size.width - 2 * borderWidth, 2 * edgeRadius,
-						innerRadius, innerRadius);
-				gc.fillGradientRectangle(borderWidth, size.height / 2, size.width - 2 * borderWidth, size.height / 2 - edgeRadius, true);
-
-				if (borderWidth > 0) {
-					gc.setClipping((Rectangle) null);
-					gc.setForeground(getBorderColor());
-					gc.setLineWidth(borderWidth);
-					gc.drawRoundRectangle(borderWidth / 2, borderWidth / 2, size.width - borderWidth, size.height - borderWidth, edgeRadius * 2,
-							edgeRadius * 2);
-				}
+				border.doPaint(gc, getParent().getBackground());
 
 				if (selected) {
 					final int radius = Math.max(0, edgeRadius * 2 - 2);
@@ -268,7 +262,7 @@ public class Tile extends Composite {
 
 					gc.setForeground(dimmedBackground[3]);
 					gc.setLineWidth(1);
-					gc.drawRoundRectangle(borderWidth, borderWidth, size.width - borderOffset, size.height - borderOffset, radius, radius);
+					gc.drawRoundRectangle(borderWidth, borderWidth, size.x - borderOffset, size.y - borderOffset, radius, radius);
 				}
 			}
 
@@ -279,8 +273,8 @@ public class Tile extends Composite {
 				paintBackground(e.gc);
 				e.gc.setForeground(getForeground());
 
-				final Rectangle clientArea = getClientArea();
-				final TextArea[] textAreas = createTextAreas(clientArea.width, clientArea.height);
+				final Point size = getSize();
+				final TextArea[] textAreas = createTextAreas(size.x, size.y);
 				for (final TextArea textArea : textAreas) {
 					textArea.draw(e.gc);
 				}
@@ -452,6 +446,7 @@ public class Tile extends Composite {
 	 *
 	 * @return the color
 	 */
+	@Override
 	public Color getBorderColor() {
 		return borderColor != null ? borderColor : getDisplay().getSystemColor(SWT.COLOR_WIDGET_BORDER);
 	}
@@ -663,7 +658,8 @@ public class Tile extends Composite {
 	 *
 	 * @return the radius
 	 */
-	public int getEdgesRadius() {
+	@Override
+	public int getEdgeRadius() {
 		return edgeRadius;
 	}
 
@@ -1125,35 +1121,35 @@ public class Tile extends Composite {
 
 	private Rectangle getDecoratorBounds() {
 		final Point decoratorSize = getDecoratorSize();
-		final Rectangle size = getClientArea();
+		final Point size = getSize();
 		int x;
 		int y;
 
 		if (decoratorAlignment == SWT.BOTTOM) {
-			x = (size.width - 2 * marginWidth - decoratorSize.x) / 2 + marginWidth;
-			y = size.height - marginHeight - decoratorSize.y - borderWidth;
+			x = (size.x - 2 * marginWidth - decoratorSize.x) / 2 + marginWidth;
+			y = size.y - marginHeight - decoratorSize.y - borderWidth;
 		} else if (decoratorAlignment == SWT.TOP) {
-			x = (size.width - 2 * marginWidth - decoratorSize.x) / 2 + marginWidth;
+			x = (size.x - 2 * marginWidth - decoratorSize.x) / 2 + marginWidth;
 			y = marginHeight + borderWidth;
 		} else if (decoratorAlignment == SWT.CENTER) {
-			x = (size.width - 2 * marginWidth - decoratorSize.x) / 2 + marginWidth;
+			x = (size.x - 2 * marginWidth - decoratorSize.x) / 2 + marginWidth;
 			y = marginHeight + borderWidth;
 			if (!sections.isEmpty()) {
-				final int height = createTextArea(0, size.width, size.height).getBounds().height;
+				final int height = createTextArea(0, size.x, size.y).getBounds().height;
 				y += height + (height == 0 ? 0 : decoratorSpacing);
 			}
 		} else {
 			if ((decoratorAlignment & SWT.LEFT) > 0) {
 				x = marginWidth + borderWidth;
 			} else {
-				x = size.width - decoratorSize.x - marginWidth - borderWidth;
+				x = size.x - decoratorSize.x - marginWidth - borderWidth;
 			}
 			if ((decoratorAlignment & SWT.TOP) > 0) {
 				y = marginHeight + borderWidth;
 			} else if ((decoratorAlignment & SWT.BOTTOM) > 0) {
-				y = size.height - marginHeight - decoratorSize.y;
+				y = size.y - marginHeight - decoratorSize.y;
 			} else {
-				y = marginHeight + Math.max(0, (size.height - decoratorSize.y) / 2 - marginHeight);
+				y = marginHeight + Math.max(0, (size.y - decoratorSize.y) / 2 - marginHeight);
 			}
 		}
 
@@ -1161,8 +1157,8 @@ public class Tile extends Composite {
 		y = Math.max(y, borderWidth + marginHeight);
 
 		// Clipping auf sichtbaren Bereich, Rand wird nicht übermalt
-		final int maxHeight = size.height - borderWidth - marginHeight - y;
-		final int maxWidth = size.width - borderWidth - marginWidth - x;
+		final int maxHeight = size.y - borderWidth - marginHeight - y;
+		final int maxWidth = size.x - borderWidth - marginWidth - x;
 
 		return new Rectangle(x, y, Math.min(decoratorSize.x, maxWidth), Math.min(decoratorSize.y, maxHeight));
 	}
@@ -1225,5 +1221,11 @@ public class Tile extends Composite {
 				color.dispose();
 			}
 		}
+	}
+
+	@Override
+	public Rectangle getClientArea() {
+		final Point size = getSize();
+		return new Rectangle(0, 0, size.x, size.y);
 	}
 }
