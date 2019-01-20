@@ -10,6 +10,7 @@
 package org.greip.tile;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -25,6 +26,8 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
@@ -188,7 +191,7 @@ public class Tile extends Composite implements IBorderable {
 	private boolean highlight;
 	private final SelectionHandler linkHandler = new SelectionHandler();
 	private final List<TextDescriptor> sections = new ArrayList<>();
-	private final Color[] dimmedBackground = new Color[4];
+	private final Color[] dimmedBackground = new Color[5];
 
 	private Cursor decoratorCursor;
 	private Cursor cursor;
@@ -216,7 +219,7 @@ public class Tile extends Composite implements IBorderable {
 	 *            </ul>
 	 */
 	public Tile(final Composite parent, final int style) {
-		super(parent, SWT.DOUBLE_BUFFERED | SWT.NO_FOCUS & ~SWT.BORDER);
+		super(parent, SWT.DOUBLE_BUFFERED | SWT.NO_FOCUS);
 		if (style != SWT.NONE) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 
 		addMouseTrackListener(new MouseTrackAdapter() {
@@ -248,22 +251,40 @@ public class Tile extends Composite implements IBorderable {
 					gc.fillGradientRectangle(borderWidth, edgeRadius, size.x - 2 * borderWidth, size.y / 2 - edgeRadius, true);
 
 					gc.setForeground(selected ? dimmedBackground[2] : getBackground());
-					gc.setBackground(getBackground());
+					gc.setBackground(selected ? dimmedBackground[4] : getBackground());
 					gc.fillRoundRectangle(borderWidth, size.y - borderWidth - 2 * edgeRadius, size.x - 2 * borderWidth, 2 * edgeRadius,
 							innerRadius, innerRadius);
 					gc.fillGradientRectangle(borderWidth, size.y / 2, size.x - 2 * borderWidth, size.y / 2 - edgeRadius, true);
+
+				} else if (selected) {
+					gc.setBackground(getBackground());
+					gc.fillRectangle(0, 0, size.x, size.y);
+
+					final ImageData imageData = createTransparentBackgroundImage(gc);
+					Util.withResource(new Image(gc.getDevice(), imageData), img -> {
+						gc.drawImage(img, 0, 0);
+					});
 				}
 
 				border.doPaint(gc, getParent().getBackground());
+			}
 
-				if (selected) {
-					final int radius = Math.max(0, edgeRadius * 2 - 2);
-					final int borderOffset = 2 * borderWidth - 1;
+			private ImageData createTransparentBackgroundImage(final GC gc) {
+				final Point size = getSize();
 
-					gc.setForeground(dimmedBackground[3]);
-					gc.setLineWidth(1);
-					gc.drawRoundRectangle(borderWidth, borderWidth, size.x - borderOffset, size.y - borderOffset, radius, radius);
-				}
+				return Util.withResource(new Image(gc.getDevice(), size.x, size.y), image -> {
+					Util.withResource(new GC(image), imageGC -> {
+						imageGC.drawImage(getBackgroundImage(), 0, 0);
+					});
+
+					final ImageData data = image.getImageData();
+					final byte[] alphas = new byte[size.x * size.y];
+
+					Arrays.fill(alphas, (byte) 230);
+					data.setAlphas(0, 0, alphas.length, alphas, 0);
+
+					return data;
+				});
 			}
 
 			@Override
@@ -293,7 +314,7 @@ public class Tile extends Composite implements IBorderable {
 		addListener(SWT.MouseDown, linkHandler);
 		addListener(SWT.Dispose, e -> disposeBackgroundColors());
 
-		setBackground(getBackground());
+		setBackground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
 		setMargins(10, 10);
 		setDecoratorAlignment(SWT.RIGHT);
 	}
@@ -433,12 +454,20 @@ public class Tile extends Composite implements IBorderable {
 		disposeBackgroundColors();
 
 		final Display display = getDisplay();
-		final RGB backgroundRGB = color.getRGB();
+		RGB backgroundRGB = color.getRGB();
+		final float brightness = backgroundRGB.getHSB()[2];
+
+		if (brightness > 0.7f) {
+			backgroundRGB = Util.getDimmedRGB(backgroundRGB, -(0.3f - brightness) / 10);
+		} else if (brightness < 0.3f) {
+			backgroundRGB = Util.getDimmedRGB(backgroundRGB, 0.3f - brightness);
+		}
 
 		dimmedBackground[0] = new Color(display, Util.getDimmedRGB(backgroundRGB, 0.07f));
 		dimmedBackground[1] = new Color(display, Util.getDimmedRGB(backgroundRGB, -0.02f));
 		dimmedBackground[2] = new Color(display, Util.getDimmedRGB(backgroundRGB, -0.07f));
 		dimmedBackground[3] = new Color(display, Util.getDimmedRGB(backgroundRGB, 0.25f));
+		dimmedBackground[4] = new Color(display, backgroundRGB);
 	}
 
 	/**
@@ -1147,7 +1176,7 @@ public class Tile extends Composite implements IBorderable {
 			if ((decoratorAlignment & SWT.TOP) > 0) {
 				y = marginHeight + borderWidth;
 			} else if ((decoratorAlignment & SWT.BOTTOM) > 0) {
-				y = size.y - marginHeight - decoratorSize.y;
+				y = size.y - marginHeight - decoratorSize.y - borderWidth;
 			} else {
 				y = marginHeight + Math.max(0, (size.y - decoratorSize.y) / 2 - marginHeight);
 			}
