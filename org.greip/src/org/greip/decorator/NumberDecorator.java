@@ -59,7 +59,7 @@ public final class NumberDecorator extends AbstractNumberDecorator {
 			final int lineWidth = (outerDiameter - innerDiameter) / 2;
 
 			gc.setForeground(getTreshholdColor(getCircleColor()));
-			Util.drawArc(gc, x, y, outerDiameter, lineWidth, 0, 360);
+			Util.drawArc(gc, x + (size.x - outerDiameter) / 2, y, outerDiameter, lineWidth, 0, 360);
 			paintValue(gc, x + (size.x - textSize.x) / 2, y + (size.y - textSize.y) / 2);
 
 		} else {
@@ -150,7 +150,8 @@ public final class NumberDecorator extends AbstractNumberDecorator {
 
 	@Override
 	public Point getSize() {
-		return new Point(outerDiameter, outerDiameter);
+		final Point textSize = getTextSize();
+		return new Point(Math.max(outerDiameter, textSize.x), Math.max(outerDiameter, textSize.y));
 	}
 
 	@Override

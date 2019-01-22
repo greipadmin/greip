@@ -265,8 +265,6 @@ public class Tile extends Composite implements IBorderable {
 						gc.drawImage(img, 0, 0);
 					});
 				}
-
-				border.doPaint(gc, getParent().getBackground());
 			}
 
 			private ImageData createTransparentBackgroundImage(final GC gc) {
@@ -306,7 +304,10 @@ public class Tile extends Composite implements IBorderable {
 
 					e.gc.setClipping(decoratorBounds);
 					decorator.doPaint(e.gc, decoratorBounds.x, decoratorBounds.y);
+					e.gc.setClipping((Rectangle) null);
 				}
+
+				border.doPaint(e.gc, getParent().getBackground());
 			}
 		});
 
