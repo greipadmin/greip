@@ -111,7 +111,7 @@ class ColorWheel extends Composite {
 	}
 
 	private void disposeColorWheelImage() {
-		Util.whenNotNull(image, image::dispose);
+		Util.whenNotNull(image, Image::dispose);
 	}
 
 	private Cursor createCursor() {

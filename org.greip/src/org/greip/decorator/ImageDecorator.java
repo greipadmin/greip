@@ -215,7 +215,7 @@ public final class ImageDecorator extends AbstractDecorator {
 					scaledImages[i] = images[i];
 				}
 
-				Util.whenNotNull(bgColor, color -> color.dispose());
+				Util.whenNotNull(bgColor, Color::dispose);
 			});
 		});
 	}
