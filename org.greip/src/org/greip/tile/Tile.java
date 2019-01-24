@@ -24,7 +24,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Cursor;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
@@ -45,6 +44,7 @@ import org.greip.internal.BorderPainter;
 import org.greip.internal.IBorderable;
 import org.greip.markup.HtmlMarkupParser;
 import org.greip.markup.MarkupText;
+import org.greip.tile.TextSection.TextSectionModifyListener;
 
 /**
  * Instances of this class represent a non-selectable user interface object that
@@ -146,6 +146,7 @@ public class Tile extends Composite implements IBorderable {
 		private final TextLayout layout;
 		private int x;
 		private int y;
+		private int[] margins;
 
 		public TextArea(final TextLayout layout) {
 			this.layout = layout;
@@ -164,14 +165,14 @@ public class Tile extends Composite implements IBorderable {
 		public void draw(final GC gc) {
 			layout.draw(gc, x, y);
 		}
-	}
 
-	private static class TextDescriptor {
-		public String text;
-		public int alignment;
-		public Font font;
-		public Color foreground;
-		public boolean wrap;
+		public int[] getMargins() {
+			return margins;
+		}
+
+		public void setMargins(final int[] margins) {
+			this.margins = margins;
+		}
 	}
 
 	private IDecorator decorator;
@@ -190,8 +191,10 @@ public class Tile extends Composite implements IBorderable {
 	private boolean selected;
 	private boolean highlight;
 	private final SelectionHandler linkHandler = new SelectionHandler();
-	private final List<TextDescriptor> sections = new ArrayList<>();
+	private final List<TextSection> textSections = new ArrayList<>();
 	private final Color[] dimmedBackground = new Color[5];
+
+	private final TextSectionModifyListener sectionModifyListener = s -> redraw();
 
 	private Cursor decoratorCursor;
 	private Cursor cursor;
@@ -321,67 +324,21 @@ public class Tile extends Composite implements IBorderable {
 	}
 
 	/**
-	 * Adds a new text section to the list of sections. Sections are not
-	 * removeable.
-	 *
-	 * @param text
-	 *        the text content of the section (cannot be null)
-	 * @param alignment
-	 *        the text alignment (SWT.LEFT, SWT.CENTER, SWT.RIGHT and
-	 *        SWT.JUSTIFY)
-	 *
-	 * @exception IllegalArgumentException
-	 *            <ul>
-	 *            <li>ERROR_NULL_ARGUMENT - if the text is null</li>
-	 *            </ul>
-	 */
-	public void addSection(final String text, final int alignment) {
-		addSection(text, alignment, null, null, true);
-	}
-
-	/**
 	 * Adds a new text section to the list of sections. You can remove sections
-	 * by {@link #removeSection(int)}
+	 * by {@link #removeTextSections(TextSection...)}.
 	 *
-	 * @param text
-	 *        the text content of the section (cannot be null)
-	 * @param alignment
-	 *        the text alignment (SWT.LEFT, SWT.CENTER, SWT.RIGHT and
-	 *        SWT.JUSTIFY)
-	 * @param font
-	 *        the font to use
-	 * @param foreground
-	 *        the text foreground color
-	 * @param wrap
-	 *        the line wrapping behaviour
-	 *
-	 * @exception IllegalArgumentException
-	 *            <ul>
-	 *            <li>ERROR_NULL_ARGUMENT - if the text is null</li>
-	 *            <li>ERROR_IVALID_ARGUMENT - if the alignment value is
-	 *            invalid</li>
-	 *            </ul>
+	 * @param section
+	 *        the new text section
 	 */
-	public void addSection(final String text, final int alignment, final Font font, final Color foreground, final boolean wrap) {
-		checkWidget();
-		if (text == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-		if (!Util.in(alignment, SWT.LEFT, SWT.RIGHT, SWT.CENTER, Greip.JUSTIFY)) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-
-		final TextDescriptor descriptor = new TextDescriptor();
-		descriptor.text = text;
-		descriptor.alignment = alignment;
-		descriptor.font = font;
-		descriptor.foreground = foreground;
-		descriptor.wrap = wrap;
-
-		sections.add(descriptor);
-		redraw();
+	public void addTextSection(final TextSection section) {
+		textSections.add(section);
+		section.addModifyListener(sectionModifyListener);
 	}
 
 	/**
-	 * Removes the spcified section from the list of sections.
+	 * Removes the spcified sections from the list of sections.
 	 *
-	 * @param index
+	 * @param indexes
 	 *        the sections index
 	 *
 	 * @exception IllegalArgumentException
@@ -389,58 +346,32 @@ public class Tile extends Composite implements IBorderable {
 	 *            <li>ERROR_INVALID_RANGE - if the index out of range</li>
 	 *            </ul>
 	 */
-	public void removeSection(final int index) {
-		sections.remove(getSection(index));
+	public void removeTextSections(final TextSection... sections) {
+		if (sections == null || sections.length == 0) {
+			removeSections(textSections.stream().toArray(TextSection[]::new));
+		} else {
+			removeSections(sections);
+		}
 		redraw();
 	}
 
 	/**
-	 * Removes all sections from the list of sections.
-	 */
-	public void removeAllSections() {
-		sections.clear();
-	}
-
-	/**
-	 * Returns a value which describes the position of the text in the section.
-	 * The value will be one of <code>SWT.LEFT</code>, <code>SWT.RIGHT</code>,
-	 * <code>SWT.CENTER</code> or <code>Greip.JUSTIFY</code>.
+	 * Returns the n'th text section. The first text section has index 0.
 	 *
 	 * @param index
-	 *        the sections index
+	 *        the index
 	 *
-	 * @return the alignment
+	 * @return the text section
 	 *
 	 * @exception IllegalArgumentException
 	 *            <ul>
-	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
+	 *            <li>ERROR_INVALID_RANGE - if the index less than zero or
+	 *            greater or equal to the count of text sections</li>
 	 *            </ul>
 	 */
-	public int getAlignment(final int index) {
-		return getSection(index).alignment;
-	}
-
-	/**
-	 * Controls how text content in the sction will be displayed. The argument
-	 * should be one of <code>SWT.LEFT</code>, <code>SWT.RIGHT</code>,
-	 * <code>SWT.CENTER</code> or <code>Greip.JUSTIFY</code>.
-	 *
-	 * @param index
-	 *        the sections index
-	 * @param alignment
-	 *        the new alignment
-	 *
-	 * @exception IllegalArgumentException
-	 *            <ul>
-	 *            <li>ERROR_IVALID_ARGUMENT - if the alignment value is
-	 *            invalid</li>
-	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
-	 *            </ul>
-	 */
-	public void setAlignment(final int index, final int alignment) {
-		if (!Util.in(alignment, SWT.LEFT, SWT.RIGHT, SWT.CENTER, Greip.JUSTIFY)) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-		getSection(index).alignment = alignment;
-		redraw();
+	public TextSection getTextSection(final int index) {
+		if (index < 0 || index >= textSections.size()) SWT.error(SWT.ERROR_INVALID_RANGE);
+		return textSections.get(index);
 	}
 
 	/*
@@ -716,77 +647,6 @@ public class Tile extends Composite implements IBorderable {
 	}
 
 	/**
-	 * Return the font used to be paint the sections textual content.
-	 *
-	 * @param index
-	 * @return
-	 */
-	public Font getFont(final int index) {
-		final Font font = getSection(index).font;
-		return font == null ? getFont() : font;
-	}
-
-	/**
-	 * Sets the font for the text content of the section. The default font is
-	 * {@link #getFont()}.
-	 *
-	 * @param index
-	 *        the sections index
-	 * @param font
-	 *        the font
-	 *
-	 * @exception IllegalArgumentException
-	 *            <ul>
-	 *            <li>ERROR_INVALID_ARGUMENT - if the font has been disposed</li>
-	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
-	 *            </ul>
-	 */
-	public void setFont(final int index, final Font font) {
-		if (font != null && font.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-		getSection(index).font = font;
-		redraw();
-	}
-
-	/**
-	 * Returns the foreground color wich is used to paint textual content.
-	 *
-	 * @param index
-	 *        the sections index
-	 *
-	 * @return the foreground color
-	 *
-	 * @exception IllegalArgumentException
-	 *            <ul>
-	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
-	 *            </ul>
-	 */
-	public Color getForeground(final int index) {
-		final Color foreground = getSection(index).foreground;
-		return foreground == null ? getForeground() : foreground;
-	}
-
-	/**
-	 * Defines the foreground color wich is used to paint textual content.
-	 *
-	 * @param index
-	 *        the sections index
-	 * @param foreground
-	 *        the foreground color
-	 *
-	 * @exception IllegalArgumentException
-	 *            <ul>
-	 *            <li>ERROR_INVALID_ARGUMENT - if the color has been
-	 *            disposed</li>
-	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
-	 *            </ul>
-	 */
-	public void setForeground(final int index, final Color foreground) {
-		if (foreground != null && foreground.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-		getSection(index).foreground = foreground;
-		redraw();
-	}
-
-	/**
 	 * Returns <code>true</code> if highlighting on mouse hover is enabled,
 	 * otherwise <code>false</code>.
 	 *
@@ -841,43 +701,6 @@ public class Tile extends Composite implements IBorderable {
 	}
 
 	/**
-	 * Returns the sections textual content.
-	 *
-	 * @param index
-	 *        the sections index
-	 *
-	 * @return the text content
-	 *
-	 * @exception IllegalArgumentException
-	 *            <ul>
-	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
-	 *            </ul>
-	 */
-	public String getText(final int index) {
-		return getSection(index).text;
-	}
-
-	/**
-	 * Sets the textual content for the specified text section.
-	 *
-	 * @param index
-	 *        the sections index
-	 * @param text
-	 *        the new text content (null not allowed)
-	 *
-	 * @exception IllegalArgumentException
-	 *            <ul>
-	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
-	 *            </ul>
-	 */
-	public void setText(final int index, final String text) {
-		if (text == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-
-		getSection(index).text = text;
-		redraw();
-	}
-
-	/**
 	 * Returns then spacing between two text sections.
 	 *
 	 * @return the spacing in pixels
@@ -901,43 +724,6 @@ public class Tile extends Composite implements IBorderable {
 	public void setTextSpacing(final int textSpacing) {
 		if (decoratorSpacing < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		this.textSpacing = textSpacing;
-		redraw();
-	}
-
-	/**
-	 * Returns the current line wrap behaviour at the spcified text section.
-	 *
-	 * @param index
-	 *        the sections index
-	 *
-	 * @return returns <code>true</code> if line wrap behaviour enabled,
-	 *         otherwise <code>false</code>.
-	 *
-	 * @exception IllegalArgumentException
-	 *            <ul>
-	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
-	 *            </ul>
-	 */
-	public boolean isWrap(final int index) {
-		return getSection(index).wrap;
-	}
-
-	/**
-	 * Defines the line wrap behaviour at the specified text section.
-	 *
-	 * @param index
-	 *        the sections index
-	 * @param wrap
-	 *        <code>true</code> if line wrap enabled, <code>false</code>
-	 *        otherwise.
-	 *
-	 * @exception IllegalArgumentException
-	 *            <ul>
-	 *            <li>ERROR_INVALID_RANGE - if index is out of range</li>
-	 *            </ul>
-	 */
-	public void setWrap(final int index, final boolean wrap) {
-		getSection(index).wrap = wrap;
 		redraw();
 	}
 
@@ -1040,13 +826,15 @@ public class Tile extends Composite implements IBorderable {
 		return size;
 	}
 
-	private void showCursor(final Cursor cursor) {
-		super.setCursor(cursor);
+	private void removeSections(final TextSection... sections) {
+		for (final TextSection section : sections) {
+			section.removeModifyListener(sectionModifyListener);
+			textSections.remove(section);
+		}
 	}
 
-	private TextDescriptor getSection(final int index) {
-		if (index < 0 || index >= sections.size()) SWT.error(SWT.ERROR_INVALID_RANGE);
-		return sections.get(index);
+	private void showCursor(final Cursor cursor) {
+		super.setCursor(cursor);
 	}
 
 	private int computeMaxTextWidth(final int maxWidth) {
@@ -1071,16 +859,19 @@ public class Tile extends Composite implements IBorderable {
 	}
 
 	private TextArea createTextArea(final int index, final int wHint, final int hHint) {
-		final TextLayout layout = createTextLayout(index, computeMaxTextWidth(wHint), hHint);
+		final int[] margins = getTextSection(index).getMargins();
+
+		final TextLayout layout = createTextLayout(index, computeMaxTextWidth(wHint - margins[0] - margins[1]), hHint);
 		final TextArea textArea = new TextArea(layout);
 
 		textArea.setLocation(computeTextIndent(), 0);
+		textArea.setMargins(margins);
 
 		return textArea;
 	}
 
 	private TextArea[] createTextAreas(final int wHint, final int hHint) {
-		final TextArea[] textAreas = IntStream.range(0, sections.size()).mapToObj(i -> createTextArea(i, wHint, SWT.DEFAULT))
+		final TextArea[] textAreas = IntStream.range(0, textSections.size()).mapToObj(i -> createTextArea(i, wHint, SWT.DEFAULT))
 				.toArray(TextArea[]::new);
 
 		final Point decoratorSize = getDecoratorSize();
@@ -1090,8 +881,10 @@ public class Tile extends Composite implements IBorderable {
 			y += decoratorSize.y + decoratorSpacing;
 
 		} else if (decoratorAlignment == SWT.CENTER && textAreas.length > 0) {
-			int offset = Math.min(getNonEmptyTextCount(), 2) * decoratorSpacing;
-			offset -= getNonEmptyTextCount() >= 2 ? textSpacing : 0;
+			final int nonEmptyTextCount = getNonEmptyTextCount();
+
+			int offset = Math.min(nonEmptyTextCount, 2) * decoratorSpacing;
+			offset -= nonEmptyTextCount >= 2 ? textSpacing : 0;
 			offset += decoratorSize.y;
 
 			for (int i = 1; i < textAreas.length; i++) {
@@ -1105,10 +898,11 @@ public class Tile extends Composite implements IBorderable {
 
 		for (final TextArea textArea : textAreas) {
 			final Rectangle bounds = textArea.getBounds();
+			final int[] margins = textArea.getMargins();
 			final int height = bounds.height;
 
-			textArea.setLocation(bounds.x, bounds.y + y);
-			y += height + (height == 0 ? 0 : textSpacing);
+			textArea.setLocation(bounds.x + margins[0], bounds.y + y + margins[2]);
+			y += height + (height == 0 ? 0 : textSpacing + margins[2] + margins[3]);
 		}
 
 		if (hHint != SWT.DEFAULT) {
@@ -1139,12 +933,13 @@ public class Tile extends Composite implements IBorderable {
 
 	private TextLayout createTextLayout(final int index, final int maxWidth, final int maxHeight) {
 		final MarkupText markupText = new MarkupText(getDisplay(), new HtmlMarkupParser());
+		final TextSection section = getTextSection(index);
 
-		markupText.setFont(getFont(index));
-		markupText.setForeground(getForeground(index));
-		markupText.setAlignment(getAlignment(index));
-		markupText.setWrap(isWrap(index));
-		markupText.layout(getText(index), maxWidth, maxHeight);
+		markupText.setFont(section.getFont());
+		markupText.setForeground(section.getForeground());
+		markupText.setAlignment(section.getAlignment());
+		markupText.setWrap(section.isWrap());
+		markupText.layout(section.getText(), maxWidth, maxHeight);
 
 		return markupText.getTextLayout();
 	}
@@ -1164,7 +959,7 @@ public class Tile extends Composite implements IBorderable {
 		} else if (decoratorAlignment == SWT.CENTER) {
 			x = (size.x - 2 * marginWidth - decoratorSize.x) / 2 + marginWidth;
 			y = marginHeight + borderWidth;
-			if (!sections.isEmpty()) {
+			if (!textSections.isEmpty()) {
 				final int height = createTextArea(0, size.x, size.y).getBounds().height;
 				y += height + (height == 0 ? 0 : decoratorSpacing);
 			}
@@ -1205,7 +1000,8 @@ public class Tile extends Composite implements IBorderable {
 		int maxWidth = 0;
 
 		for (final TextArea textArea : textAreas) {
-			maxWidth = Math.max(maxWidth, textArea.getBounds().width);
+			final int[] margins = textArea.margins;
+			maxWidth = Math.max(maxWidth, textArea.getBounds().width + margins[0] + margins[1]);
 		}
 
 		return maxWidth;
@@ -1215,7 +1011,8 @@ public class Tile extends Composite implements IBorderable {
 		int totalHeight = 0;
 
 		for (final TextArea textArea : textAreas) {
-			totalHeight += textArea.getBounds().height;
+			final int[] margins = textArea.margins;
+			totalHeight += textArea.getBounds().height + margins[2] + margins[3];
 		}
 
 		return Math.max(totalHeight + (getNonEmptyTextCount() - 1) * textSpacing, 0);
@@ -1226,19 +1023,19 @@ public class Tile extends Composite implements IBorderable {
 	}
 
 	private boolean hasAnyText() {
-		for (final TextDescriptor descriptor : sections) {
-			if (!descriptor.text.isEmpty()) {
+		for (final TextSection descriptor : textSections) {
+			if (!descriptor.getText().isEmpty()) {
 				return true;
 			}
 		}
-		return !sections.isEmpty();
+		return !textSections.isEmpty();
 	}
 
 	private int getNonEmptyTextCount() {
-		int count = sections.size();
+		int count = textSections.size();
 
-		for (final TextDescriptor descriptor : sections) {
-			if (descriptor.text == null || descriptor.text.isEmpty()) {
+		for (final TextSection section : textSections) {
+			if (section.getText().isEmpty()) {
 				count--;
 			}
 		}
