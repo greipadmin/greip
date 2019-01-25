@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Greip - Additional SWT Widgets
 Bundle-SymbolicName: org.greip
-Bundle-Version: 1.0.2.qualifier
+Bundle-Version: 1.0.3.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: Thomas Lorbeer
 Require-Bundle: org.eclipse.swt;bundle-version="3.105.0",
@@ -18,3 +18,4 @@ Export-Package: org.greip.calculator,
  org.greip.picture,
  org.greip.separator,
  org.greip.tile
+Automatic-Module-Name: org.greip

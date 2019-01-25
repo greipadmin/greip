@@ -2,7 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Greip - Additional SWT Widgets (Language Pack)
 Bundle-SymbolicName: org.greip.nl1
-Bundle-Version: 1.0.2.qualifier
+Bundle-Version: 1.0.3.qualifier
 Bundle-Vendor: Thomas Lorbeer
-Fragment-Host: org.greip;bundle-version="1.0.2"
+Fragment-Host: org.greip;bundle-version="1.0.3"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Automatic-Module-Name: org.greip.nl1

@@ -2,7 +2,7 @@
 <feature
       id="org.greip.feature"
       label="Greip Widgets"
-      version="1.0.1.qualifier"
+      version="1.0.3.qualifier"
       provider-name="Thomas Lorbeer">
 
    <description url="http://www.example.com/description">
@@ -168,7 +168,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
          id="org.greip"
          download-size="0"
          install-size="0"
-         version="1.0.2.qualifier"
+         version="1.0.3.qualifier"
          unpack="false"/>
 
 </feature>
