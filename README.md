@@ -56,3 +56,16 @@ Greip is a natural satellite of Saturn. Its discovery was announced on 26 June 2
 
 # License
 Eclipse Public License, Version 1.0 (EPL-1.0). See https://www.eclipse.org/legal/epl-v10.html.
+
+# Release notes
+* Beta releases
+  * 1.0.3 \[25-01-2019\] 
+    * finalize API for Tile widget
+    * add some features to Tile widget
+  * 1.0.2 \[05-01-2019\] first release available on Eclipse marketplace
+    * finalize API's for Calculator, Separator, ColorButton, FontButton, Picture an Styled Label
+    * preview Tile widget
+* Alpha releases
+  * 1.0.1 \[07-02-2017\] first release on GitHub
+  * 1.0.0 \[07-02-2017\] first internal release
+The complete list of changes is available [here](https://github.com/greipadmin/greip/wiki/Release%20Notes).
