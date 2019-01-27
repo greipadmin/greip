@@ -245,6 +245,8 @@ public final class PercentageDecorator extends AbstractNumberDecorator {
 
 	@Override
 	public void doPaint(final GC gc, final int x, final int y) {
+		gc.setAntialias(SWT.ON);
+
 		paintCircle(gc, x, y);
 
 		if (curValue == getValue()) {

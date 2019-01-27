@@ -52,6 +52,7 @@ public final class NumberDecorator extends AbstractNumberDecorator {
 	 */
 	@Override
 	public void doPaint(final GC gc, final int x, final int y) {
+		gc.setAntialias(SWT.ON);
 
 		if (offset == 0) {
 			final Point size = getSize();
