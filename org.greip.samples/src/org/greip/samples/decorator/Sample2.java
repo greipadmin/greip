@@ -23,7 +23,7 @@ public class Sample2 extends AbstractSample {
 
 	public static void main(final String[] args) {
 		final Sample2 sample = new Sample2();
-		sample.show("Greip NumberDecorator Sample");
+		sample.show("Greip NumberDecorator Sample", true);
 	}
 
 	@Override

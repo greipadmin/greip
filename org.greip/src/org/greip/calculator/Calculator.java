@@ -151,6 +151,7 @@ public final class Calculator extends Composite {
 		lblMemory = new Label(resultPanel, SWT.RIGHT);
 		lblMemory.setLayoutData(new GridData(SWT.LEFT, SWT.BOTTOM, false, false, 1, 1));
 		lblMemory.setText("M");
+		lblMemory.setVisible(false);
 		Util.applyDerivedFont(lblMemory, -3, SWT.NONE);
 	}
 

@@ -16,7 +16,7 @@ public class Sample1 extends AbstractSample {
 
 	public static void main(final String[] args) {
 		final Sample1 sample = new Sample1();
-		sample.show("Greip Separator Sample");
+		sample.show("Greip Separator Sample", true);
 	}
 
 	@Override

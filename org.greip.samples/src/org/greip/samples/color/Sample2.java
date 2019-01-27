@@ -15,7 +15,7 @@ public class Sample2 extends AbstractSample {
 
 	public static void main(final String[] args) {
 		final Sample2 sample = new Sample2();
-		sample.show("Greip ColorButton Sample");
+		sample.show("Greip ColorButton Sample", true);
 	}
 
 	@Override

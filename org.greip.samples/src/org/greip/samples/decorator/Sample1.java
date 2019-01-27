@@ -19,7 +19,7 @@ public class Sample1 extends AbstractSample {
 
 	public static void main(final String[] args) {
 		final Sample1 sample = new Sample1();
-		sample.show("Greip animated GIF Sample");
+		sample.show("Greip animated GIF Sample", true);
 	}
 
 	@Override

@@ -8,6 +8,7 @@
  **/
 package org.greip.samples;
 
+import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -22,12 +23,12 @@ public abstract class AbstractSample {
 		shell = new Shell(display);
 	}
 
-	protected void show(final String windowTitle) {
+	protected void show(final String windowTitle, final boolean setShellMargins) {
 
 		layout();
 
 		if (!shell.isDisposed()) {
-			shell.setLayout(new GridLayout());
+			shell.setLayout(setShellMargins ? new GridLayout() : GridLayoutFactory.fillDefaults().create());
 			shell.setText(windowTitle);
 			shell.pack();
 			shell.open();

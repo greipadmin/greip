@@ -20,7 +20,7 @@ public class Sample4 extends AbstractSample {
 
 	public static void main(final String[] args) {
 		final Sample4 sample = new Sample4();
-		sample.show("Greip Color Chooser Sample");
+		sample.show("Greip Color Chooser Sample", true);
 	}
 
 	@Override
