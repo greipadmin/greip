@@ -45,7 +45,9 @@ public final class ImageDecorator extends AbstractDecorator {
 	 * Creates a new instance of the decorator.
 	 *
 	 * @param parent
-	 *        the parent control, <code>null</code> not allowed.
+	 *        The parent control. When displaying animated GIFs, the parent must
+	 *        be created with the style {@link SWT#DOUBLE_BUFFERED}, otherwise
+	 *        the display will flicker.
 	 *
 	 * @exception IllegalArgumentException
 	 *            <ul>
