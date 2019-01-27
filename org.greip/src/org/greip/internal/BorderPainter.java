@@ -43,7 +43,7 @@ public class BorderPainter {
 	 *        The backgound color that is used for paintig edges.
 	 */
 	public void doPaint(final GC gc, final Color edgeBackground) {
-		final int radius = borderable.getEdgeRadius();
+		final int radius = borderable.getCornerRadius();
 		final int lineWidth = borderable.getBorderWidth();
 		final Point size = borderable.getSize();
 
@@ -53,7 +53,7 @@ public class BorderPainter {
 
 		if (radius > 0) {
 			gc.setForeground(edgeBackground);
-			final ImageData imageData = createRoundedEdgeMask(gc);
+			final ImageData imageData = createCornerMask(gc);
 
 			for (int x = 0; x < radius + lineWidth * 2; x++) {
 				for (int y = 0; y < radius + lineWidth * 2; y++) {
@@ -75,8 +75,8 @@ public class BorderPainter {
 		}
 	}
 
-	private ImageData createRoundedEdgeMask(final GC gc) {
-		final int radius = borderable.getEdgeRadius();
+	private ImageData createCornerMask(final GC gc) {
+		final int radius = borderable.getCornerRadius();
 		final int lineWidth = borderable.getBorderWidth();
 		final Point size = borderable.getSize();
 

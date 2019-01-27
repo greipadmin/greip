@@ -186,7 +186,7 @@ public class Tile extends Composite implements IBorderable {
 	private final BorderPainter border = new BorderPainter(this);
 	private int borderWidth;
 	private Color borderColor;
-	private int edgeRadius;
+	private int cornerRadius;
 
 	private boolean selected;
 	private boolean highlight;
@@ -245,19 +245,19 @@ public class Tile extends Composite implements IBorderable {
 				final Point size = getSize();
 
 				if (getBackgroundImage() == null) {
-					final int innerRadius = Math.max(0, 2 * edgeRadius - borderWidth);
+					final int innerRadius = Math.max(0, 2 * cornerRadius - borderWidth);
 
 					gc.setBackground(selected ? dimmedBackground[0] : getBackground());
-					gc.fillRoundRectangle(borderWidth, borderWidth, size.x - 2 * borderWidth, 2 * edgeRadius, innerRadius, innerRadius);
+					gc.fillRoundRectangle(borderWidth, borderWidth, size.x - 2 * borderWidth, 2 * cornerRadius, innerRadius, innerRadius);
 					gc.setForeground(selected ? dimmedBackground[0] : getBackground());
 					gc.setBackground(selected ? dimmedBackground[1] : getBackground());
-					gc.fillGradientRectangle(borderWidth, edgeRadius, size.x - 2 * borderWidth, size.y / 2 - edgeRadius, true);
+					gc.fillGradientRectangle(borderWidth, cornerRadius, size.x - 2 * borderWidth, size.y / 2 - cornerRadius, true);
 
 					gc.setForeground(selected ? dimmedBackground[2] : getBackground());
 					gc.setBackground(selected ? dimmedBackground[4] : getBackground());
-					gc.fillRoundRectangle(borderWidth, size.y - borderWidth - 2 * edgeRadius, size.x - 2 * borderWidth, 2 * edgeRadius,
+					gc.fillRoundRectangle(borderWidth, size.y - borderWidth - 2 * cornerRadius, size.x - 2 * borderWidth, 2 * cornerRadius,
 							innerRadius, innerRadius);
-					gc.fillGradientRectangle(borderWidth, size.y / 2, size.x - 2 * borderWidth, size.y / 2 - edgeRadius, true);
+					gc.fillGradientRectangle(borderWidth, size.y / 2, size.x - 2 * borderWidth, size.y / 2 - cornerRadius, true);
 
 				} else if (selected) {
 					gc.setBackground(getBackground());
@@ -421,7 +421,7 @@ public class Tile extends Composite implements IBorderable {
 	 *        the border color
 	 *
 	 * @see #setBorderWidth(int)
-	 * @see #setEdgeRadius(int)
+	 * @see #setCornerRadius(int)
 	 */
 	public void setBorderColor(final Color borderColor) {
 		if (borderColor != null && borderColor.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -452,7 +452,7 @@ public class Tile extends Composite implements IBorderable {
 	 *            </ul>
 	 *
 	 * @see #setBorderColor(Color)
-	 * @see #setEdgeRadius(int)
+	 * @see #setCornerRadius(int)
 	 */
 	public void setBorderWidth(final int borderWith) {
 		if (borderWidth < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -615,34 +615,33 @@ public class Tile extends Composite implements IBorderable {
 	}
 
 	/**
-	 * Gets the radius of the rounded edges.
+	 * Gets the radius of the rounded corners.
 	 *
 	 * @return the radius
 	 */
 	@Override
-	public int getEdgeRadius() {
-		return edgeRadius;
+	public int getCornerRadius() {
+		return cornerRadius;
 	}
 
 	/**
-	 * Defines the radius of the rounded edges if the control shows a border
-	 * line.
+	 * Defines the radius of the rounded corners.
 	 *
-	 * @param edgeRadius
-	 *        the radius of the rounded edges
+	 * @param cornerRadius
+	 *        the radius of the rounded corners
 	 *
 	 * @exception InvalidArgumentException
 	 *            <ul>
-	 *            <li>ERROR_INVALID_ARGUMENT - if the edge radius less then
+	 *            <li>ERROR_INVALID_ARGUMENT - if the corner radius less then
 	 *            zero</li>
 	 *            </ul>
 	 *
 	 * @see #setBorderColor(Color)
 	 * @see #setBorderWidth(int)
 	 */
-	public void setEdgeRadius(final int edgeRadius) {
-		if (edgeRadius < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-		this.edgeRadius = edgeRadius;
+	public void setCornerRadius(final int cornerRadius) {
+		if (cornerRadius < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		this.cornerRadius = cornerRadius;
 		redraw();
 	}
 

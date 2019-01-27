@@ -15,7 +15,7 @@ public interface IBorderable {
 
 	Color getBorderColor();
 
-	int getEdgeRadius();
+	int getCornerRadius();
 
 	int getBorderWidth();
 

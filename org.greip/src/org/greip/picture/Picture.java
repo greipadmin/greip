@@ -43,7 +43,7 @@ public class Picture extends Composite implements IBorderable {
 	private final BorderPainter border = new BorderPainter(this);
 	private int borderWidth = 0;
 	private Color borderColor;
-	private int edgeRadius;
+	private int cornerRadius;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -268,34 +268,33 @@ public class Picture extends Composite implements IBorderable {
 	}
 
 	/**
-	 * Gets the radius of the rounded edges.
+	 * Gets the radius of the rounded corners.
 	 *
 	 * @return the radius
 	 */
 	@Override
-	public int getEdgeRadius() {
-		return edgeRadius;
+	public int getCornerRadius() {
+		return cornerRadius;
 	}
 
 	/**
-	 * Defines the radius of the rounded edges if the control shows a border
-	 * line.
+	 * Defines the radius of the rounded corners.
 	 *
-	 * @param edgeRadius
-	 *        the radius of the rounded edges
+	 * @param cornerRadius
+	 *        the radius of the rounded corners
 	 *
 	 * @exception InvalidArgumentException
 	 *            <ul>
-	 *            <li>ERROR_INVALID_ARGUMENT - if the edge radius less then
+	 *            <li>ERROR_INVALID_ARGUMENT - if the corner radius less then
 	 *            zero</li>
 	 *            </ul>
 	 *
 	 * @see #setBorderColor(Color)
 	 * @see #setBorderWidth(int)
 	 */
-	public void setEdgeRadius(final int edgeRadius) {
-		if (edgeRadius < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-		this.edgeRadius = edgeRadius;
+	public void setCornerRadius(final int cornerRadius) {
+		if (cornerRadius < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		this.cornerRadius = cornerRadius;
 		redraw();
 	}
 

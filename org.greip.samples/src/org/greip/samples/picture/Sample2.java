@@ -30,6 +30,6 @@ public class Sample2 extends AbstractSample {
 		// configure the border
 		picture.setBorderWidth(5);
 		picture.setBorderColor(display.getSystemColor(SWT.COLOR_DARK_GREEN));
-		picture.setEdgeRadius(16);
+		picture.setCornerRadius(16);
 	}
 }
