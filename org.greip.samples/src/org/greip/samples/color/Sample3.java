@@ -7,6 +7,12 @@ import org.greip.color.ColorButton;
 import org.greip.color.ColorPicker;
 import org.greip.samples.AbstractSample;
 
+/**
+ * The example shows the use of an {@link ColorButton} in conjunction with a
+ * {@link ColorPicker.Factory} and a list of predefined colors.
+ *
+ * @author Thomas Lorbeer
+ */
 public class Sample3 extends AbstractSample {
 
 	public static void main(final String[] args) {
