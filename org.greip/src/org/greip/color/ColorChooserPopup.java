@@ -20,9 +20,11 @@ class ColorChooserPopup extends Popup {
 
 	private AbstractColorChooser colorChooser;
 	private RGB rgb;
+	private final Control control;
 
 	public ColorChooserPopup(final Control control) {
 		super(control);
+		this.control = control;
 		setBackground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
 	}
 
@@ -47,5 +49,9 @@ class ColorChooserPopup extends Popup {
 	private void propagateNewRGB() {
 		rgb = colorChooser.getRGB();
 		close();
+	}
+
+	public int getPreferredWidth() {
+		return control.getSize().x - getBorderWidth() * 2 - 2;
 	}
 }

@@ -57,9 +57,19 @@ public final class ColorPicker extends AbstractColorChooser {
 		}
 
 		createTableItems(table);
-		table.getParent().setLayoutData(new GridData(ITEM_WIDTH + getScrollBarWidth(), Math.min(MAX_ITEMS, rgbs.length) * ITEM_HEIGHT));
+		configureTable(table);
+
+		table.getParent().setLayoutData(new GridData(calculateTableWidth(), Math.min(MAX_ITEMS, rgbs.length) * ITEM_HEIGHT));
 
 		setRGB(rgbs[0]);
+	}
+
+	private int calculateTableWidth() {
+		int width = ITEM_WIDTH + getScrollBarWidth();
+		if (getShell() instanceof ColorChooserPopup) {
+			width = Math.max(width, ((ColorChooserPopup) getShell()).getPreferredWidth());
+		}
+		return width;
 	}
 
 	@Override
@@ -73,22 +83,24 @@ public final class ColorPicker extends AbstractColorChooser {
 		panel.setLayout(new FillLayout());
 
 		table = new Table(panel, SWT.FULL_SELECTION | SWT.H_SCROLL);
-		new TableColumn(table, SWT.NONE).setWidth(ITEM_WIDTH);
 
-		table.addListener(SWT.Activate, e -> table.showSelection());
+		return panel;
+	}
+
+	private void configureTable(final Table table) {
+		final int itemWidth = calculateTableWidth() - getScrollBarWidth();
+		new TableColumn(table, SWT.NONE).setWidth(itemWidth);
 
 		table.addListener(SWT.MeasureItem, e -> {
-			e.width = ITEM_WIDTH;
+			e.width = itemWidth;
 			e.height = ITEM_HEIGHT;
 		});
-
-		table.addListener(SWT.EraseItem, e -> e.detail &= ~SWT.FOREGROUND);
 
 		table.addListener(SWT.PaintItem, e -> {
 			final RGB rgb = (RGB) e.item.getData();
 
 			Util.withResource(new Color(e.display, rgb), color -> {
-				final Rectangle rect = new Rectangle(10, e.y + 5, ITEM_WIDTH - 21, e.height - 11);
+				final Rectangle rect = new Rectangle(10, e.y + 5, itemWidth - 21, e.height - 11);
 
 				e.gc.setBackground(color);
 				e.gc.fillRectangle(rect);
@@ -97,6 +109,9 @@ public final class ColorPicker extends AbstractColorChooser {
 			});
 		});
 
+		table.addListener(SWT.Activate, e -> table.showSelection());
+		table.addListener(SWT.EraseItem, e -> e.detail &= ~SWT.FOREGROUND);
+
 		table.addListener(SWT.DefaultSelection, e -> {
 			setRGB((RGB) e.item.getData());
 			notifyListeners(SWT.Selection, new Event());
@@ -104,8 +119,6 @@ public final class ColorPicker extends AbstractColorChooser {
 
 		table.addListener(SWT.Selection, e -> setNewRGB((RGB) e.item.getData()));
 		table.setToolTipText(""); //$NON-NLS-1$
-
-		return panel;
 	}
 
 	private void createTableItems(final Table table) {
