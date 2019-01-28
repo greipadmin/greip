@@ -12,6 +12,8 @@ import java.io.InputStream;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -21,6 +23,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.TypedListener;
 import org.greip.common.Greip;
 import org.greip.common.Util;
 import org.greip.decorator.ImageDecorator;
@@ -622,5 +625,66 @@ public class Separator extends Composite {
 		final int height = isVertical() ? size.width : size.height;
 
 		return new Rectangle(indent + (indent == 0 ? 0 : spacing) + margin - 1, (height - imageSize.y) / 2, imageSize.x, imageSize.y);
+	}
+
+	/**
+	 * Adds the listener to the collection of listeners who will be notified when
+	 * separator is selected by the user, by sending it one of the messages
+	 * defined in the <code>SelectionListener</code> interface.
+	 * <p>
+	 * <code>widgetSelected</code> is called when a link is selected by the user.
+	 * The data member of the event contains the link object.
+	 * <code>widgetDefaultSelected</code> is never called.
+	 * </p>
+	 *
+	 * @param listener
+	 *        the listener which should be notified
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+	 *            </ul>
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
+	 *
+	 * @see SelectionListener
+	 * @see #removeSelectionListener
+	 * @see SelectionEvent
+	 */
+	public void addSelectionListener(final SelectionListener listener) {
+		if (listener == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		addListener(SWT.Selection, new TypedListener(listener));
+	}
+
+	/**
+	 * Removes the listener from the collection of listeners who will be notified
+	 * when separator is selected by the user.
+	 *
+	 * @param listener
+	 *        the listener which should no longer be notified
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+	 *            </ul>
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *            disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the receiver</li>
+	 *            </ul>
+	 *
+	 * @see SelectionListener
+	 * @see #addSelectionListener
+	 */
+	public void removeSelectionListener(final SelectionListener listener) {
+		if (listener == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		removeListener(SWT.Selection, listener);
 	}
 }
