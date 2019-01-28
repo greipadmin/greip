@@ -68,4 +68,5 @@ Eclipse Public License, Version 1.0 (EPL-1.0). See https://www.eclipse.org/legal
 * Alpha releases
   * 1.0.1 \[07-02-2017\] first release on GitHub
   * 1.0.0 \[07-02-2017\] first internal release
+  
 The complete list of changes is available [here](https://github.com/greipadmin/greip/wiki/Release%20Notes).
