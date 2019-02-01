@@ -49,7 +49,10 @@ Available translations:
 * Italian
 
 # Eclipse update site
-To install Greip use this update site: https://github.com/greipadmin/greip/raw/master/updatesite.
+
+To install Greip use this update site: https://github.com/greipadmin/greip/raw/master/updatesite or drag the install button into your running Eclipse workspace. 
+
+<a href="http://marketplace.eclipse.org/marketplace-client-intro?mpc_install=4445639" class="drag" title="Greip - Additional SWT Widgets"><img class="img-responsive" src="https://marketplace.eclipse.org/sites/all/themes/solstice/public/images/marketplace/btn-install.png" alt="Drag to your running Eclipse workspace to install More Clipboard" /></a>
 
 # Release notes
 * Beta releases
