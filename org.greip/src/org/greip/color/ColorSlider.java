@@ -46,7 +46,7 @@ class ColorSlider extends Composite {
 		addListener(SWT.Paint, this::handlePaint);
 		addListener(SWT.MouseMove, this::handleMouseMove);
 		addListener(SWT.MouseDown, this::handleMouseMove);
-		addListener(SWT.MouseUp, this::handleMouseUp);
+		addListener(SWT.MouseUp, e -> handleMouseUp());
 		addListener(SWT.Resize, e -> initColors());
 		addListener(SWT.KeyDown, this::handleKeyDown);
 		addListener(SWT.FocusIn, e -> redraw());
@@ -80,7 +80,7 @@ class ColorSlider extends Composite {
 		return type;
 	}
 
-	private void handleMouseUp(final Event e) {
+	private void handleMouseUp() {
 		currentRGB = rgbs[rgbIndex];
 		notifyListeners(SWT.DefaultSelection, new Event());
 	}
