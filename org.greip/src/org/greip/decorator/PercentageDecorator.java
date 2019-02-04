@@ -13,16 +13,18 @@ import org.greip.common.Util;
  *
  * @author Thomas Lorbeer
  */
-public final class PercentageDecorator extends AbstractNumberDecorator {
+public final class PercentageDecorator extends AbstractValueDecorator<Double> {
 
-	private double curValue;
-	private double maxValue;
-	private double increment;
+	private static final Double ZERO = Double.valueOf(0d);
+
+	private Double maxValue = Double.valueOf(100.0d);
 	private Color circleBackground;
 	private Color circleForeground;
 	private int outerDiameter = 50;
 	private int innerDiameter = 40;
 	private CircleType circleType = CircleType.Circle;
+
+	private final AnimationContext ctx = new AnimationContext();
 
 	/**
 	 * Creates a new instance of the decorator.
@@ -41,7 +43,12 @@ public final class PercentageDecorator extends AbstractNumberDecorator {
 		super(parent);
 
 		setUnit("%");
-		setMaxValue(100.0d);
+		setValue(ZERO);
+	}
+
+	@Override
+	protected AnimationContext getAnimationContext() {
+		return ctx;
 	}
 
 	/**
@@ -65,7 +72,7 @@ public final class PercentageDecorator extends AbstractNumberDecorator {
 	 *            disposed</li>
 	 *            </ul>
 	 */
-	public void setCircleBackground(final Color color) {
+	public void setBackground(final Color color) {
 		this.circleBackground = Util.checkResource(color, true);
 		redraw();
 	}
@@ -91,7 +98,7 @@ public final class PercentageDecorator extends AbstractNumberDecorator {
 	 *            disposed</li>
 	 *            </ul>
 	 */
-	public void setCircleForeground(final Color color) {
+	public void setForeground(final Color color) {
 		this.circleForeground = Util.checkResource(color, true);
 		redraw();
 	}
@@ -184,7 +191,7 @@ public final class PercentageDecorator extends AbstractNumberDecorator {
 	 *
 	 * @return the maximum
 	 */
-	public double getMaxValue() {
+	public Double getMaxValue() {
 		return maxValue;
 	}
 
@@ -198,17 +205,18 @@ public final class PercentageDecorator extends AbstractNumberDecorator {
 	 *
 	 * @exception IllegalArgumentException
 	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if maximum value is null</li>
 	 *            <li>ERROR_INVALID_ARGUMENT - if maximum value is less then
 	 *            zero</li>
 	 *            </ul>
 	 */
-	public void setMaxValue(final double maxValue) {
-		if (maxValue < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+	public void setMaxValue(final Double maxValue) {
+		if (maxValue == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (maxValue.doubleValue() < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 
 		this.maxValue = maxValue;
-		this.increment = maxValue / 30;
 
-		if (getValue() > maxValue) {
+		if (getValue().compareTo(maxValue) > 0) {
 			setValue(maxValue);
 		} else {
 			redraw();
@@ -223,24 +231,21 @@ public final class PercentageDecorator extends AbstractNumberDecorator {
 	 *
 	 * @exception IllegalArgumentException
 	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if value is null</li>
 	 *            <li>ERROR_INVALID_ARGUMENT - if outer diameter less than zero
 	 *            or greater than {@link #getMaxValue()}</li>
 	 *            </ul>
 	 */
 	@Override
-	public void setValue(final double value) {
-		if (value < 0 || value > getMaxValue()) SWT.error(SWT.ERROR_INVALID_RANGE);
+	public void setValue(final Double value) {
+		if (value == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (value.compareTo(ZERO) < 0 || value.compareTo(maxValue) > 0) SWT.error(SWT.ERROR_INVALID_RANGE);
 		super.setValue(value);
 	}
 
 	@Override
-	protected double getValueToDisplay() {
-		return getValue() * 100 / getMaxValue();
-	}
-
-	@Override
-	protected void initAnimation() {
-		curValue = isShowAnimation() ? 0d : getValue();
+	protected Double getValueToDisplay() {
+		return Double.valueOf(getValue().doubleValue() * 100 / getMaxValue().doubleValue());
 	}
 
 	@Override
@@ -249,9 +254,9 @@ public final class PercentageDecorator extends AbstractNumberDecorator {
 
 		paintCircle(gc, x, y);
 
-		if (curValue == getValue()) {
+		if (!ctx.isActive()) {
 			final Point size = getSize();
-			final Point textSize = getTextSize();
+			final Point textSize = getValueSize();
 			final int offsetY;
 
 			if (circleType == CircleType.Circle) {
@@ -263,14 +268,13 @@ public final class PercentageDecorator extends AbstractNumberDecorator {
 			paintValue(gc, x + (size.x - textSize.x) / 2, y + offsetY);
 
 		} else {
-			curValue = Math.min(curValue + increment, getValue());
-			redrawAsync();
+			paintCircle(gc, x, y);
 		}
 	}
 
 	@Override
 	public Point getSize() {
-		final Point textSize = getTextSize();
+		final Point textSize = getValueSize();
 
 		if (circleType == CircleType.Circle) {
 			return new Point(Math.max(outerDiameter, textSize.x), Math.max(outerDiameter, textSize.y));
@@ -281,7 +285,10 @@ public final class PercentageDecorator extends AbstractNumberDecorator {
 	}
 
 	private void paintCircle(final GC gc, final int x, final int y) {
-		final int curAngle = (int) Math.round(curValue * circleType.angle / maxValue);
+		final double increment = maxValue.doubleValue() / ctx.getStepCount();
+		final double curValue = Math.min(maxValue.doubleValue() / ctx.getStepCount() * ctx.getStep() + increment, getValue().doubleValue());
+
+		final int curAngle = (int) Math.round(curValue * circleType.angle / maxValue.doubleValue());
 		final int lineWidth = (outerDiameter - innerDiameter) / 2;
 
 		gc.setForeground(Util.nvl(getTreshholdColor(getCircleForeground()), getParent().getForeground()));

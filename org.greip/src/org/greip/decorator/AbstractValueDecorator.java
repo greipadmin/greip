@@ -8,11 +8,11 @@
  **/
 package org.greip.decorator;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
+import java.text.Format;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.TreeMap;
 
 import org.eclipse.swt.SWT;
@@ -25,21 +25,20 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Control;
 import org.greip.common.Util;
 
-public abstract class AbstractNumberDecorator extends AbstractDecorator {
+public abstract class AbstractValueDecorator<T extends Comparable<T>> extends AbstractAnimatedDecorator {
 
 	private static final int TEXT_SPACING = 2;
 
-	private double value;
-	private boolean animate = true;
-	private NumberFormat numberFormat = new DecimalFormat("#0");
+	private T value;
+	private Format format;
 	private Font font;
-	private final Map<Double, Color> treshholdMap = new TreeMap<>((o1, o2) -> -o1.compareTo(o2));
+	private final Map<T, Color> treshholdMap = new TreeMap<>((o1, o2) -> -o1.compareTo(o2));
 	private Color valueColor;
 	private String unit;
 	private int unitAlignment = SWT.RIGHT;
 	private Font unitFont;
 
-	protected AbstractNumberDecorator(final Control parent) {
+	protected AbstractValueDecorator(final Control parent) {
 		super(parent);
 	}
 
@@ -48,7 +47,7 @@ public abstract class AbstractNumberDecorator extends AbstractDecorator {
 	 *
 	 * @return the value
 	 */
-	public double getValue() {
+	public T getValue() {
 		return value;
 	}
 
@@ -58,39 +57,18 @@ public abstract class AbstractNumberDecorator extends AbstractDecorator {
 	 * @param value
 	 *        the value
 	 */
-	public void setValue(final double value) {
+	public void setValue(final T value) {
 		this.value = value;
-		initAnimation();
-		redraw();
+		startAnimation();
 	}
 
-	protected double getValueToDisplay() {
+	protected T getValueToDisplay() {
 		return value;
 	}
 
 	protected String getValueAsString() {
-		return numberFormat.format(getValueToDisplay());
-	}
-
-	abstract protected void initAnimation();
-
-	/**
-	 * Gets the current animation behaviour.
-	 *
-	 * @return the animation behaviour
-	 */
-	public boolean isShowAnimation() {
-		return animate;
-	}
-
-	/**
-	 * Enables or disables the animation on value change.
-	 *
-	 * @param animate
-	 *        the new animation behaviour
-	 */
-	public void setShowAnimation(final boolean animate) {
-		this.animate = animate;
+		final T valueToDisplay = getValueToDisplay();
+		return format == null ? Objects.toString(valueToDisplay, "") : format.format(valueToDisplay);
 	}
 
 	/**
@@ -104,9 +82,9 @@ public abstract class AbstractNumberDecorator extends AbstractDecorator {
 	 *            <li>ERROR_NULL_ARGUMENT - if the format is null</li>
 	 *            </ul>
 	 */
-	public void setNumberFormat(final NumberFormat numberFormat) {
-		if (numberFormat == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-		this.numberFormat = numberFormat;
+	public void setFormat(final Format format) {
+		if (format == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		this.format = format;
 	}
 
 	/**
@@ -139,7 +117,7 @@ public abstract class AbstractNumberDecorator extends AbstractDecorator {
 	 *
 	 * @return the current map
 	 */
-	public Map<Double, Color> getTreshholdColors() {
+	public Map<T, Color> getTreshholdColors() {
 		return Collections.unmodifiableMap(treshholdMap);
 	}
 
@@ -154,7 +132,7 @@ public abstract class AbstractNumberDecorator extends AbstractDecorator {
 	 *            <li>ERROR_NULL_ARGUMENT - if the map is null</li>
 	 *            </ul>
 	 */
-	public void setTreshholdColors(final Map<Double, Color> treshholdMap) {
+	public void setTreshholdColors(final Map<T, Color> treshholdMap) {
 		if (treshholdMap == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		this.treshholdMap.clear();
 		this.treshholdMap.putAll(treshholdMap);
@@ -162,8 +140,8 @@ public abstract class AbstractNumberDecorator extends AbstractDecorator {
 	}
 
 	protected Color getTreshholdColor(final Color defaultColor) {
-		for (final Entry<Double, Color> entry : treshholdMap.entrySet()) {
-			if (getValue() >= entry.getKey().doubleValue()) {
+		for (final Entry<T, Color> entry : treshholdMap.entrySet()) {
+			if (getValue().compareTo(entry.getKey()) > 0) {
 				return entry.getValue();
 			}
 		}
@@ -262,7 +240,7 @@ public abstract class AbstractNumberDecorator extends AbstractDecorator {
 		redraw();
 	}
 
-	protected Point getTextSize() {
+	protected Point getValueSize() {
 		return Util.withResource(new GC(getDisplay()), gc -> {
 			Util.whenNotNull(getFont(), gc::setFont);
 			final Point size = gc.textExtent(getValueAsString());
@@ -298,7 +276,7 @@ public abstract class AbstractNumberDecorator extends AbstractDecorator {
 	}
 
 	protected void paintValue(final GC gc, final int x, final int y) {
-		final Point textSize = getTextSize();
+		final Point textSize = getValueSize();
 
 		final FontMetrics valueMetrics = applyFont(gc, getFont());
 		final Point valueSize = gc.textExtent(getValueAsString());
@@ -350,9 +328,5 @@ public abstract class AbstractNumberDecorator extends AbstractDecorator {
 	private static FontMetrics applyFont(final GC gc, final Font font) {
 		Util.whenNotNull(font, gc::setFont);
 		return gc.getFontMetrics();
-	}
-
-	protected void redrawAsync() {
-		getDisplay().timerExec(10, this::redraw);
 	}
 }

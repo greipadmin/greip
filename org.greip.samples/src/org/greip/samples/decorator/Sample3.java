@@ -1,6 +1,7 @@
 package org.greip.samples.decorator;
 
-import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
@@ -9,20 +10,19 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
-import org.greip.decorator.PercentageDecorator;
 import org.greip.decorator.ShapeDecorator;
 import org.greip.samples.AbstractSample;
 
 /**
- * The example shows the use of an {@link ShapeDecorator}. A
- * {@link PercentageDecorator} can also be used.
+ * The example shows the use of an {@link ShapeDecorator} to display a formatted
+ * date.
  *
  * @author Thomas Lorbeer
  */
-public class Sample2 extends AbstractSample {
+public class Sample3 extends AbstractSample {
 
 	public static void main(final String[] args) {
-		final Sample2 sample = new Sample2();
+		final Sample3 sample = new Sample3();
 		sample.show("Greip ShapeDecorator Sample", true);
 	}
 
@@ -42,22 +42,22 @@ public class Sample2 extends AbstractSample {
 		shell.addListener(SWT.Dispose, e -> font.dispose());
 
 		// create the decorator
-		final ShapeDecorator<Float> decorator = new ShapeDecorator<>(composite);
+		final ShapeDecorator<Date> decorator = new ShapeDecorator<>(composite);
 
-		// set value, output format and unit text
-		decorator.setValue(1234.5f);
-		decorator.setFormat(NumberFormat.getInstance());
-		decorator.setUnit("kg");
+		// set value and output format
+		decorator.setValue(new Date());
+		decorator.setFormat(new SimpleDateFormat("hh:mm:ss"));
 
-		// configure the shape as circle
-		decorator.setShapeSize(80, 80);
-		decorator.setCornerArc(80, 80);
-		decorator.setLineWidth(10);
+		// configure the shape
+		decorator.setShapeSize(140, 50);
+		decorator.setCornerArc(8, 8);
+		decorator.setLineWidth(1);
 
 		// configure font and colors
 		decorator.setFont(font);
 		decorator.setValueColor(display.getSystemColor(SWT.COLOR_GREEN));
-		decorator.setForeground(display.getSystemColor(SWT.COLOR_DARK_GREEN));
+		decorator.setForeground(display.getSystemColor(SWT.COLOR_GRAY));
+		decorator.setBackground(display.getSystemColor(SWT.COLOR_DARK_GREEN));
 
 		// adds a listener to paint the decorator centered
 		composite.addListener(SWT.Paint, e -> {
