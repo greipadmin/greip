@@ -206,16 +206,6 @@ public final class Util {
 		return new RGB(red, green, blue);
 	}
 
-	public static void drawArc(final GC gc, final int x, final int y, final int diameter, final int lineWidth, final int startAngle,
-			final int arcAngle) {
-
-		gc.setLineWidth(2);
-		for (int i = 1; i < lineWidth; i++) {
-			gc.drawArc(x + i, y + i, diameter - i - i, diameter - i - i, startAngle, arcAngle);
-		}
-		gc.setLineWidth(1);
-	}
-
 	public static float getZoom(final Device device) {
 		return device.getDPI().x / 96.0f;
 	}

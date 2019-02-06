@@ -18,6 +18,7 @@ public final class PercentageDecorator extends AbstractValueDecorator<Double> {
 	private static final Double ZERO = Double.valueOf(0d);
 
 	private Double maxValue = Double.valueOf(100.0d);
+	private Double minValue = ZERO;
 	private Color circleBackground;
 	private Color circleForeground;
 	private int outerDiameter = 50;
@@ -201,23 +202,61 @@ public final class PercentageDecorator extends AbstractValueDecorator<Double> {
 	 * within its new range. The default maximum is 100.
 	 *
 	 * @param maxValue
-	 *        the new maximum, which must be greater or equal than zero.
+	 *        the new maximum value, which must be greater as minimum value.
 	 *
 	 * @exception IllegalArgumentException
 	 *            <ul>
 	 *            <li>ERROR_NULL_ARGUMENT - if maximum value is null</li>
-	 *            <li>ERROR_INVALID_ARGUMENT - if maximum value is less then
-	 *            zero</li>
+	 *            <li>ERROR_INVALID_RANGE - if maximum value is less or equal
+	 *            minimum value</li>
 	 *            </ul>
 	 */
 	public void setMaxValue(final Double maxValue) {
 		if (maxValue == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-		if (maxValue.doubleValue() < 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		if (maxValue.compareTo(minValue) <= 0) SWT.error(SWT.ERROR_INVALID_RANGE);
 
 		this.maxValue = maxValue;
 
 		if (getValue().compareTo(maxValue) > 0) {
 			setValue(maxValue);
+		} else {
+			redraw();
+		}
+	}
+
+	/**
+	 * Returns the minimum value which the decorator will allow. The default
+	 * minimum is zero.
+	 *
+	 * @return the minimum
+	 */
+	public Double getMinValue() {
+		return minValue;
+	}
+
+	/**
+	 * Sets the minimum value that the decorator will allow. If the new minimum
+	 * is applied then the current value will be adjusted if necessary to fall
+	 * within its new range. The default minimum is zero.
+	 *
+	 * @param minValue
+	 *        the new minimum value, must be less then maximum value.
+	 *
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_NULL_ARGUMENT - if minimum value is null</li>
+	 *            <li>ERROR_INVALID_RANGE - if minimum value is greater or equal
+	 *            maximum value</li>
+	 *            </ul>
+	 */
+	public void setMinValue(final Double minValue) {
+		if (minValue == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (minValue.compareTo(maxValue) >= 0) SWT.error(SWT.ERROR_INVALID_RANGE);
+
+		this.minValue = minValue;
+
+		if (getValue().compareTo(minValue) < 0) {
+			setValue(minValue);
 		} else {
 			redraw();
 		}
@@ -245,7 +284,7 @@ public final class PercentageDecorator extends AbstractValueDecorator<Double> {
 
 	@Override
 	protected Double getValueToDisplay() {
-		return Double.valueOf(getValue().doubleValue() * 100 / getMaxValue().doubleValue());
+		return Double.valueOf(getValue().doubleValue() * 100 / (getMaxValue().doubleValue() - getMinValue().doubleValue()));
 	}
 
 	@Override
@@ -285,15 +324,25 @@ public final class PercentageDecorator extends AbstractValueDecorator<Double> {
 	}
 
 	private void paintCircle(final GC gc, final int x, final int y) {
-		final double increment = maxValue.doubleValue() / ctx.getStepCount();
-		final double curValue = Math.min(maxValue.doubleValue() / ctx.getStepCount() * ctx.getStep() + increment, getValue().doubleValue());
+		final double range = maxValue.doubleValue() - minValue.doubleValue();
+		final double increment = range / ctx.getStepCount();
+		final double curValue = Math.min(range / ctx.getStepCount() * ctx.getStep() + increment, getValue().doubleValue());
 
-		final int curAngle = (int) Math.round(curValue * circleType.angle / maxValue.doubleValue());
-		final int lineWidth = (outerDiameter - innerDiameter) / 2;
+		final int curAngle = (int) Math.round(curValue * circleType.angle / range);
 
 		gc.setForeground(Util.nvl(getTreshholdColor(getCircleForeground()), getParent().getForeground()));
-		Util.drawArc(gc, x, y, outerDiameter, lineWidth, circleType.angle - curAngle + circleType.offset, curAngle);
+		paintArc(gc, x, y, outerDiameter, circleType.angle - curAngle + circleType.offset, curAngle);
 		gc.setForeground(Util.nvl(getCircleBackground(), getDisplay().getSystemColor(SWT.COLOR_GRAY)));
-		Util.drawArc(gc, x, y, outerDiameter, lineWidth, circleType.offset, circleType.angle - curAngle);
+		paintArc(gc, x, y, outerDiameter, circleType.offset, circleType.angle - curAngle);
+	}
+
+	private void paintArc(final GC gc, final int x, final int y, final int diameter, final int startAngle, final int arcAngle) {
+		final int lineWidth = (outerDiameter - innerDiameter) / 2;
+
+		gc.setLineWidth(2);
+		for (int i = 1; i < lineWidth; i++) {
+			gc.drawArc(x + i, y + i, diameter - i - i, diameter - i - i, startAngle, arcAngle);
+		}
+		gc.setLineWidth(1);
 	}
 }
