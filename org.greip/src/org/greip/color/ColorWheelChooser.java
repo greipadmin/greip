@@ -12,6 +12,7 @@ package org.greip.color;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
@@ -72,8 +73,10 @@ public final class ColorWheelChooser extends AbstractColorChooser {
 	}
 
 	private void createBrightnessSlider(final Composite parent) {
+		final Point size = colorWheel.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+
 		brightnessSlider = new ColorSlider(parent, getColorResolution());
-		brightnessSlider.setLayoutData(GridDataFactory.swtDefaults().hint(SWT.DEFAULT, 127).create());
+		brightnessSlider.setLayoutData(GridDataFactory.swtDefaults().hint(SWT.DEFAULT, size.y).create());
 		brightnessSlider.setType(ColorSliderType.Lightness);
 		brightnessSlider.setOrientation(SWT.VERTICAL);
 		brightnessSlider.addListener(SWT.Selection, e -> setNewRGB(determineNewRGB(true)));

@@ -26,7 +26,7 @@ class ColorSlider extends Composite {
 	private final ColorResolution resolution;
 	private ColorSliderType type = ColorSliderType.Hue;
 	private boolean vertical;
-	private int barHeight = 4;
+	private int barHeight;
 	private Color borderColor;
 	private Color markerColor;
 
@@ -38,10 +38,14 @@ class ColorSlider extends Composite {
 	private RGB currentRGB;
 	private HSB originalHSB;
 
+	private final float zoom;
+	private int scaledBarHeight;
+
 	public ColorSlider(final Composite parent, final ColorResolution resolution) {
 		super(parent, SWT.DOUBLE_BUFFERED);
 
 		this.resolution = resolution;
+		this.zoom = Util.getZoom(getDisplay());
 
 		addListener(SWT.Paint, this::handlePaint);
 		addListener(SWT.MouseMove, this::handleMouseMove);
@@ -52,6 +56,7 @@ class ColorSlider extends Composite {
 		addListener(SWT.FocusIn, e -> redraw());
 		addListener(SWT.FocusOut, e -> redraw());
 
+		setBarHeight(4);
 		setHSB(new HSB(0, 0, 0));
 	}
 
@@ -123,16 +128,21 @@ class ColorSlider extends Composite {
 	}
 
 	private void paintMarker(final GC gc) {
-		final int markerPos = (int) ((rgbIndex + 0.5f) * stepSize);
+		final int markerPos = (int) ((rgbIndex + 0.5f) * stepSize) - 1;
 		final int height = vertical ? getBarBounds().width : getBarBounds().height;
 
 		gc.setAntialias(SWT.ON);
 		gc.setBackground(getMarkerColor());
 
+		final int three = zoom(3);
+		final int four = zoom(4);
+		final int seven = zoom(7);
+		final int ten = zoom(10);
+
 		if (vertical) {
-			gc.fillPolygon(new int[] { height + 4, markerPos + 4, height + 10, markerPos + 1, height + 10, markerPos + 7 });
+			gc.fillPolygon(new int[] { height + four, markerPos + four, height + ten, markerPos + 1, height + ten, markerPos + seven });
 		} else {
-			gc.fillPolygon(new int[] { markerPos + 4, height + 3, markerPos + 7, height + 10, markerPos + 1, height + 10 });
+			gc.fillPolygon(new int[] { markerPos + four, height + three, markerPos + seven, height + ten, markerPos + 1, height + ten });
 		}
 	}
 
@@ -144,10 +154,10 @@ class ColorSlider extends Composite {
 
 			if (vertical) {
 				final float increment = (float) barBounds.height / colorSteps;
-				bounds = new Rectangle(barBounds.x + 1, (int) (increment * i) + 4, getBarHeight(), (int) increment + 1);
+				bounds = new Rectangle(barBounds.x + 1, (int) (increment * i) + 4, scaledBarHeight, (int) increment + 1);
 			} else {
 				final float increment = (float) barBounds.width / colorSteps;
-				bounds = new Rectangle((int) (increment * i) + 4, barBounds.y + 1, (int) increment + 1, getBarHeight());
+				bounds = new Rectangle((int) (increment * i) + 4, barBounds.y + 1, (int) increment + 1, scaledBarHeight);
 			}
 
 			Util.withResource(new Color(gc.getDevice(), rgbs[i]), c -> {
@@ -180,7 +190,8 @@ class ColorSlider extends Composite {
 
 	@Override
 	public Point computeSize(final int wHint, final int hHint, final boolean changed) {
-		return vertical ? new Point(getBarHeight() + 12, Math.max(100, hHint)) : new Point(Math.max(100, wHint), getBarHeight() + 12);
+		return vertical ? new Point(scaledBarHeight + zoom(12), Math.max(100, hHint))
+				: new Point(Math.max(100, wHint), scaledBarHeight + zoom(12));
 	}
 
 	public Color getBorderColor() {
@@ -207,12 +218,14 @@ class ColorSlider extends Composite {
 
 	public void setBarHeight(final int barHeight) {
 		this.barHeight = Math.max(1, barHeight);
+		this.scaledBarHeight = zoom(barHeight);
 		redraw();
 	}
 
 	private Rectangle getBarBounds() {
 		final Point size = getSize();
-		return vertical ? new Rectangle(2, 3, barHeight, Math.max(1, size.y - 8)) : new Rectangle(3, 2, Math.max(1, size.x - 8), barHeight);
+		return vertical ? new Rectangle(2, 3, scaledBarHeight, Math.max(1, size.y - 8))
+				: new Rectangle(3, 2, Math.max(1, size.x - 8), scaledBarHeight);
 	}
 
 	public void addSelectionListener(final SelectionListener listener) {
@@ -235,5 +248,9 @@ class ColorSlider extends Composite {
 	@Override
 	public int getOrientation() {
 		return vertical ? SWT.VERTICAL : SWT.HORIZONTAL;
+	}
+
+	private int zoom(final int pixels) {
+		return (int) (pixels * zoom);
 	}
 }

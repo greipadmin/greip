@@ -12,29 +12,29 @@ package org.greip.color;
 public enum ColorResolution {
 
 	Minimal(
-		4.65f,
+		4,
 		12),
 
 	Low(
-		6.45f,
+		6,
 		18),
 
 	Medium(
-		8.5f,
+		10,
 		24),
 
 	High(
-		9.9f,
+		12,
 		30),
 
 	Maximal(
 		80,
 		-1);
 
-	final float saturationSteps;
+	final int saturationSteps;
 	final int hueSteps;
 
-	ColorResolution(final float saturationSteps, final int hueSteps) {
+	ColorResolution(final int saturationSteps, final int hueSteps) {
 		this.saturationSteps = saturationSteps;
 		this.hueSteps = hueSteps;
 	}

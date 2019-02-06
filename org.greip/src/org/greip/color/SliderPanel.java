@@ -20,11 +20,14 @@ import org.greip.common.Util;
 
 class SliderPanel extends Composite {
 
+	private static final int DEFAULT_WIDTH = 180;
+
 	private final ColorSlider[] sliders;
 
 	public SliderPanel(final AbstractColorChooser parent, final ColorResolution colorResolution, final String... titles) {
 		super(parent, SWT.NO_FOCUS);
 
+		final int width = (int) (Util.getZoom(getDisplay()) * DEFAULT_WIDTH);
 		sliders = new ColorSlider[titles.length];
 
 		GridLayoutFactory.fillDefaults().spacing(0, 5).applyTo(this);
@@ -36,7 +39,7 @@ class SliderPanel extends Composite {
 			Util.applyDerivedFont(label, -1, SWT.ITALIC);
 
 			final ColorSlider slider = new ColorSlider(this, colorResolution);
-			slider.setLayoutData(GridDataFactory.swtDefaults().align(SWT.FILL, SWT.CENTER).grab(true, true).hint(170, SWT.DEFAULT).create());
+			slider.setLayoutData(GridDataFactory.swtDefaults().align(SWT.FILL, SWT.CENTER).grab(true, true).hint(width, SWT.DEFAULT).create());
 			slider.addListener(SWT.MouseDoubleClick, e -> {
 				parent.setRGB(parent.getRGB());
 				parent.notifyListeners(SWT.Selection, new Event());

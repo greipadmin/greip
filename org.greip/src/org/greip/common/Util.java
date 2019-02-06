@@ -215,4 +215,8 @@ public final class Util {
 		}
 		gc.setLineWidth(1);
 	}
+
+	public static float getZoom(final Device device) {
+		return device.getDPI().x / 96.0f;
+	}
 }
