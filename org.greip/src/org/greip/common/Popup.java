@@ -19,6 +19,7 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 
 public abstract class Popup extends Shell {
@@ -40,12 +41,15 @@ public abstract class Popup extends Shell {
 			canceled = true;
 		});
 
-		addListener(SWT.Traverse, e -> {
+		final Listener traverseListener = e -> {
 			if (e.detail == SWT.TRAVERSE_ESCAPE) {
 				close();
 				canceled = true;
 			}
-		});
+		};
+
+		getDisplay().addFilter(SWT.Traverse, traverseListener);
+		addListener(SWT.Dispose, e -> e.display.removeFilter(SWT.Traverse, traverseListener));
 	}
 
 	@Override
