@@ -196,7 +196,7 @@ public final class Util {
 	}
 
 	public static RGB hexToRGB(final String hex) {
-		if (!hex.matches("#[0-9A-F]{0,6}")) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		if (!hex.matches("#[0-9A-Fa-f]{0,6}")) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		final int color = Integer.parseInt(hex.concat("000000").substring(1, 7), 16);
 
 		final int blue = color & 0xff;

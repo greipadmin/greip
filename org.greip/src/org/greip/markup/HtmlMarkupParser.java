@@ -204,7 +204,7 @@ public class HtmlMarkupParser implements IMarkupParser {
 
 		private static RGB getRGB(final String color) throws SAXException {
 			if (color == null) return null;
-			if (!color.matches("#[0-9A-F]{0,6}")) throw new SAXException("invalid color value");
+			if (!color.matches("#[0-9A-Fa-f]{0,6}")) throw new SAXException("invalid color value");
 
 			return Util.hexToRGB(color);
 		}
