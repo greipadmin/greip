@@ -931,7 +931,7 @@ public class Tile extends Composite implements IBorderable {
 	}
 
 	private TextLayout createTextLayout(final int index, final int maxWidth, final int maxHeight) {
-		final MarkupText markupText = new MarkupText(getDisplay(), new HtmlMarkupParser());
+		final MarkupText markupText = new MarkupText(this, new HtmlMarkupParser());
 		final TextSection section = getTextSection(index);
 
 		markupText.setFont(section.getFont());

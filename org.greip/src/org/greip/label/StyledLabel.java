@@ -57,7 +57,7 @@ import org.greip.markup.MarkupText;
  */
 public class StyledLabel extends Label {
 
-	private final MarkupText markupText = new MarkupText(getDisplay(), new HtmlMarkupParser());
+	private final MarkupText markupText = new MarkupText(this, new HtmlMarkupParser());
 	private String text = "";
 	private final Image tmpImage;
 
@@ -156,7 +156,7 @@ public class StyledLabel extends Label {
 
 	@Override
 	public Point computeSize(final int wHint, final int hHint, final boolean changed) {
-		final MarkupText markupText = new MarkupText(getDisplay(), new HtmlMarkupParser());
+		final MarkupText markupText = new MarkupText(this, new HtmlMarkupParser());
 		final Point offset = getOffset();
 
 		markupText.setFont(getFont());

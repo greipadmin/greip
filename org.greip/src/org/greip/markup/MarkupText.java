@@ -15,6 +15,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.TextLayout;
 import org.eclipse.swt.graphics.TextStyle;
+import org.eclipse.swt.widgets.Control;
 import org.greip.common.Greip;
 import org.greip.common.Util;
 
@@ -30,10 +31,12 @@ public class MarkupText {
 	private final TextLayout textLayout;
 	private final IMarkupParser parser;
 
-	public MarkupText(final Device device, final IMarkupParser parser) {
-		this.device = device;
+	public MarkupText(final Control control, final IMarkupParser parser) {
+		this.device = control.getDisplay();
 		this.parser = parser;
 		this.textLayout = new TextLayout(device);
+
+		control.addListener(SWT.Dispose, e -> textLayout.dispose());
 	}
 
 	public void layout(final String markupText, final int maxWidth, final int maxHeight) {
