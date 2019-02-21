@@ -44,7 +44,7 @@ public class DropDownButton extends Button {
 		final Point size = Util.getTextSize(this, super.getText(), SWT.DRAW_MNEMONIC);
 
 		if (size.x > 0) {
-			size.x += 6;
+			size.x += 12;
 		}
 
 		return size;

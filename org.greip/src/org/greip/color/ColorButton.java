@@ -124,7 +124,7 @@ public class ColorButton extends DropDownButton {
 	@Override
 	public Point computeSize(final int wHint, final int hHint, final boolean changed) {
 		final Point size = super.computeSize(wHint, hHint, changed);
-		return new Point(Math.max(30, size.x + 20), size.y);
+		return new Point(Math.max(30, size.x + 14), size.y);
 	}
 
 	private void changeImage() {
