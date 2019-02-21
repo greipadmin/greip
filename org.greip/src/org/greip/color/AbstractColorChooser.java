@@ -19,16 +19,10 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.TypedListener;
 import org.greip.common.Util;
-import org.greip.nls.Messages;
-import org.greip.separator.LineStyle;
-import org.greip.separator.Separator;
 
 public abstract class AbstractColorChooser extends Composite {
 
@@ -36,11 +30,9 @@ public abstract class AbstractColorChooser extends Composite {
 	private RGB newRGB;
 	private RGB rgb;
 
-	private Spinner spiRed;
-	private Spinner spiGreen;
-	private Spinner spiBlue;
 	private Composite previewPanel;
 	private final boolean showInfo;
+	private ColorInfo colorInfo;
 
 	protected AbstractColorChooser(final Composite parent, final ColorResolution colorResolution, final boolean showInfo,
 			final boolean showHistory) {
@@ -50,16 +42,28 @@ public abstract class AbstractColorChooser extends Composite {
 		this.showInfo = showInfo;
 		this.newRGB = new RGB(0, 0, 0);
 
-		final int columns = 1 + (showHistory ? 1 : 0) + (showInfo ? 1 : 0);
-		setLayout(GridLayoutFactory.fillDefaults().numColumns(columns).spacing(10, 0).create());
+		setLayout(GridLayoutFactory.fillDefaults().numColumns(3).spacing(10, 0).create());
 		setBackgroundMode(SWT.INHERIT_FORCE);
 
 		addListener(SWT.Selection, e -> ColorHistoryList.INSTANCE.add(getRGB()));
 		addListener(SWT.Traverse, e -> Util.when(e.detail == SWT.TRAVERSE_RETURN, () -> ColorHistoryList.INSTANCE.add(getRGB())));
 
 		if (showHistory) createHistoryPanel();
-		createColorChooserPanel();
-		if (showInfo) createInfoPanel();
+
+		final int hSpan = 3 - (showHistory ? 1 : 0);
+		GridDataFactory.fillDefaults().align(SWT.CENTER, SWT.CENTER).span(hSpan, 1).applyTo(createColorChooserPanel());
+
+		if (showInfo) {
+			createColorInfoPanel();
+			createPreviewPanel();
+		}
+	}
+
+	private void createColorInfoPanel() {
+		colorInfo = new ColorInfo(this);
+		colorInfo.setForeground(getDisplay().getSystemColor(SWT.COLOR_DARK_GRAY));
+		GridDataFactory.fillDefaults().align(SWT.CENTER, SWT.CENTER).span(2, 1).indent(0, 8).grab(true, true).applyTo(colorInfo);
+		Util.applyDerivedFont(colorInfo, -2, SWT.NONE);
 	}
 
 	protected abstract Composite createColorChooserPanel();
@@ -68,65 +72,47 @@ public abstract class AbstractColorChooser extends Composite {
 		return new Point(10, 10);
 	}
 
-	private void createInfoPanel() {
-		final Composite infoPanel = new Composite(this, SWT.NONE);
-		infoPanel.setLayout(GridLayoutFactory.fillDefaults().numColumns(3).spacing(3, 5).create());
-		infoPanel.setLayoutData(GridDataFactory.fillDefaults().grab(true, true).create());
-
-		final Separator line = new Separator(infoPanel, SWT.VERTICAL);
-		line.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, true, 1, 4));
-		line.setLineColor(getDisplay().getSystemColor(SWT.COLOR_DARK_GRAY));
-		line.setLineStyle(LineStyle.Dot);
-		line.setMarginWidth(0);
-
-		spiRed = createRGBSpinner(infoPanel, Messages.Red);
-		spiGreen = createRGBSpinner(infoPanel, Messages.Green);
-		spiBlue = createRGBSpinner(infoPanel, Messages.Blue);
-
-		previewPanel = new Composite(infoPanel, SWT.NO_FOCUS);
-		previewPanel.setLayoutData(GridDataFactory.fillDefaults().hint(60, 20).span(2, 1).align(SWT.RIGHT, SWT.BOTTOM).create());
+	private void createPreviewPanel() {
+		previewPanel = new Composite(this, SWT.NO_FOCUS | SWT.DOUBLE_BUFFERED);
+		previewPanel.setLayoutData(GridDataFactory.fillDefaults().hint(35, 8).indent(0, 10).align(SWT.RIGHT, SWT.FILL).create());
 
 		previewPanel.addListener(SWT.Paint, e -> {
-			final Rectangle bounds = previewPanel.getClientArea();
+			final Point size = getPreviewSize();
 			final Color oldColor = new Color(e.display, rgb);
 			final Color newColor = new Color(e.display, getRGB());
 
-			e.gc.setForeground(e.display.getSystemColor(SWT.COLOR_GRAY));
-			e.gc.drawRectangle(0, 0, bounds.width - 1, bounds.height - 1);
-			e.gc.setBackground(newColor);
-			e.gc.fillRectangle(1, 1, bounds.width / 2, bounds.height - 2);
+			e.gc.setAntialias(SWT.ON);
 			e.gc.setBackground(oldColor);
-			e.gc.fillRectangle(bounds.width / 2, 1, (bounds.width - 2) / 2, bounds.height - 2);
+			e.gc.fillRoundRectangle(0, 0, size.x, size.y - 1, 5, 5);
+			e.gc.setBackground(newColor);
+			e.gc.setClipping(0, 0, size.x / 2, size.y);
+			e.gc.fillRoundRectangle(0, 0, size.x, size.y - 1, 5, 5);
+			e.gc.setForeground(e.display.getSystemColor(SWT.COLOR_GRAY));
+			e.gc.setClipping((Rectangle) null);
+			e.gc.drawRoundRectangle(0, 0, size.x - 1, size.y - 1, 5, 5);
 
 			oldColor.dispose();
 			newColor.dispose();
 		});
 
 		previewPanel.addListener(SWT.MouseDown, e -> {
-			final Rectangle bounds = previewPanel.getClientArea();
-			Util.when(e.x > bounds.width / 2, () -> setRGB(rgb));
+			final Point size = getPreviewSize();
+			Util.when(e.x > size.x / 2, () -> setRGB(rgb));
 		});
 
 		previewPanel.addListener(SWT.MouseDoubleClick, e -> {
-			final Rectangle bounds = previewPanel.getClientArea();
-			Util.when(e.x < bounds.width / 2, () -> notifyListeners(SWT.Selection, new Event()));
+			final Point size = getPreviewSize();
+			Util.when(e.x < size.x / 2, () -> notifyListeners(SWT.Selection, new Event()));
 		});
+	}
+
+	private Point getPreviewSize() {
+		final Point size = previewPanel.getSize();
+		return new Point(size.x - 3, size.y);
 	}
 
 	private void createHistoryPanel() {
 		GridDataFactory.fillDefaults().align(SWT.LEFT, SWT.CENTER).applyTo(new ColorHistory(this));
-	}
-
-	private static Spinner createRGBSpinner(final Composite parent, final String label) {
-		final Label lbl = new Label(parent, SWT.NONE);
-		lbl.setText(label + ":"); //$NON-NLS-1$
-		lbl.setLayoutData(GridDataFactory.swtDefaults().indent(8, 0).create());
-
-		final Spinner spi = new Spinner(parent, SWT.RIGHT | SWT.BORDER);
-		spi.setMaximum(255);
-		spi.setEnabled(false);
-
-		return spi;
 	}
 
 	protected final ColorResolution getColorResolution() {
@@ -137,10 +123,9 @@ public abstract class AbstractColorChooser extends Composite {
 		newRGB = rgb;
 
 		if (showInfo) {
-			spiRed.setSelection(rgb.red);
-			spiGreen.setSelection(rgb.green);
-			spiBlue.setSelection(rgb.blue);
+			colorInfo.setRGB(rgb);
 			previewPanel.redraw();
+			layout(true, true);
 		}
 	}
 

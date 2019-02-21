@@ -23,7 +23,7 @@ class ColorHistory extends Composite {
 	private final ColorHistoryList history = ColorHistoryList.INSTANCE;
 
 	public ColorHistory(final AbstractColorChooser colorChooser) {
-		super(colorChooser, SWT.NONE);
+		super(colorChooser, SWT.NO_FOCUS);
 
 		setLayout(GridLayoutFactory.fillDefaults().spacing(0, 3).create());
 

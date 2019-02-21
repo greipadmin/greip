@@ -16,6 +16,7 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.TypedListener;
@@ -29,6 +30,7 @@ class ColorSlider extends Composite {
 	private int barHeight;
 	private Color borderColor;
 	private Color markerColor;
+	private String text;
 
 	private int colorSteps;
 	private float stepSize;
@@ -50,7 +52,7 @@ class ColorSlider extends Composite {
 		addListener(SWT.Paint, this::handlePaint);
 		addListener(SWT.MouseMove, this::handleMouseMove);
 		addListener(SWT.MouseDown, this::handleMouseMove);
-		addListener(SWT.MouseUp, e -> handleMouseUp());
+		addListener(SWT.MouseUp, this::handleMouseUp);
 		addListener(SWT.Resize, e -> initColors());
 		addListener(SWT.KeyDown, this::handleKeyDown);
 		addListener(SWT.FocusIn, e -> redraw());
@@ -85,9 +87,11 @@ class ColorSlider extends Composite {
 		return type;
 	}
 
-	private void handleMouseUp() {
-		currentRGB = rgbs[rgbIndex];
-		notifyListeners(SWT.DefaultSelection, new Event());
+	private void handleMouseUp(final Event e) {
+		if (e.y >= getBarBounds().y) {
+			currentRGB = rgbs[rgbIndex];
+			notifyListeners(SWT.DefaultSelection, new Event());
+		}
 	}
 
 	private void initColors() {
@@ -108,7 +112,7 @@ class ColorSlider extends Composite {
 	}
 
 	private void handleMouseMove(final Event e) {
-		if (e.stateMask == SWT.BUTTON1 || e.button == 1) {
+		if ((e.stateMask == SWT.BUTTON1 || e.button == 1) && e.y >= getBarBounds().y) {
 			setSelectedRGB(calculateRgbIndex(vertical ? e.y : e.x));
 		}
 	}
@@ -118,31 +122,62 @@ class ColorSlider extends Composite {
 	}
 
 	private void handlePaint(final Event e) {
+		paintText(e.gc);
 		paintBar(e.gc);
 		paintMarker(e.gc);
 		paintBorder(e.gc);
+		paintFocusRect(e.gc);
+	}
 
+	private void paintFocusRect(final GC gc) {
 		if (isFocusControl()) {
-			e.gc.drawFocus(0, 0, getSize().x, getSize().y);
+			final Rectangle barBounds = getBarBounds();
+
+			if (vertical) {
+				gc.drawFocus(barBounds.x - 2, barBounds.y - 3, barBounds.width + 4 + zoom(8), barBounds.height + 8);
+			} else {
+				gc.drawFocus(barBounds.x - 3, barBounds.y - 2, barBounds.width + 8, barBounds.height + 4 + zoom(8));
+			}
+		}
+	}
+
+	private void paintText(final GC gc) {
+		if (text != null) {
+			final Point textSize = getTextSize();
+			final Point size = getSize();
+
+			if (vertical) {
+				Util.withResource(new Transform(gc.getDevice()), transform -> {
+					transform.rotate(-90f);
+					transform.translate(0, 0);
+
+					gc.setTransform(transform);
+					gc.drawText(text, -size.y + (size.y - textSize.x) / 2, 0, true);
+					gc.setTransform(null);
+				});
+			} else {
+				gc.drawText(text, (size.x - textSize.x) / 2, 0, true);
+			}
 		}
 	}
 
 	private void paintMarker(final GC gc) {
-		final int markerPos = (int) ((rgbIndex + 0.5f) * stepSize) - 1;
-		final int height = vertical ? getBarBounds().width : getBarBounds().height;
+		final int markerPos = (int) ((rgbIndex + 0.5f) * stepSize);
+		final Rectangle barBounds = getBarBounds();
 
 		gc.setAntialias(SWT.ON);
 		gc.setBackground(getMarkerColor());
 
-		final int three = zoom(3);
 		final int four = zoom(4);
 		final int seven = zoom(7);
-		final int ten = zoom(10);
+		final int markerHeight = zoom(8);
 
 		if (vertical) {
-			gc.fillPolygon(new int[] { height + four, markerPos + four, height + ten, markerPos + 1, height + ten, markerPos + seven });
+			final int x = barBounds.x + barBounds.width;
+			gc.fillPolygon(new int[] { x + 1, markerPos + four, x + markerHeight, markerPos + 1, x + markerHeight, markerPos + seven });
 		} else {
-			gc.fillPolygon(new int[] { markerPos + four, height + three, markerPos + seven, height + ten, markerPos + 1, height + ten });
+			final int y = barBounds.y + barBounds.height;
+			gc.fillPolygon(new int[] { markerPos + four, y + 1, markerPos + seven, y + markerHeight, markerPos + 1, y + markerHeight });
 		}
 	}
 
@@ -171,7 +206,11 @@ class ColorSlider extends Composite {
 		final Rectangle bounds = getBarBounds();
 
 		gc.setForeground(getBorderColor());
-		gc.drawRectangle(bounds.x, bounds.y, bounds.width + 1, bounds.height + 1);
+		if (vertical) {
+			gc.drawRectangle(bounds.x, bounds.y, barHeight + 1, bounds.height + 1);
+		} else {
+			gc.drawRectangle(bounds.x, bounds.y, bounds.width + 1, barHeight + 1);
+		}
 	}
 
 	protected final HSB getOriginalHSB() {
@@ -190,8 +229,24 @@ class ColorSlider extends Composite {
 
 	@Override
 	public Point computeSize(final int wHint, final int hHint, final boolean changed) {
-		return vertical ? new Point(scaledBarHeight + zoom(12), Math.max(100, hHint))
-				: new Point(Math.max(100, wHint), scaledBarHeight + zoom(12));
+		final Point textSize = getTextSize();
+
+		return vertical ? new Point(scaledBarHeight + zoom(12) + textSize.y, Math.max(100, hHint))
+				: new Point(Math.max(100, wHint), scaledBarHeight + zoom(12) + textSize.y);
+	}
+
+	private Point getTextSize() {
+		if (getText() == null) {
+			return new Point(0, 0);
+		}
+
+		final Point size = Util.withResource(new GC(getDisplay()), gc -> {
+			gc.setFont(getFont());
+			return gc.textExtent(getText());
+		});
+		size.y += zoom(2);
+
+		return size;
 	}
 
 	public Color getBorderColor() {
@@ -224,8 +279,10 @@ class ColorSlider extends Composite {
 
 	private Rectangle getBarBounds() {
 		final Point size = getSize();
-		return vertical ? new Rectangle(2, 3, scaledBarHeight, Math.max(1, size.y - 8))
-				: new Rectangle(3, 2, Math.max(1, size.x - 8), scaledBarHeight);
+		final int textHeight = getTextSize().y;
+
+		return vertical ? new Rectangle(2 + textHeight, 3, scaledBarHeight, Math.max(1, size.y - 8))
+				: new Rectangle(3, 2 + textHeight, Math.max(1, size.x - 8), scaledBarHeight);
 	}
 
 	public void addSelectionListener(final SelectionListener listener) {
@@ -252,5 +309,13 @@ class ColorSlider extends Composite {
 
 	private int zoom(final int pixels) {
 		return (int) (pixels * zoom);
+	}
+
+	public String getText() {
+		return text;
+	}
+
+	public void setText(final String text) {
+		this.text = text;
 	}
 }

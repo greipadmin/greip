@@ -46,6 +46,6 @@ class ColorHistoryList {
 	}
 
 	public int size() {
-		return 9;
+		return 8;
 	}
 }

@@ -17,6 +17,8 @@ import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
+import org.greip.common.Util;
+import org.greip.nls.Messages;
 
 public final class ColorWheelChooser extends AbstractColorChooser {
 
@@ -81,6 +83,9 @@ public final class ColorWheelChooser extends AbstractColorChooser {
 		brightnessSlider.setOrientation(SWT.VERTICAL);
 		brightnessSlider.addListener(SWT.Selection, e -> setNewRGB(determineNewRGB(true)));
 		brightnessSlider.addListener(SWT.MouseDoubleClick, e -> notifyListeners(SWT.Selection, e));
+
+		brightnessSlider.setText(Messages.Brightness);
+		Util.applyDerivedFont(brightnessSlider, -1, SWT.ITALIC);
 	}
 
 	@Override
