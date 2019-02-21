@@ -37,7 +37,7 @@ public class Sample1 extends AbstractSample {
 		lblFontName.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
 
 		// configure the font button
-		button.setText("  Select Font...  ");
+		button.setText("Select Font...");
 
 		// add selection listener
 		button.addListener(SWT.Selection, e -> {
