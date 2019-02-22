@@ -32,6 +32,7 @@ public interface IColorChooserFactory {
 	 * @see ColorChooserHSB
 	 * @see ColorChooserRGB
 	 * @see ColorWheelChooser
+	 * @see ColorCircleChooser
 	 * @see ColorPicker
 	 */
 	AbstractColorChooser create(Composite parent);
