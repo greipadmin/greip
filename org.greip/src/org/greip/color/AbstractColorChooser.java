@@ -42,7 +42,7 @@ public abstract class AbstractColorChooser extends Composite {
 		this.showInfo = showInfo;
 		this.newRGB = new RGB(0, 0, 0);
 
-		setLayout(GridLayoutFactory.fillDefaults().numColumns(3).spacing(10, 0).create());
+		setLayout(GridLayoutFactory.fillDefaults().numColumns(3).spacing(0, 0).create());
 		setBackgroundMode(SWT.INHERIT_FORCE);
 
 		addListener(SWT.Selection, e -> ColorHistoryList.INSTANCE.add(getRGB()));
@@ -51,7 +51,9 @@ public abstract class AbstractColorChooser extends Composite {
 		if (showHistory) createHistoryPanel();
 
 		final int hSpan = 3 - (showHistory ? 1 : 0);
-		GridDataFactory.fillDefaults().align(SWT.CENTER, SWT.CENTER).span(hSpan, 1).applyTo(createColorChooserPanel());
+		final int hIndent = showHistory ? 10 : 0;
+
+		GridDataFactory.fillDefaults().align(SWT.CENTER, SWT.CENTER).span(hSpan, 1).indent(hIndent, 0).applyTo(createColorChooserPanel());
 
 		if (showInfo) {
 			createColorInfoPanel();

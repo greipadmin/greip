@@ -29,7 +29,7 @@ public enum ColorResolution {
 
 	Maximal(
 		80,
-		-1);
+		360);
 
 	final int saturationSteps;
 	final int hueSteps;

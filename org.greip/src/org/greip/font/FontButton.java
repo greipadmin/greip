@@ -35,6 +35,10 @@ public class FontButton extends DropDownButton {
 	private Consumer<FontData> fontConsumer;
 	private BiConsumer<FontData, RGB> fontBiConsumer;
 
+	{
+		FontList.touch();
+	}
+
 	/**
 	 * Constructs a new instance of this class.
 	 *
@@ -56,8 +60,6 @@ public class FontButton extends DropDownButton {
 	 */
 	public FontButton(final Composite parent, final int style) {
 		super(parent, style | SWT.DROP_DOWN);
-
-		FontList.touch();
 
 		addListener(SWT.Selection, e -> {
 			if (fontConsumer != null || fontBiConsumer != null) {
