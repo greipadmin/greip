@@ -47,6 +47,7 @@ Available translations:
 * Spain
 * Portuguese
 * Italian
+* Arabic
 
 # Eclipse update site
 

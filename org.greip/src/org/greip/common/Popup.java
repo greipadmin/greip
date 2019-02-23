@@ -85,17 +85,7 @@ public abstract class Popup extends Shell {
 		final boolean rtl = getOrientation() == SWT.RIGHT_TO_LEFT;
 		final List<Point> positions = new ArrayList<>();
 
-		if (!rtl) {
-			// bottom right/left
-			positions.add(new Point(controlLocation.x + buttonOffset, controlLocation.y + controlSize.y));
-			positions.add(new Point(controlLocation.x - size.x + controlSize.x - buttonOffset, controlLocation.y + controlSize.y));
-			// top right/left
-			positions.add(new Point(controlLocation.x + buttonOffset, controlLocation.y - size.y));
-			positions.add(new Point(controlLocation.x - size.x + controlSize.x - buttonOffset, controlLocation.y - size.y));
-			// center right/left
-			positions.add(new Point(controlLocation.x + controlSize.x, (screenSize.height - size.y) / 2));
-			positions.add(new Point(controlLocation.x - size.x, (screenSize.height - size.y) / 2));
-		} else {
+		if (rtl) {
 			// bottom left/right
 			positions.add(new Point(controlLocation.x - size.x - buttonOffset, controlLocation.y + controlSize.y));
 			positions.add(new Point(controlLocation.x - controlSize.x + buttonOffset, controlLocation.y + controlSize.y));
@@ -105,6 +95,16 @@ public abstract class Popup extends Shell {
 			// center left/right
 			positions.add(new Point(controlLocation.x - size.x - controlSize.x, (screenSize.height - size.y) / 2));
 			positions.add(new Point(controlLocation.x, (screenSize.height - size.y) / 2));
+		} else {
+			// bottom right/left
+			positions.add(new Point(controlLocation.x + buttonOffset, controlLocation.y + controlSize.y));
+			positions.add(new Point(controlLocation.x - size.x + controlSize.x - buttonOffset, controlLocation.y + controlSize.y));
+			// top right/left
+			positions.add(new Point(controlLocation.x + buttonOffset, controlLocation.y - size.y));
+			positions.add(new Point(controlLocation.x - size.x + controlSize.x - buttonOffset, controlLocation.y - size.y));
+			// center right/left
+			positions.add(new Point(controlLocation.x + controlSize.x, (screenSize.height - size.y) / 2));
+			positions.add(new Point(controlLocation.x - size.x, (screenSize.height - size.y) / 2));
 		}
 
 		// center top/bottom/screen
