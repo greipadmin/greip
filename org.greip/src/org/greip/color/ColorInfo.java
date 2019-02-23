@@ -17,6 +17,7 @@ public class ColorInfo extends Label {
 
 	public ColorInfo(final Composite parent) {
 		super(parent, SWT.CENTER);
+		setOrientation(SWT.LEFT_TO_RIGHT);
 	}
 
 	@Override
@@ -25,7 +26,8 @@ public class ColorInfo extends Label {
 	}
 
 	public void setRGB(final RGB rgb) {
-		setText("#" + toHex(rgb) + "    (R: " + rgb.red + "  G: " + rgb.green + "  B: " + rgb.blue + ")");
+		final String msg = "#%1s   [R: %2d  G: %3d  B: %4d]";
+		setText(String.format(msg, toHex(rgb), Integer.valueOf(rgb.red), Integer.valueOf(rgb.green), Integer.valueOf(rgb.blue)));
 	}
 
 	private static String toHex(final RGB rgb) {

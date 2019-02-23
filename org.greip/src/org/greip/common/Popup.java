@@ -76,35 +76,45 @@ public abstract class Popup extends Shell {
 		final Point size = getSize();
 		final Point controlSize = control.getSize();
 		final Point controlLocation = control.toDisplay(0, 0);
-		final int borderWidth = control instanceof Button ? 1 : control.getBorderWidth();
+		final int borderWidth = control instanceof Button ? 0 : control.getBorderWidth();
+		final int buttonOffset = control instanceof Button ? 1 : 0;
 
 		controlLocation.x -= borderWidth;
 		controlLocation.y -= borderWidth;
 
-		final List<Rectangle> positions = new ArrayList<>();
-		// bottom
-		positions.add(new Rectangle(controlLocation.x, controlLocation.y + controlSize.y, size.x, size.y));
-		positions.add(new Rectangle(controlLocation.x + controlSize.x, controlLocation.y, size.x, size.y));
-		positions.add(new Rectangle(controlLocation.x - size.x + controlSize.x, controlLocation.y + controlSize.y, size.x, size.y));
-		// top
-		positions.add(new Rectangle(controlLocation.x, controlLocation.y - size.y, size.x, size.y));
-		positions.add(new Rectangle(controlLocation.x + controlSize.x, controlLocation.y + controlSize.y - size.y, size.x, size.y));
-		positions.add(new Rectangle(controlLocation.x - size.x + controlSize.x, controlLocation.y - size.y, size.x, size.y));
-		// center
-		positions.add(new Rectangle((screenSize.width - size.x) / 2, controlLocation.y + controlSize.y, size.x, size.y));
-		positions.add(new Rectangle(controlLocation.x + controlSize.x, (screenSize.height - size.y) / 2, size.x, size.y));
-		positions.add(new Rectangle(controlLocation.x - size.x, (screenSize.height - size.y) / 2, size.x, size.y));
-		positions.add(new Rectangle((screenSize.width - size.x) / 2, controlLocation.y - size.y, size.x, size.y));
-		positions.add(new Rectangle((screenSize.width - size.x) / 2, (screenSize.height - size.y) / 2, size.x, size.y));
+		final boolean rtl = getOrientation() == SWT.RIGHT_TO_LEFT;
+		final List<Point> positions = new ArrayList<>();
 
-		for (final Rectangle r : positions) {
-			if (r.x > screenSize.x && r.y > screenSize.y && r.height + r.y < screenSize.height && r.width + r.x < screenSize.width) {
+		if (!rtl) {
+			// bottom right/left
+			positions.add(new Point(controlLocation.x + buttonOffset, controlLocation.y + controlSize.y));
+			positions.add(new Point(controlLocation.x - size.x + controlSize.x - buttonOffset, controlLocation.y + controlSize.y));
+			// top right/left
+			positions.add(new Point(controlLocation.x + buttonOffset, controlLocation.y - size.y));
+			positions.add(new Point(controlLocation.x - size.x + controlSize.x - buttonOffset, controlLocation.y - size.y));
+			// center right/left
+			positions.add(new Point(controlLocation.x + controlSize.x, (screenSize.height - size.y) / 2));
+			positions.add(new Point(controlLocation.x - size.x, (screenSize.height - size.y) / 2));
+		} else {
+			// bottom left/right
+			positions.add(new Point(controlLocation.x - size.x - buttonOffset, controlLocation.y + controlSize.y));
+			positions.add(new Point(controlLocation.x - controlSize.x + buttonOffset, controlLocation.y + controlSize.y));
+			// top left/right
+			positions.add(new Point(controlLocation.x - size.x - buttonOffset, controlLocation.y - size.y));
+			positions.add(new Point(controlLocation.x - controlSize.x + buttonOffset, controlLocation.y - size.y));
+			// center left/right
+			positions.add(new Point(controlLocation.x - size.x - controlSize.x, (screenSize.height - size.y) / 2));
+			positions.add(new Point(controlLocation.x, (screenSize.height - size.y) / 2));
+		}
 
-				if (control instanceof Button && controlLocation.x == r.x) {
-					r.x += 2;
-				}
+		// center top/bottom/screen
+		positions.add(new Point((screenSize.width - size.x) / 2, controlLocation.y + controlSize.y));
+		positions.add(new Point((screenSize.width - size.x) / 2, controlLocation.y - size.y));
+		positions.add(new Point((screenSize.width - size.x) / 2, (screenSize.height - size.y) / 2));
 
-				return new Point(r.x, r.y);
+		for (final Point p : positions) {
+			if (p.x > screenSize.x && p.y > screenSize.y && size.y + p.y < screenSize.height && size.x + p.x < screenSize.width) {
+				return p;
 			}
 		}
 
