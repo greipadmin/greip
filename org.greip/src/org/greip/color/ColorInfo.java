@@ -26,7 +26,7 @@ public class ColorInfo extends Label {
 	}
 
 	public void setRGB(final RGB rgb) {
-		final String msg = "#%1s   [R: %2d  G: %3d  B: %4d]";
+		final String msg = "#%s   R:\u2006%d\u2000G:\u2006%d\u2000B:\u2006%d";
 		setText(String.format(msg, toHex(rgb), Integer.valueOf(rgb.red), Integer.valueOf(rgb.green), Integer.valueOf(rgb.blue)));
 	}
 

@@ -116,17 +116,17 @@ class ColorCircle extends Composite {
 
 		addListener(SWT.Dispose, e -> {
 			cursor.dispose();
-			disposeColorWheelImage();
+			disposeColorCircleImage();
 		});
 	}
 
 	private void recreateColorWheelImage() {
-		disposeColorWheelImage();
-		createColorWheelImage();
+		disposeColorCircleImage();
+		createColorCircleImage();
 		bgColor = getBackground();
 	}
 
-	private void disposeColorWheelImage() {
+	private void disposeColorCircleImage() {
 		Util.whenNotNull(image, Image::dispose);
 	}
 
@@ -178,36 +178,23 @@ class ColorCircle extends Composite {
 		return (int) (pixels * zoom);
 	}
 
-	private void createColorWheelImage() {
-		createLowResolutionImage();
-
-		Util.withResource(new GC(image), gc -> {
-			gc.setAntialias(SWT.ON);
-			gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
-
-			final int radius = (DIAMETER - zoom(20)) / 2;
-			final int diameter = radius * 2 + 1;
-			gc.fillOval(outerRadius - radius, outerRadius - radius, diameter, diameter);
-		});
-	}
-
-	private void createLowResolutionImage() {
+	private void createColorCircleImage() {
 		final Display display = getDisplay();
 
 		image = new Image(display, scaledDiameter, scaledDiameter);
-		final GC gc = new GC(image);
-		final Transform transform = new Transform(gc.getDevice());
+		final GC gc1 = new GC(image);
+		final Transform transform = new Transform(gc1.getDevice());
 		transform.scale(zoom, zoom);
 
-		gc.setTransform(transform);
-		gc.setBackground(getBackground());
-		gc.fillRectangle(0, 0, scaledDiameter, scaledDiameter);
-		gc.setAntialias(SWT.ON);
+		gc1.setTransform(transform);
+		gc1.setBackground(getBackground());
+		gc1.fillRectangle(0, 0, scaledDiameter, scaledDiameter);
+		gc1.setAntialias(SWT.ON);
 
 		final List<RGB> rgbList = new ArrayList<>();
 		final List<Point> pointList = new ArrayList<>();
 
-		final double radius = (DIAMETER - 10) / 2d;
+		final double radius1 = (DIAMETER - 10) / 2d;
 		final int hueSteps = colorResolution.hueSteps;
 		final int arcAngle = Math.round(360.0f / hueSteps) + 1;
 
@@ -216,22 +203,31 @@ class ColorCircle extends Composite {
 			final RGB rgb = new RGB(startAngle, 1, 1.0f);
 
 			Util.withResource(new Color(display, rgb), c -> {
-				gc.setBackground(c);
-				gc.fillArc(0, 0, DIAMETER, DIAMETER, Math.round(startAngle + 90.0f - arcAngle / 2), arcAngle);
+				gc1.setBackground(c);
+				gc1.fillArc(0, 0, DIAMETER, DIAMETER, Math.round(startAngle + 90.0f - arcAngle / 2), arcAngle);
 			});
 
 			final double arc = (startAngle + 90.0f) * Math.PI / 180;
-			final int centerX = (int) Math.round((radius * Math.cos(arc) + RADIUS) * zoom);
-			final int centerY = (int) Math.round((radius * Math.sin(-arc) + RADIUS) * zoom);
+			final int centerX = (int) Math.round((radius1 * Math.cos(arc) + RADIUS) * zoom);
+			final int centerY = (int) Math.round((radius1 * Math.sin(-arc) + RADIUS) * zoom);
 
 			rgbList.add(rgb);
 			pointList.add(new Point(centerX, centerY));
 		}
 
 		transform.dispose();
-		gc.dispose();
+		gc1.dispose();
 
 		colorData = new ColorData(rgbList, pointList);
+
+		Util.withResource(new GC(image), gc -> {
+			gc.setAntialias(SWT.ON);
+			gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
+
+			final int radius = (scaledDiameter - zoom(20)) / 2;
+			final int diameter = radius * 2 + 1;
+			gc.fillOval(outerRadius - radius, outerRadius - radius, diameter, diameter);
+		});
 	}
 
 	private RGB getColorFromImage(final int x, final int y) {
