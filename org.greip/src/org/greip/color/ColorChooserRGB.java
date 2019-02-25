@@ -9,6 +9,7 @@
  **/
 package org.greip.color;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Composite;
 import org.greip.nls.Messages;
@@ -48,7 +49,7 @@ public final class ColorChooserRGB extends AbstractColorChooser {
 	@Override
 	protected Composite createColorChooserPanel() {
 		final ColorResolution colorResolution = getColorResolution();
-		final SliderPanel panel = new SliderPanel(this, colorResolution, Messages.Red, Messages.Green, Messages.Blue);
+		final SliderPanel panel = new SliderPanel(this, SWT.HORIZONTAL, colorResolution, Messages.Red, Messages.Green, Messages.Blue);
 
 		connector = new ColorSliderConnectorRGB(this, panel.getSliders());
 

@@ -30,7 +30,7 @@ import org.greip.common.Util;
 
 class ColorCircle extends Composite {
 
-	private static final int DIAMETER = 100;
+	private static final int DIAMETER = 106;
 	private static final int RADIUS = DIAMETER / 2;
 
 	private static class ColorData {

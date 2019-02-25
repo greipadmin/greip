@@ -12,12 +12,10 @@ package org.greip.color;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
-import org.greip.common.Util;
 import org.greip.nls.Messages;
 
 public final class ColorCircleChooser extends AbstractColorChooser {
@@ -45,8 +43,7 @@ public final class ColorCircleChooser extends AbstractColorChooser {
 	}
 
 	private ColorCircle colorCircle;
-	private ColorSlider brightnessSlider;
-	private ColorSlider saturationSlider;
+	private IColorSliderConnector connector;
 
 	public ColorCircleChooser(final Composite parent, final ColorResolution colorResolution, final boolean showInfo,
 			final boolean showHistory) {
@@ -56,53 +53,35 @@ public final class ColorCircleChooser extends AbstractColorChooser {
 
 	private void createColorCircle(final Composite parent) {
 		colorCircle = new ColorCircle(parent, getColorResolution());
-		colorCircle.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, false, false, 1, 5));
-		colorCircle.addListener(SWT.Modify, e -> setNewRGB(determineNewRGB(false)));
+		colorCircle.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, false, false));
+		colorCircle.addListener(SWT.Modify, e -> setNewRGB(determineNewRGB()));
 		colorCircle.addListener(SWT.Selection, e -> notifyListeners(SWT.Selection, new Event()));
 	}
 
-	private RGB determineNewRGB(final boolean brightnessChanged) {
-		final HSB wheelHSB = new HSB(colorCircle.getRGB());
-		float brightness = 1.0f - brightnessSlider.getValue();
-		final float saturation = saturationSlider.getValue();
+	private RGB determineNewRGB() {
+		final float hue = colorCircle.getRGB().getHSB()[0];
+		final float[] hsb = connector.getRGB().getHSB();
+		final float saturation = hsb[2];
+		final float brightness = hsb[1] == 0.0f ? 1.0f : hsb[1];
 
-		if (!brightnessChanged && brightness == 0.0f) {
-			brightness = 1.0f;
-		}
+		final RGB rgb = new RGB(hue, saturation, brightness);
+		connector.setRGB(rgb);
 
-		final HSB hsb = new HSB(wheelHSB.getHue(), saturation, brightness);
-		brightnessSlider.setHSB(hsb);
-		saturationSlider.setHSB(hsb);
-
-		return hsb.getRGB();
+		return rgb;
 	}
 
 	private void createSliders(final Composite parent) {
-		final Point size = colorCircle.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+		final ColorResolution colorResolution = getColorResolution();
+		final SliderPanel panel = new SliderPanel(parent, SWT.VERTICAL, colorResolution, Messages.Saturation, Messages.Brightness);
 
-		saturationSlider = new ColorSlider(parent, getColorResolution());
-		saturationSlider.setLayoutData(GridDataFactory.swtDefaults().hint(SWT.DEFAULT, size.y).create());
-		saturationSlider.setType(ColorSliderType.Saturation);
-		saturationSlider.setOrientation(SWT.VERTICAL);
-		saturationSlider.addListener(SWT.Selection, e -> setNewRGB(determineNewRGB(true)));
-		saturationSlider.addListener(SWT.MouseDoubleClick, e -> notifyListeners(SWT.Selection, e));
-		saturationSlider.setText(Messages.Saturation);
-		Util.applyDerivedFont(saturationSlider, -1, SWT.ITALIC);
-
-		brightnessSlider = new ColorSlider(parent, getColorResolution());
-		brightnessSlider.setLayoutData(GridDataFactory.swtDefaults().hint(SWT.DEFAULT, size.y).create());
-		brightnessSlider.setType(ColorSliderType.Lightness);
-		brightnessSlider.setOrientation(SWT.VERTICAL);
-		brightnessSlider.addListener(SWT.Selection, e -> setNewRGB(determineNewRGB(true)));
-		brightnessSlider.addListener(SWT.MouseDoubleClick, e -> notifyListeners(SWT.Selection, e));
-		brightnessSlider.setText(Messages.Brightness);
-		Util.applyDerivedFont(brightnessSlider, -1, SWT.ITALIC);
+		GridDataFactory.fillDefaults().grab(false, true).align(SWT.LEFT, SWT.FILL).applyTo(panel);
+		connector = new ColorSliderConnectorCircle(this, panel.getSliders());
 	}
 
 	@Override
 	protected Composite createColorChooserPanel() {
 		final Composite panel = new Composite(this, SWT.NO_FOCUS);
-		GridLayoutFactory.swtDefaults().numColumns(3).margins(0, 0).spacing(10, 0).applyTo(panel);
+		GridLayoutFactory.swtDefaults().numColumns(2).margins(0, 0).spacing(10, 0).applyTo(panel);
 
 		createColorCircle(panel);
 		createSliders(panel);
@@ -114,7 +93,6 @@ public final class ColorCircleChooser extends AbstractColorChooser {
 	public void setRGB(final RGB rgb) {
 		super.setRGB(rgb);
 		colorCircle.setRGB(rgb);
-		brightnessSlider.setHSB(new HSB(rgb));
-		saturationSlider.setHSB(new HSB(rgb));
+		connector.setRGB(rgb);
 	}
 }
