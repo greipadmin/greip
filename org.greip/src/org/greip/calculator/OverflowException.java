@@ -9,6 +9,10 @@
  **/
 package org.greip.calculator;
 
-class OverflowException extends Exception {
+class OverflowException extends CalculationException {
 	private static final long serialVersionUID = 5413208333888092846L;
+
+	public OverflowException() {
+		super(null);
+	}
 }

@@ -11,7 +11,6 @@ package org.greip.calculator;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
-import java.text.ParseException;
 import java.text.ParsePosition;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
@@ -32,6 +31,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.greip.calculator.CalcualtionEngine.CalculationResult;
 import org.greip.common.Util;
 import org.greip.nls.Messages;
 
@@ -56,7 +56,7 @@ public final class Calculator extends Composite {
 			}),
 		CTRL_MINUS(
 			(e, c) -> e.keyCode == '-' && e.stateMask == SWT.CTRL,
-			(e, c) -> c.processAction(Formula.SIGN)),
+			(e, c) -> c.processAction(CalcualtionEngine.SIGN)),
 		CTRL_CR(
 			(e, c) -> e.keyCode == SWT.CR && e.stateMask == SWT.CTRL,
 			(e, c) -> {
@@ -64,7 +64,7 @@ public final class Calculator extends Composite {
 				c.propagateValue();
 			}),
 		DEFAULT_ACTION(
-			(e, c) -> c.formula.isLegalAction(e.character),
+			(e, c) -> c.engine.isLegalCommand(e.character),
 			(e, c) -> c.processAction(e.character));
 
 		private final BiPredicate<Event, Calculator> predicate;
@@ -92,7 +92,7 @@ public final class Calculator extends Composite {
 	private Label lblFormula;
 	private Text txtFocus;
 
-	private final Formula formula = new Formula();
+	private final CalcualtionEngine engine = new CalcualtionEngine();
 	private BigDecimal value = BigDecimal.ZERO;
 	private Color resultBackground;
 	private Color resultForeground;
@@ -167,22 +167,22 @@ public final class Calculator extends Composite {
 	private void createButtons() {
 		createSpacer();
 
-		createSmallButton("MC", Formula.MC, 0, SWT.COLOR_DARK_RED);
-		createSmallButton("MR", Formula.MR, 0, SWT.COLOR_DARK_RED);
-		createSmallButton("MS", Formula.MS, 0, SWT.COLOR_DARK_RED);
-		createSmallButton("M+", Formula.M_PLUS, 3, SWT.COLOR_DARK_RED);
-		createSmallButton("M-", Formula.M_MINUS, 0, SWT.COLOR_DARK_RED);
+		createSmallButton("MC", CalcualtionEngine.MC, 0, SWT.COLOR_DARK_RED);
+		createSmallButton("MR", CalcualtionEngine.MR, 0, SWT.COLOR_DARK_RED);
+		createSmallButton("MS", CalcualtionEngine.MS, 0, SWT.COLOR_DARK_RED);
+		createSmallButton("M+", CalcualtionEngine.M_PLUS, 3, SWT.COLOR_DARK_RED);
+		createSmallButton("M-", CalcualtionEngine.M_MINUS, 0, SWT.COLOR_DARK_RED);
 
 		createSmallButton("\u2190", SWT.BS, 0, SWT.COLOR_BLACK);
 		createSmallButton("CE", 'E', 0, SWT.COLOR_BLACK);
 		createSmallButton("C", 'C', 0, SWT.COLOR_BLACK);
-		createSmallButton("(", '(', 3, SWT.COLOR_BLACK).setVisible(false);
-		createSmallButton(")", ')', 0, SWT.COLOR_BLACK).setVisible(false);
+		createSmallButton("(", '(', 3, SWT.COLOR_BLACK);
+		createSmallButton(")", ')', 0, SWT.COLOR_BLACK);
 
 		createSpacer();
 
-		createButtonsFor('7', '8', '9', SPACER, Formula.DIVIDE, '%');
-		createButtonsFor('4', '5', '6', SPACER, Formula.MULTIPLY, Formula.SIGN);
+		createButtonsFor('7', '8', '9', SPACER, CalcualtionEngine.DIVIDE, '%');
+		createButtonsFor('4', '5', '6', SPACER, CalcualtionEngine.MULTIPLY, CalcualtionEngine.SIGN);
 		createButtonsFor('1', '2', '3', SPACER, '-');
 		createButton('=', 1, 2, 0);
 		createButton('0', 2, 1, 0);
@@ -244,27 +244,32 @@ public final class Calculator extends Composite {
 	private void processAction(final char action) {
 
 		try {
-			lblResult.setText(formula.processAction(action));
-			lblResult.setForeground(getResultForeground());
+			engine.process(action);
+			final CalculationResult result = engine.getCalculationResult();
 
-		} catch (final ParseException | ArithmeticException e) {
-			lblResult.setText(Messages.Error);
-			lblResult.setForeground(getDisplay().getSystemColor(SWT.COLOR_RED));
+			lblResult.setText(result.getResult());
+			lblResult.setForeground(getResultForeground());
 
 		} catch (final OverflowException e) {
 			lblResult.setText(Messages.Overflow);
 			lblResult.setForeground(getDisplay().getSystemColor(SWT.COLOR_RED));
+
+		} catch (final CalculationException e) {
+			lblResult.setText(Messages.Error);
+			lblResult.setForeground(getDisplay().getSystemColor(SWT.COLOR_RED));
 		}
 
 		showFormula();
-		lblMemory.setVisible(formula.getMemory() != null);
+		lblMemory.setVisible(engine.getMemory() != null);
 		txtFocus.setFocus();
 	}
 
 	private void showFormula() {
+		final String formula = engine.getCalculationResult().getFormula();
+
 		Util.withResource(new GC(lblFormula), gc -> {
 			final int width = lblFormula.getSize().x;
-			lblFormula.setText(reverse(Util.shortenText(gc, reverse(formula.format()), width, SWT.NONE)));
+			lblFormula.setText(reverse(Util.shortenText(gc, reverse(formula), width, SWT.NONE)));
 		});
 	}
 
@@ -278,7 +283,7 @@ public final class Calculator extends Composite {
 	}
 
 	private BigDecimal calculateFormula() {
-		return (BigDecimal) formula.getDecimalFormat().parse(lblResult.getText(), new ParsePosition(0));
+		return (BigDecimal) engine.getDecimalFormat().parse(lblResult.getText(), new ParsePosition(0));
 	}
 
 	/**
@@ -297,8 +302,7 @@ public final class Calculator extends Composite {
 	 */
 	public void setValue(final BigDecimal value) {
 		checkWidget();
-		formula.init(value);
-		processAction('=');
+		engine.resetTo(value);
 	}
 
 	/**
@@ -336,7 +340,7 @@ public final class Calculator extends Composite {
 	 */
 	public void setDecimalFormat(final DecimalFormat format) {
 		checkWidget();
-		formula.setDecimalFormat(format);
+		engine.setDecimalFormat(format);
 		processAction('=');
 	}
 
