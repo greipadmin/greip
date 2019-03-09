@@ -15,7 +15,7 @@ import org.greip.samples.AbstractSample;
 
 /**
  * The example shows the use of an {@link ShapeDecorator} to display a formatted
- * date.
+ * date. The shape is configured to paint a rectangle with rounded corners.
  *
  * @author Thomas Lorbeer
  */

@@ -9,13 +9,12 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
-import org.greip.decorator.PercentageDecorator;
 import org.greip.decorator.ShapeDecorator;
 import org.greip.samples.AbstractSample;
 
 /**
- * The example shows the use of an {@link ShapeDecorator}. A
- * {@link PercentageDecorator} can also be used.
+ * The example shows the use of an {@link ShapeDecorator}. It is configured to
+ * paint a circle.
  *
  * @author Thomas Lorbeer
  */
