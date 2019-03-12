@@ -11,7 +11,6 @@ package org.greip.calculator;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
-import java.text.ParsePosition;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 
@@ -59,10 +58,7 @@ public final class Calculator extends Composite {
 			(e, c) -> c.processAction(CalcualtionEngine.SIGN)),
 		CTRL_CR(
 			(e, c) -> e.keyCode == SWT.CR && e.stateMask == SWT.CTRL,
-			(e, c) -> {
-				c.processAction(SWT.CR);
-				c.propagateValue();
-			}),
+			(e, c) -> c.propagateValue()),
 		DEFAULT_ACTION(
 			(e, c) -> c.engine.isLegalCommand(e.character),
 			(e, c) -> c.processAction(e.character));
@@ -278,12 +274,12 @@ public final class Calculator extends Composite {
 	}
 
 	private void propagateValue() {
-		value = calculateFormula();
+		try {
+			value = engine.compute();
+		} catch (final CalculationException e) {
+			// ignore
+		}
 		notifyListeners(SWT.Selection, new Event());
-	}
-
-	private BigDecimal calculateFormula() {
-		return (BigDecimal) engine.getDecimalFormat().parse(lblResult.getText(), new ParsePosition(0));
 	}
 
 	/**
@@ -303,6 +299,8 @@ public final class Calculator extends Composite {
 	public void setValue(final BigDecimal value) {
 		checkWidget();
 		engine.resetTo(value);
+
+		lblResult.setText(engine.getCalculationResult().getResult());
 	}
 
 	/**

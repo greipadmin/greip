@@ -116,18 +116,20 @@ class CalcualtionEngine {
 		return BigDecimal.valueOf(getDefaultDecimalFormat().parse(token.replace(NEGATE, '-')).doubleValue());
 	}
 
-	public void process(final char command) throws CalculationException {
-		final char cmd = normalizeCommand(command);
+	public void process(final char... commands) throws CalculationException {
 
 		try {
-			if (isMemoryCommand(cmd)) {
-				processMemoryCommand(cmd);
-			} else {
-				processCommand(cmd);
+			for (final char command : commands) {
+				final char cmd = normalizeCommand(command);
+
+				if (isMemoryCommand(cmd)) {
+					processMemoryCommand(cmd);
+				} else {
+					processCommand(cmd);
+				}
 			}
 
 		} catch (final Exception e) {
-			e.printStackTrace();
 			resetTo(BigDecimal.ZERO);
 			throw e instanceof CalculationException ? (CalculationException) e : new CalculationException(e);
 		}
@@ -178,7 +180,7 @@ class CalcualtionEngine {
 		switch (command) {
 			case '=':
 				if (lastOperation != null) {
-					if (!"%".equals(lastOperation) && !lastCharIs(')')) {
+					if (!lastCharIs(')')) {
 						if (isNumberEntered || lastCharIsOperator()) {
 							formula.append(getCurrentValueAsString());
 							lastOperation += getCurrentValueAsString();
@@ -216,7 +218,6 @@ class CalcualtionEngine {
 
 					formula.append(operator);
 					formula.append(result);
-					lastOperation = String.valueOf(command);
 				}
 				break;
 
@@ -244,7 +245,7 @@ class CalcualtionEngine {
 				break;
 
 			case '(':
-				if (isNumberEntered || lastCharIs(')')) return;
+				if (isNumberEntered || formula.toString().matches(".*[0-9\\)]$")) return;
 				formula.append(command);
 				clearResult();
 				parentheses++;
@@ -264,7 +265,6 @@ class CalcualtionEngine {
 					}
 					formula.append(')');
 					parentheses--;
-//					lastOperation = null;
 					calculate();
 				}
 				break;
@@ -286,10 +286,14 @@ class CalcualtionEngine {
 			lastOperation = null;
 		}
 
-		isNumberEntered = command == '%' || command == SIGN || Character.isDigit(command);
+		isNumberEntered = command == SIGN || Character.isDigit(command);
 	}
 
 	private void closeAllParentheses() {
+		while (parentheses > 0 && formula.charAt(formula.length() - 1) == '(') {
+			formula.deleteCharAt(formula.length() - 1);
+			parentheses--;
+		}
 		while (parentheses > 0) {
 			formula.append(')');
 			parentheses--;
@@ -405,5 +409,22 @@ class CalcualtionEngine {
 		lastOperation = null;
 		parentheses = 0;
 		result = format.format(Util.nvl(value, BigDecimal.ZERO));
+	}
+
+	public BigDecimal compute() throws CalculationException {
+		try {
+			if (lastOperation != null && lastOperation.length() == 1) {
+				formula.append(getCurrentValueAsString());
+				closeAllParentheses();
+				calculate();
+			}
+			return getCurrentValue();
+
+		} catch (final Exception e) {
+			throw e instanceof CalculationException ? (CalculationException) e : new CalculationException(e);
+
+		} finally {
+			resetTo(BigDecimal.ZERO);
+		}
 	}
 }
