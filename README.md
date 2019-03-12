@@ -56,6 +56,12 @@ To install Greip use this update site: https://github.com/greipadmin/greip/raw/m
 <a href="http://marketplace.eclipse.org/marketplace-client-intro?mpc_install=4445639" class="drag" title="Greip - Additional SWT Widgets"><img class="img-responsive" src="https://marketplace.eclipse.org/sites/all/themes/solstice/public/images/marketplace/btn-install.png" alt="Drag to your running Eclipse workspace to install More Clipboard" /></a>
 
 # Release notes
+* Stable releases
+  * [1.1.0](https://github.com/greipadmin/greip/milestone/2?closed=1) \[coming soon\]
+    * finalize all APIs
+    * color and font selection redesigned
+    * new color chooser named ColorCircleChooser
+    * calculator now supports parenthesis
 * Beta releases
   * [1.0.3](https://github.com/greipadmin/greip/milestone/1?closed=1) \[25-01-2019\] 
     * finalize API for Tile widget
