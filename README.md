@@ -57,7 +57,7 @@ To install Greip use this update site: https://github.com/greipadmin/greip/raw/m
 
 # Release notes
 * Stable releases
-  * [1.1.0](https://github.com/greipadmin/greip/milestone/2?closed=1) \[coming soon\]
+  * [1.1.0](https://github.com/greipadmin/greip/milestone/2?closed=1) \[12-03-2019\]
     * finalize all APIs
     * color and font selection redesigned
     * new color chooser named ColorCircleChooser
