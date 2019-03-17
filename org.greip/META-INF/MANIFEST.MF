@@ -19,5 +19,4 @@ Export-Package: org.greip.calculator,
  org.greip.separator,
  org.greip.tile
 Automatic-Module-Name: org.greip
-Bundle-ClassPath: lib/exp4j-0.4.8.jar,
- .
+Bundle-ClassPath: .
