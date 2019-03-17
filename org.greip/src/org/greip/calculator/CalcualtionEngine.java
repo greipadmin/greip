@@ -215,7 +215,7 @@ class CalcualtionEngine {
 					final double value = calculateFormula().doubleValue();
 					final double factor = 100 / getCurrentValue().doubleValue();
 
-					result = getDefaultDecimalFormat().format(value / factor);
+					result = getDecimalFormat().format(value / factor);
 
 					formula.append(operator);
 					formula.append(result);
@@ -257,7 +257,7 @@ class CalcualtionEngine {
 					if (!isNumberEntered) {
 						final char operator = formula.charAt(formula.length() - 1);
 						formula.setLength(formula.length() - 1);
-						result = getDefaultDecimalFormat().format(calculateFormula());
+						result = getDecimalFormat().format(calculateFormula());
 
 						formula.append(operator);
 						formula.append(result);
@@ -302,7 +302,7 @@ class CalcualtionEngine {
 	}
 
 	private String getCurrentValueAsString() throws ParseException {
-		return getDefaultDecimalFormat().format(getCurrentValue()).replace('-', NEGATE);
+		return getDecimalFormat().format(getCurrentValue()).replace('-', NEGATE);
 	}
 
 	private void processMemoryCommand(final char command) throws ParseException {
@@ -313,7 +313,7 @@ class CalcualtionEngine {
 				memory = null;
 				break;
 			case MR:
-				result = getDefaultDecimalFormat().format(memoryValue);
+				result = getDecimalFormat().format(memoryValue);
 				break;
 			case MS:
 				memory = getCurrentValue();
