@@ -14,12 +14,11 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.regex.Pattern;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-
 import org.eclipse.swt.SWT;
 import org.greip.common.Util;
+
+import net.objecthunter.exp4j.Expression;
+import net.objecthunter.exp4j.ExpressionBuilder;
 
 class CalcualtionEngine {
 
@@ -79,7 +78,7 @@ class CalcualtionEngine {
 		return formula.toString().replaceAll("([" + Pattern.quote(OPERATORS) + "])", " $1 ").trim();
 	}
 
-	private void calculate() throws OverflowException, ScriptException {
+	private void calculate() throws OverflowException {
 
 		final BigDecimal value = calculateFormula();
 
@@ -93,7 +92,7 @@ class CalcualtionEngine {
 		result = format.format(value).replace('-', NEGATE);
 	}
 
-	private BigDecimal calculateFormula() throws ScriptException {
+	private BigDecimal calculateFormula() {
 
 		final String expression = formula.toString().replace(NEGATE, '-').replace(decimalSeparator, '.');
 
@@ -107,10 +106,10 @@ class CalcualtionEngine {
 			index++;
 		}
 
-		final ScriptEngineManager mgr = new ScriptEngineManager();
-		final ScriptEngine engine = mgr.getEngineByName("JavaScript");
+		final ExpressionBuilder e = new ExpressionBuilder(expression.substring(index));
+		final Expression build = e.build();
 
-		return new BigDecimal(engine.eval(expression.substring(index)).toString());
+		return new BigDecimal(build.evaluate());
 	}
 
 	private BigDecimal toBigDecimal(final String token) throws ParseException {
