@@ -17,10 +17,12 @@ import java.util.regex.Pattern;
 import org.eclipse.swt.SWT;
 import org.greip.common.Util;
 
-import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
+import net.objecthunter.exp4j.function.Function;
 
 class CalcualtionEngine {
+
+	private static final String IGNORE = String.valueOf((char) 0);
 
 	static final char NEGATE = '\u02D7';
 	static final char SIGN = '\u00B1';
@@ -33,7 +35,38 @@ class CalcualtionEngine {
 	static final char M_PLUS = '\u0004';
 	static final char M_MINUS = '\u0005';
 
-	private static final String OPERATORS = "+-%/*";
+	static final char SIN = '\uFFFF';
+	static final char COS = '\uFFFE';
+	static final char TAN = '\uFFFD';
+	static final char SINH = '\uFFFC';
+	static final char COSH = '\uFFFB';
+	static final char TANH = '\uFFFA';
+
+	static final char SQRT = '\uFFEF';
+	static final char CBRT = '\uFFEE';
+	static final char POW = '\uFFED';
+
+	static final char LN = '\uFFCF';
+	static final char LOG = '\uFFCE';
+	static final char EXP = '\uFFCD';
+
+	static final char PI = '\u03C0';
+	static final char E = '\u2107';
+
+	private static final String OPERATORS = "+-%/*^";
+
+	private static final Function FSIN = new Func("sin", args -> Math.sin(Math.toRadians(args[0])));
+	private static final Function FCOS = new Func("cos", args -> Math.cos(Math.toRadians(args[0])));
+	private static final Function FTAN = new Func("tan", args -> Math.tan(Math.toRadians(args[0])));
+	private static final Function FSINH = new Func("sinh", args -> Math.sinh(args[0]));
+	private static final Function FCOSH = new Func("cosh", args -> Math.cosh(args[0]));
+	private static final Function FTANH = new Func("tanh", args -> Math.tanh(args[0]));
+	private static final Function FCBRT = new Func("cbrt", args -> Math.cbrt(args[0]));
+	private static final Function FSQRT = new Func("sqrt", args -> Math.sqrt(args[0]));
+	private static final Function FPOW = new Func("pow", args -> Math.pow(args[0], 2d));
+	private static final Function FLN = new Func("ln", args -> Math.log(args[0]));
+	private static final Function FLOG = new Func("log", args -> Math.log10(args[0]));
+	private static final Function FEXP = new Func("exp", args -> Math.exp(args[0]));
 
 	static class CalculationResult {
 
@@ -51,6 +84,26 @@ class CalcualtionEngine {
 
 		public String getResult() {
 			return result.toString();
+		}
+	}
+
+	@FunctionalInterface
+	interface Intrinsic {
+		double calculate(double... values);
+	}
+
+	static class Func extends Function {
+
+		private final Intrinsic intrinsic;
+
+		Func(final String name, final Intrinsic function) {
+			super(name);
+			this.intrinsic = function;
+		}
+
+		@Override
+		public double apply(final double... values) {
+			return intrinsic.calculate(values);
 		}
 	}
 
@@ -106,10 +159,10 @@ class CalcualtionEngine {
 			index++;
 		}
 
-		final ExpressionBuilder e = new ExpressionBuilder(expression.substring(index));
-		final Expression build = e.build();
+		final ExpressionBuilder eb = new ExpressionBuilder(expression.substring(index));
+		eb.functions(FSIN, FCOS, FTAN, FSINH, FCOSH, FTANH, FSQRT, FCBRT, FPOW);
 
-		return new BigDecimal(build.evaluate());
+		return new BigDecimal(eb.build().evaluate());
 	}
 
 	private BigDecimal toBigDecimal(final String token) throws ParseException {
@@ -130,6 +183,7 @@ class CalcualtionEngine {
 			}
 
 		} catch (final Exception e) {
+			e.printStackTrace();
 			resetTo(BigDecimal.ZERO);
 			throw e instanceof CalculationException ? (CalculationException) e : new CalculationException(e);
 		}
@@ -146,10 +200,6 @@ class CalcualtionEngine {
 	}
 
 	private void processCommand(final char command) throws Exception {
-
-		if (!isLegalCommand(command)) {
-			throw new IllegalArgumentException("unknown command " + command);
-		}
 
 		if (command == decimalSeparator) {
 			if (!lastCharIs(')')) {
@@ -225,6 +275,7 @@ class CalcualtionEngine {
 			case '-':
 			case '*':
 			case '/':
+			case '^':
 				if (isNumberEntered || formula.length() == 0) {
 					formula.append(getCurrentValueAsString());
 					calculate();
@@ -234,6 +285,55 @@ class CalcualtionEngine {
 					formula.append(command);
 				}
 				lastOperation = String.valueOf(command);
+				break;
+
+			case SIN:
+				executeFunction(FSIN);
+				break;
+			case COS:
+				executeFunction(FCOS);
+				break;
+			case TAN:
+				executeFunction(FTAN);
+				break;
+
+			case SINH:
+				executeFunction(FSINH);
+				break;
+			case COSH:
+				executeFunction(FCOSH);
+				break;
+			case TANH:
+				executeFunction(FTANH);
+				break;
+
+			case SQRT:
+				executeFunction(FSQRT);
+				break;
+			case CBRT:
+				executeFunction(FCBRT);
+				break;
+
+			case POW:
+				executeFunction(FPOW);
+				break;
+
+			case LN:
+				executeFunction(FLN);
+				break;
+			case LOG:
+				executeFunction(FLOG);
+				break;
+			case EXP:
+				executeFunction(FEXP);
+				break;
+
+			case PI:
+				applyConstant(Math.PI);
+				break;
+
+			case E:
+				applyConstant(Math.E);
 				break;
 
 			case 'C':
@@ -270,7 +370,11 @@ class CalcualtionEngine {
 				break;
 
 			default:
-				if (!lastCharIs(')')) {
+				if (IGNORE.equals(lastOperation)) {
+					lastOperation = null;
+					result = String.valueOf(command);
+					formula.setLength(0);
+				} else if (!lastCharIs(')')) {
 					if (!isNumberEntered) {
 						result = "";
 						if (!lastCharIsOperator()) {
@@ -286,7 +390,28 @@ class CalcualtionEngine {
 			lastOperation = null;
 		}
 
-		isNumberEntered = command == SIGN || Character.isDigit(command);
+		isNumberEntered = Character.isDigit(command) || Util.in(command, SIGN, PI, E);
+	}
+
+	private void applyConstant(final double constant) {
+		if (!lastCharIsOperator() || lastCharIs(')')) {
+			formula.setLength(0);
+		}
+		result = getDecimalFormat().format(constant);
+	}
+
+	private void executeFunction(final Function function) throws ParseException {
+		if (isNumberEntered || formula.length() == 0) {
+			formula.append(function.getName()).append('(');
+			formula.append(getCurrentValueAsString());
+			formula.append(')');
+			result = getDecimalFormat().format(function.apply(getCurrentValue().doubleValue()));
+//		} else {
+//			formula.insert(0, function.getName() + '(');
+//			formula.append(')');
+//			result = getDecimalFormat().format(function.apply(getCurrentValue().doubleValue()));
+		}
+		lastOperation = IGNORE;
 	}
 
 	private void closeAllParentheses() {
@@ -356,7 +481,8 @@ class CalcualtionEngine {
 	}
 
 	public boolean isLegalCommand(final char command) {
-		return (OPERATORS + "0123456789=CE()" + SIGN + SWT.BS).indexOf(normalizeCommand(command)) != -1 || command == decimalSeparator;
+		return (OPERATORS + SIN + COS + TAN + SINH + COSH + TANH + "0123456789=CE()" + SIGN + SWT.BS).indexOf(normalizeCommand(command)) != -1
+				|| command == decimalSeparator;
 	}
 
 	private static boolean isMemoryCommand(final char command) {

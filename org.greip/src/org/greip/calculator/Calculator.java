@@ -22,6 +22,7 @@ import org.eclipse.swt.dnd.Clipboard;
 import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
@@ -95,6 +96,11 @@ public final class Calculator extends Composite {
 
 	private Label lblMemory;
 
+	private final Color fnBackground;
+	private final Font fnFont;
+
+	private final boolean simple;
+
 	/**
 	 * Constructs a new instance of this class given its parent.
 	 *
@@ -109,12 +115,26 @@ public final class Calculator extends Composite {
 	 *            </ul>
 	 */
 	public Calculator(final Composite parent) {
+		this(parent, SWT.NONE);
+	}
+
+	public Calculator(final Composite parent, final int style) {
 		super(parent, SWT.NONE);
+
+		simple = style == SWT.SIMPLE;
 
 		setLayout(GridLayoutFactory.fillDefaults().margins(5, 5).spacing(2, 2).numColumns(5).create());
 		setBackground(getDisplay().getSystemColor(SWT.COLOR_DARK_GRAY));
 		setBackgroundMode(SWT.INHERIT_FORCE);
 		addListener(SWT.Resize, e -> showFormula());
+
+		fnFont = new Font(getDisplay(), "Calibri", 8, SWT.ITALIC);
+		fnBackground = new Color(getDisplay(), 100, 100, 200);
+
+		addListener(SWT.Dispose, e -> {
+			fnBackground.dispose();
+			fnFont.dispose();
+		});
 
 		createFocusControl();
 		createResultPanel();
@@ -175,6 +195,28 @@ public final class Calculator extends Composite {
 		createSmallButton("(", '(', 3, SWT.COLOR_BLACK);
 		createSmallButton(")", ')', 0, SWT.COLOR_BLACK);
 
+		if (!simple) {
+			createSpacer();
+
+			createFnButton("sin", CalcualtionEngine.SIN, 0);
+			createFnButton("cos", CalcualtionEngine.COS, 0);
+			createFnButton("tan", CalcualtionEngine.TAN, 0);
+			createFnButton("\u221A", CalcualtionEngine.SQRT, 3);
+			createFnButton("³\u221A", CalcualtionEngine.CBRT, 0);
+
+			createFnButton("sinh", CalcualtionEngine.SINH, 0);
+			createFnButton("cosh", CalcualtionEngine.COSH, 0);
+			createFnButton("tanh", CalcualtionEngine.TANH, 0);
+			createFnButton("x²", CalcualtionEngine.POW, 3);
+			createFnButton("x^y", '^', 0);
+
+			createFnButton("ln", CalcualtionEngine.LN, 0);
+			createFnButton("log", CalcualtionEngine.LOG, 0);
+			createFnButton("e\u02E3", CalcualtionEngine.EXP, 0);
+			createFnButton("\u03C0", CalcualtionEngine.PI, 3);
+			createFnButton("\u2107", CalcualtionEngine.E, 0);
+		}
+
 		createSpacer();
 
 		createButtonsFor('7', '8', '9', SPACER, CalcualtionEngine.DIVIDE, '%');
@@ -206,7 +248,7 @@ public final class Calculator extends Composite {
 	private void createButton(final char action, final int hSpan, final int vSpan, final int indent) {
 		final Button btn = createButton(String.valueOf(action), action);
 		btn.setLayoutData(
-				GridDataFactory.fillDefaults().span(hSpan, vSpan).grab(true, true).minSize(30, SWT.DEFAULT).indent(indent, 0).create());
+				GridDataFactory.fillDefaults().span(hSpan, vSpan).grab(true, true).minSize(33, SWT.DEFAULT).indent(indent, 0).create());
 	}
 
 	private Button createButton(final String text, final char action) {
@@ -219,12 +261,22 @@ public final class Calculator extends Composite {
 		return btn;
 	}
 
+	private void createFnButton(final String text, final char action, final int hIndent) {
+		final FnButton btn = new FnButton(this, text, fnBackground);
+
+		btn.setFont(fnFont);
+		btn.setLayoutData(
+				GridDataFactory.fillDefaults().grab(true, false).minSize(33, SWT.DEFAULT).hint(SWT.DEFAULT, 20).indent(hIndent, 0).create());
+
+		btn.addListener(SWT.MouseDown, e -> processAction(action));
+	}
+
 	private Button createSmallButton(final String text, final char action, final int hIndent, final int color) {
 		final Button btn = createButton("", action);
 
 		btn.setForeground(getDisplay().getSystemColor(color));
 		btn.setLayoutData(
-				GridDataFactory.fillDefaults().grab(true, true).minSize(30, SWT.DEFAULT).hint(SWT.DEFAULT, 19).indent(hIndent, 0).create());
+				GridDataFactory.fillDefaults().grab(true, true).minSize(33, SWT.DEFAULT).hint(SWT.DEFAULT, 19).indent(hIndent, 0).create());
 
 		Util.applyDerivedFont(btn, -3, SWT.NONE);
 
