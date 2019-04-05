@@ -102,7 +102,8 @@ public final class Calculator extends Composite {
 	private final boolean simple;
 
 	/**
-	 * Constructs a new instance of this class given its parent.
+	 * Constructs a new instance of this class given its parent. SWT.SIMPLE is
+	 * used as default style.
 	 *
 	 * @param parent
 	 *        a composite control which will be the parent of the new instance
@@ -115,9 +116,29 @@ public final class Calculator extends Composite {
 	 *            </ul>
 	 */
 	public Calculator(final Composite parent) {
-		this(parent, SWT.NONE);
+		this(parent, SWT.SIMPLE);
 	}
 
+	/**
+	 * Constructs a new instance of this class given its parent.
+	 * <dl>
+	 * <dt><b>Styles:</b></dt>
+	 * <dd>SIMPLE - Simple mode without functions and constants</dd>
+	 * <dd>ALL - Advanced mode with all features</dd>
+	 * </dl>
+	 *
+	 * @param parent
+	 *        a composite control which will be the parent of the new instance
+	 *        (cannot be null)
+	 * @param style
+	 *        the style of widget to construct
+	 *
+	 * @exception SWTException
+	 *            <ul>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *            that created the parent</li>
+	 *            </ul>
+	 */
 	public Calculator(final Composite parent, final int style) {
 		super(parent, SWT.NONE);
 

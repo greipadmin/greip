@@ -19,7 +19,7 @@ import org.osgi.service.prefs.Preferences;
 
 class ColorHistoryList {
 
-	private static final String PREFERENCE_NODE = ColorHistory.class.getPackage().getName();
+	private static final String PREFERENCE_NODE = ColorHistoryList.class.getPackage().getName();
 	private static final Preferences preferences = InstanceScope.INSTANCE.getNode(PREFERENCE_NODE);
 
 	static ColorHistoryList INSTANCE = new ColorHistoryList();
