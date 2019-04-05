@@ -934,7 +934,7 @@ public class Tile extends Composite implements IBorderable {
 		final MarkupText markupText = new MarkupText(this, new HtmlMarkupParser());
 		final TextSection section = getTextSection(index);
 
-		markupText.setFont(section.getFont());
+		markupText.setFont(Util.nvl(section.getFont(), getFont()));
 		markupText.setForeground(section.getForeground());
 		markupText.setAlignment(section.getAlignment());
 		markupText.setWrap(section.isWrap());
