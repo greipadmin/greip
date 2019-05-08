@@ -165,17 +165,14 @@ public class MarkupText {
 	}
 
 	public Anchor getLinkAtLocation(final int x, final int y) {
-		final int offset = textLayout.getOffset(x, y, new int[1]);
-		final TextStyle style = textLayout.getStyle(offset);
+		final TextStyle[] styles = textLayout.getStyles();
+		final int[] ranges = textLayout.getRanges();
 
-		if (style instanceof Anchor) {
-			final TextStyle[] styles = textLayout.getStyles();
-			final int[] ranges = textLayout.getRanges();
-
-			for (int i = 0; i < styles.length; i++) {
-				if (styles[i] == style) {
-					final Rectangle bounds = textLayout.getBounds(ranges[i * 2], ranges[i * 2 + 1]);
-					return bounds.contains(x, y) ? (Anchor) style : null;
+		for (int i = 0; i < styles.length; i++) {
+			if (styles[i] instanceof Anchor) {
+				final Rectangle bounds = textLayout.getBounds(ranges[i * 2], ranges[i * 2 + 1]);
+				if (bounds.contains(x, y)) {
+					return (Anchor) styles[i];
 				}
 			}
 		}
